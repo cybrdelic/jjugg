@@ -7,6 +7,7 @@
     <title>jjugg - Job Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Mono&display=swap"
         rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
     <style>
         /* Root Variables for Theming */
         :root {
@@ -179,6 +180,13 @@
 
         [data-theme="light"] h1::after {
             -webkit-text-stroke: 1px rgba(0, 0, 0, 0.1);
+        }
+
+        nav {
+            margin: 1rem 0;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
         }
 
         /* Theme Toggle */
@@ -613,6 +621,10 @@
             letter-spacing: 1px;
         }
 
+        .kanban-cards {
+            min-height: 50px;
+        }
+
         .kanban-card {
             background: var(--bg-tertiary);
             border: var(--border-thin);
@@ -912,6 +924,11 @@
             margin-top: 1rem;
         }
 
+        .language-chart {
+            max-width: 300px;
+            margin: 1rem auto;
+        }
+
         /* Salary Information */
         .salary-container {
             display: grid;
@@ -1007,6 +1024,11 @@
             .kanban-container {
                 grid-template-columns: 1fr;
             }
+
+            nav {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
         }
 
         @media (max-width: 480px) {
@@ -1060,186 +1082,242 @@
             <div class="logo-circle"></div>
         </div>
         <h1>jjugg</h1>
-        <div>
+        <nav>
+            <button class="btn-modal" onclick="showDashboard()">Dashboard</button>
+            <button class="btn-modal" onclick="showProfile()">Profile</button>
+        </nav>
+        <div id="login-section">
             <input type="text" id="github-token-input" placeholder="Enter your GitHub PAT" />
             <button class="btn-modal" onclick="handleLogin()">Login with GitHub</button>
+            <button class="btn-modal" onclick="logout()" id="logout-btn" style="display: none;">Logout</button>
         </div>
     </header>
 
     <!-- Main Content -->
     <main>
-        <!-- Action Buttons -->
-        <section class="action-buttons">
-            <button class="btn-modal" onclick="openModal('app-modal')">Add Application</button>
-            <button class="btn-modal" onclick="openModal('save-job-modal')">Save Job</button>
-        </section>
+        <!-- Dashboard -->
+        <div id="dashboard">
+            <!-- Action Buttons -->
+            <section class="action-buttons">
+                <button class="btn-modal" onclick="openModal('app-modal')">Add Application</button>
+                <button class="btn-modal" onclick="openModal('save-job-modal')">Save Job</button>
+            </section>
 
-        <!-- Applications Grid -->
-        <section class="card">
-            <div class="card-header">
-                <h2>Applications</h2>
-                <div class="toggle-container">
-                    <label class="toggle-label" for="view-toggle">Kanban View</label>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="view-toggle" onchange="toggleView()">
-                        <span class="slider"></span>
-                    </label>
+            <!-- Applications Grid -->
+            <section class="card">
+                <div class="card-header">
+                    <h2>Applications</h2>
+                    <div class="toggle-container">
+                        <label class="toggle-label" for="view-toggle">Kanban View</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="view-toggle" onchange="toggleView()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
                 </div>
-            </div>
-            <div class="card-content">
-                <div class="controls">
-                    <div class="filter-control">
-                        <select id="filter" title="Filter applications by status or favorites">
-                            <option value="All">All Applications</option>
+                <div class="card-content">
+                    <div class="controls">
+                        <div class="filter-control">
+                            <select id="filter" title="Filter applications by status or favorites">
+                                <option value="All">All Applications</option>
+                                <option value="Applied">Applied</option>
+                                <option value="Interview Scheduled">Interview Scheduled</option>
+                                <option value="Offer Received">Offer Received</option>
+                                <option value="Rejected">Rejected</option>
+                                <option value="Favorites">Favorites</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-inputs">
+                        <input type="text" id="filter-title" placeholder="Filter Title" title="Filter by job title">
+                        <input type="text" id="filter-company" placeholder="Filter Company"
+                            title="Filter by company name">
+                        <input type="date" id="filter-date" title="Filter by application date">
+                        <select id="filter-status" title="Filter by status">
+                            <option value="">All Statuses</option>
                             <option value="Applied">Applied</option>
                             <option value="Interview Scheduled">Interview Scheduled</option>
                             <option value="Offer Received">Offer Received</option>
                             <option value="Rejected">Rejected</option>
-                            <option value="Favorites">Favorites</option>
                         </select>
+                        <input type="number" id="filter-expected" placeholder="Min Expected $"
+                            title="Filter by minimum expected salary">
+                        <input type="number" id="filter-offered" placeholder="Min Offered $"
+                            title="Filter by minimum offered salary">
+                        <input type="text" id="filter-notes" placeholder="Filter Notes" title="Filter by notes">
+                        <input type="text" id="filter-url" placeholder="Filter URL" title="Filter by URL">
+                    </div>
+                    <div class="table-container" id="table-view">
+                        <table id="applications-table">
+                            <thead>
+                                <tr>
+                                    <th onclick="sortTable(0)">Job Title</th>
+                                    <th onclick="sortTable(1)">Company</th>
+                                    <th onclick="sortTable(2)">Date</th>
+                                    <th onclick="sortTable(3)">Status</th>
+                                    <th onclick="sortTable(4)">Expected Salary</th>
+                                    <th onclick="sortTable(5)">Offered Salary</th>
+                                    <th onclick="sortTable(6)">Notes</th>
+                                    <th onclick="sortTable(7)">URL</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="kanban-container" id="kanban-view">
+                        <div class="kanban-column" data-status="Applied">
+                            <h3>Applied</h3>
+                            <div class="kanban-cards" id="kanban-applied"></div>
+                        </div>
+                        <div class="kanban-column" data-status="Interview Scheduled">
+                            <h3>Interview Scheduled</h3>
+                            <div class="kanban-cards" id="kanban-interview"></div>
+                        </div>
+                        <div class="kanban-column" data-status="Offer Received">
+                            <h3>Offer Received</h3>
+                            <div class="kanban-cards" id="kanban-offer"></div>
+                        </div>
+                        <div class="kanban-column" data-status="Rejected">
+                            <h3>Rejected</h3>
+                            <div class="kanban-cards" id="kanban-rejected"></div>
+                        </div>
+                    </div>
+                    <div class="export-container">
+                        <button onclick="exportData()" title="Export application data to CSV">Export Data</button>
                     </div>
                 </div>
-                <div class="filter-inputs">
-                    <input type="text" id="filter-title" placeholder="Filter Title" title="Filter by job title">
-                    <input type="text" id="filter-company" placeholder="Filter Company" title="Filter by company name">
-                    <input type="date" id="filter-date" title="Filter by application date">
-                    <select id="filter-status" title="Filter by status">
-                        <option value="">All Statuses</option>
-                        <option value="Applied">Applied</option>
-                        <option value="Interview Scheduled">Interview Scheduled</option>
-                        <option value="Offer Received">Offer Received</option>
-                        <option value="Rejected">Rejected</option>
-                    </select>
-                    <input type="number" id="filter-expected" placeholder="Min Expected $"
-                        title="Filter by minimum expected salary">
-                    <input type="number" id="filter-offered" placeholder="Min Offered $"
-                        title="Filter by minimum offered salary">
-                    <input type="text" id="filter-notes" placeholder="Filter Notes" title="Filter by notes">
-                    <input type="text" id="filter-url" placeholder="Filter URL" title="Filter by URL">
-                </div>
-                <div class="table-container" id="table-view">
-                    <table id="applications-table">
-                        <thead>
-                            <tr>
-                                <th onclick="sortTable(0)">Job Title</th>
-                                <th onclick="sortTable(1)">Company</th>
-                                <th onclick="sortTable(2)">Date</th>
-                                <th onclick="sortTable(3)">Status</th>
-                                <th onclick="sortTable(4)">Expected Salary</th>
-                                <th onclick="sortTable(5)">Offered Salary</th>
-                                <th onclick="sortTable(6)">Notes</th>
-                                <th onclick="sortTable(7)">URL</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-                <div class="kanban-container" id="kanban-view">
-                    <div class="kanban-column" data-status="Applied">
-                        <h3>Applied</h3>
-                        <div class="kanban-cards" id="kanban-applied"></div>
-                    </div>
-                    <div class="kanban-column" data-status="Interview Scheduled">
-                        <h3>Interview Scheduled</h3>
-                        <div class="kanban-cards" id="kanban-interview"></div>
-                    </div>
-                    <div class="kanban-column" data-status="Offer Received">
-                        <h3>Offer Received</h3>
-                        <div class="kanban-cards" id="kanban-offer"></div>
-                    </div>
-                    <div class="kanban-column" data-status="Rejected">
-                        <h3>Rejected</h3>
-                        <div class="kanban-cards" id="kanban-rejected"></div>
-                    </div>
-                </div>
-                <div class="export-container">
-                    <button onclick="exportData()" title="Export application data to CSV">Export Data</button>
-                </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- Analytics Section -->
-        <section class="card">
-            <div class="card-header">
-                <h2>Analytics</h2>
-            </div>
-            <div class="card-content">
-                <div class="analytics" id="analytics-container"></div>
-                <h3 class="mt-4">Salary Information</h3>
-                <div class="salary-container">
-                    <div class="salary-card" title="Average expected salary across all applications">
-                        <div class="salary-label">Average Expected</div>
-                        <div class="salary-amount" id="avg-expected">$0</div>
-                    </div>
-                    <div class="salary-card" title="Average offered salary for applications with offers">
-                        <div class="salary-label">Average Offered</div>
-                        <div class="salary-amount" id="avg-offered">$0</div>
-                    </div>
-                    <div class="salary-card" title="Lowest offered salary">
-                        <div class="salary-label">Min Offered</div>
-                        <div class="salary-amount" id="min-offered">$0</div>
-                    </div>
-                    <div class="salary-card" title="Highest offered salary">
-                        <div class="salary-label">Max Offered</div>
-                        <div class="salary-amount" id="max-offered">$0</div>
+            <!-- Analytics Section -->
+            <section class="card">
+                <div class="card-header">
+                    <h2>Analytics</h2>
+                </div>
+                <div class="card-content">
+                    <div class="analytics" id="analytics-container"></div>
+                    <h3 class="mt-4">Salary Information</h3>
+                    <div class="salary-container">
+                        <div class="salary-card" title="Average expected salary across all applications">
+                            <div class="salary-label">Average Expected</div>
+                            <div class="salary-amount" id="avg-expected">$0</div>
+                        </div>
+                        <div class="salary-card" title="Average offered salary for applications with offers">
+                            <div class="salary-label">Average Offered</div>
+                            <div class="salary-amount" id="avg-offered">$0</div>
+                        </div>
+                        <div class="salary-card" title="Lowest offered salary">
+                            <div class="salary-label">Min Offered</div>
+                            <div class="salary-amount" id="min-offered">$0</div>
+                        </div>
+                        <div class="salary-card" title="Highest offered salary">
+                            <div class="salary-label">Max Offered</div>
+                            <div class="salary-amount" id="max-offered">$0</div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- Goals Section -->
-        <section class="card">
-            <div class="card-header">
-                <h2>Job Search Goals</h2>
-            </div>
-            <div class="card-content">
-                <div class="goal-container">
-                    <h3>Weekly Application Target</h3>
-                    <div class="goal-progress">
-                        <div class="goal-bar" id="weekly-goal-progress"></div>
-                    </div>
-                    <div class="goal-stats">
-                        <span id="weekly-apps-submitted">0 applications</span>
-                        <span id="weekly-goal-target">Goal: 10/week</span>
-                    </div>
-                    <h3 class="mt-4">Application Activity</h3>
-                    <div class="chart-container">
-                        <canvas id="application-chart"></canvas>
+            <!-- Goals Section -->
+            <section class="card">
+                <div class="card-header">
+                    <h2>Job Search Goals</h2>
+                </div>
+                <div class="card-content">
+                    <div class="goal-container">
+                        <h3>Weekly Application Target</h3>
+                        <div class="goal-progress">
+                            <div class="goal-bar" id="weekly-goal-progress"></div>
+                        </div>
+                        <div class="goal-stats">
+                            <span id="weekly-apps-submitted">0 applications</span>
+                            <span id="weekly-goal-target">Goal: 10/week</span>
+                        </div>
+                        <h3 class="mt-4">Application Activity</h3>
+                        <div class="chart-container">
+                            <canvas id="application-chart"></canvas>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- Timeline Section -->
-        <section class="card">
-            <div class="card-header">
-                <h2>Application Timeline</h2>
-            </div>
-            <div class="card-content">
-                <div class="timeline" id="app-timeline"></div>
-            </div>
-        </section>
+            <!-- Timeline Section -->
+            <section class="card">
+                <div class="card-header">
+                    <h2>Application Timeline</h2>
+                </div>
+                <div class="card-content">
+                    <div class="timeline" id="app-timeline"></div>
+                </div>
+            </section>
 
-        <!-- Reminders Section -->
-        <section class="card">
-            <div class="card-header">
-                <h2>Follow-up Reminders</h2>
-            </div>
-            <div class="card-content">
-                <ul class="reminders-list" id="reminders-list"></ul>
-            </div>
-        </section>
+            <!-- Reminders Section -->
+            <section class="card">
+                <div class="card-header">
+                    <h2>Follow-up Reminders</h2>
+                </div>
+                <div class="card-content">
+                    <ul class="reminders-list" id="reminders-list"></ul>
+                </div>
+            </section>
+        </div>
 
-        <!-- GitHub Projects Section -->
-        <section class="card" id="github-projects" style="display: none;">
-            <div class="card-header">
-                <h2>GitHub Projects</h2>
-            </div>
-            <div class="card-content">
-                <ul id="projects-list"></ul>
-            </div>
-        </section>
+        <!-- Profile Page -->
+        <div id="profile-page" style="display: none;">
+            <section class="card">
+                <div class="card-header">
+                    <h2>GitHub Profile</h2>
+                </div>
+                <div class="card-content" id="profile-info"></div>
+            </section>
+            <section class="card">
+                <div class="card-header">
+                    <h2>Projects</h2>
+                    <div class="toggle-container">
+                        <label class="toggle-label" for="projects-view-toggle">Kanban View</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="projects-view-toggle" onchange="toggleProjectsView()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="table-container" id="projects-table-view">
+                        <div class="filter-inputs">
+                            <input type="text" id="filter-project-name" placeholder="Filter Name">
+                            <input type="text" id="filter-project-description" placeholder="Filter Description">
+                            <input type="text" id="filter-project-language" placeholder="Filter Language">
+                            <input type="number" id="filter-project-stars" placeholder="Min Stars">
+                            <input type="number" id="filter-project-forks" placeholder="Min Forks">
+                            <input type="date" id="filter-project-updated" placeholder="Updated After">
+                        </div>
+                        <table id="projects-table">
+                            <thead>
+                                <tr>
+                                    <th onclick="sortProjectsTable(0)">Name</th>
+                                    <th onclick="sortProjectsTable(1)">Description</th>
+                                    <th onclick="sortProjectsTable(2)">Language</th>
+                                    <th onclick="sortProjectsTable(3)">Stars</th>
+                                    <th onclick="sortProjectsTable(4)">Forks</th>
+                                    <th onclick="sortProjectsTable(5)">Last Updated</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="kanban-container" id="projects-kanban-view" style="display: none;">
+                        <!-- Kanban view will be rendered here -->
+                    </div>
+                </div>
+            </section>
+            <section class="card">
+                <div class="card-header">
+                    <h2>Analytics</h2>
+                </div>
+                <div class="card-content" id="profile-analytics"></div>
+            </section>
+        </div>
     </main>
 
     <!-- Add Application Modal -->
@@ -1317,7 +1395,7 @@
         </div>
     </div>
 
-    <!-- Details Modal -->
+    <!-- Application Details Modal -->
     <div class="modal" id="details-modal">
         <div class="modal-content">
             <button class="modal-close" onclick="closeModal('details-modal')">×</button>
@@ -1337,8 +1415,25 @@
         </div>
     </div>
 
+    <!-- Project Details Modal -->
+    <div class="modal" id="project-details-modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('project-details-modal')">×</button>
+            <h2>Project Details</h2>
+            <div id="project-details-content"></div>
+        </div>
+    </div>
+
+    <!-- Project Analytics Modal -->
+    <div class="modal" id="project-analytics-modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('project-analytics-modal')">×</button>
+            <h2>Project Analytics</h2>
+            <div id="project-analytics-content"></div>
+        </div>
+    </div>
+
     <!-- JavaScript -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
     <script>
         // Initial Data with Favorite Property
         const fakeData = [
@@ -1352,6 +1447,13 @@
         let applications = fakeData;
         let savedJobs = [];
         let isKanbanView = false;
+        let githubData = null;
+        let isProjectsKanbanView = false;
+
+        const kanbanCategories = {
+            'Recently Updated': repo => new Date(repo.updated_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+            'Older Projects': repo => new Date(repo.updated_at) <= new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+        };
 
         // Load Data on Page Load
         document.addEventListener('DOMContentLoaded', () => {
@@ -1388,7 +1490,7 @@
             updateGoalProgress();
             document.getElementById('date').value = new Date().toISOString().split('T')[0];
 
-            // Real-time Filtering
+            // Real-time Filtering for Applications
             document.querySelectorAll('.filter-inputs input, .filter-inputs select, #filter').forEach(input => {
                 input.addEventListener('input', () => {
                     if (isKanbanView) renderKanban();
@@ -1396,10 +1498,13 @@
                 });
             });
 
-            // Render GitHub projects if token is stored
+            // Check for existing GitHub token
             const token = localStorage.getItem('githubToken');
             if (token) {
-                fetchGitHubProjects(token);
+                document.getElementById('login-section').children[0].style.display = 'none';
+                document.getElementById('login-section').children[1].style.display = 'none';
+                document.getElementById('logout-btn').style.display = 'inline-block';
+                fetchGitHubData(token);
             }
         });
 
@@ -1412,6 +1517,7 @@
             html.setAttribute('data-theme', newTheme);
             themeText.textContent = newTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
             localStorage.setItem('theme', newTheme);
+            if (githubData) renderProfilePage(); // Re-render charts for theme
         }
 
         // Modal Functions
@@ -1425,7 +1531,28 @@
             document.body.classList.remove('modal-open');
         }
 
-        // Toggle View Function
+        // Navigation Functions
+        function showDashboard() {
+            document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('profile-page').style.display = 'none';
+        }
+
+        function showProfile() {
+            const token = localStorage.getItem('githubToken');
+            if (token) {
+                document.getElementById('dashboard').style.display = 'none';
+                document.getElementById('profile-page').style.display = 'block';
+                if (!githubData) {
+                    fetchGitHubData(token);
+                } else {
+                    renderProfilePage();
+                }
+            } else {
+                showNotification('Please log in with GitHub first.', 'error');
+            }
+        }
+
+        // Toggle View Function for Applications
         function toggleView() {
             isKanbanView = document.getElementById('view-toggle').checked;
             const tableView = document.getElementById('table-view');
@@ -1539,7 +1666,7 @@
             });
         }
 
-        // Render Table View
+        // Render Table View for Applications
         function renderTable() {
             const tbody = document.querySelector('#applications-table tbody');
             tbody.innerHTML = '';
@@ -1585,7 +1712,7 @@
             'Rejected': 'rejected'
         };
 
-        // Render Kanban View
+        // Render Kanban View for Applications
         function renderKanban() {
             const statuses = ['Applied', 'Interview Scheduled', 'Offer Received', 'Rejected'];
             let filteredApps = filterApplications();
@@ -1669,7 +1796,7 @@
                 else renderTable();
                 renderAnalytics();
                 renderReminders();
-                renderTimeline(app);
+                renderTimeline();
                 updateGoalProgress();
             }
         }
@@ -1701,7 +1828,7 @@
                 else renderTable();
                 renderAnalytics();
                 renderReminders();
-                renderTimeline(app);
+                renderTimeline();
             }
         }
 
@@ -1728,7 +1855,7 @@
             }, 1500);
         }
 
-        // Render Analytics
+        // Render Analytics for Applications
         function renderAnalytics() {
             const container = document.getElementById('analytics-container');
             container.innerHTML = '';
@@ -1747,14 +1874,12 @@
             const responseRate = total > 0 ? Math.round(((statusCounts['Interview Scheduled'] || 0) + (statusCounts['Offer Received'] || 0)) / total * 100) : 0;
             addAnalyticsCard(container, `${responseRate}%`, 'Response Rate', 'Percentage of applications with a response');
 
-            // Applications Last 7 Days
             const today = new Date();
             const sevenDaysAgo = new Date(today);
             sevenDaysAgo.setDate(today.getDate() - 7);
             const appsLast7Days = applications.filter(app => new Date(app.date) >= sevenDaysAgo).length;
             addAnalyticsCard(container, appsLast7Days, 'Apps Last 7 Days', 'Applications submitted in the last 7 days');
 
-            // Average Time to Response
             const responseTimes = applications
                 .filter(app => app.history.length > 1)
                 .map(app => {
@@ -1801,7 +1926,7 @@
             container.appendChild(card);
         }
 
-        // Sort Table
+        // Sort Table for Applications
         function sortTable(colIndex) {
             const table = document.getElementById('applications-table');
             const tbody = table.querySelector('tbody');
@@ -1857,7 +1982,7 @@
             });
         }
 
-        // Updated Render Timeline Function
+        // Render Timeline
         function renderTimeline(app = null, containerId = 'app-timeline') {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
@@ -1955,58 +2080,384 @@
             });
         }
 
-        // GitHub Login with PAT
-        async function fetchGitHubProjects(token) {
+        // GitHub Integration
+        async function fetchGitHubData(token) {
             try {
-                const response = await fetch('https://api.github.com/user/repos', {
+                // Fetch user profile
+                const userResponse = await fetch('https://api.github.com/user', {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
+                if (!userResponse.ok) throw new Error('Failed to fetch user profile');
+                const user = await userResponse.json();
 
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch projects: ${response.statusText}`);
-                }
+                // Fetch repositories
+                const reposResponse = await fetch('https://api.github.com/user/repos', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                if (!reposResponse.ok) throw new Error('Failed to fetch repositories');
+                const repos = await reposResponse.json();
 
-                const repos = await response.json();
-                displayProjects(repos);
+                githubData = { user, repos };
+                renderProfilePage();
             } catch (error) {
                 console.error('Error:', error);
-                showNotification('Failed to fetch projects. Check your token and try again.', 'error');
+                showNotification('Failed to fetch GitHub data. Check your token and try again.', 'error');
+                logout();
             }
         }
 
-        // Display the projects in the UI
-        function displayProjects(repos) {
-            const container = document.getElementById('projects-list');
-            container.innerHTML = ''; // Clear old content
-
-            if (repos.length === 0) {
-                container.innerHTML = '<li>No projects found.</li>';
-                return;
-            }
-
-            repos.forEach(repo => {
-                const li = document.createElement('li');
-                li.textContent = `${repo.name}: ${repo.description || 'No description'}`;
-                container.appendChild(li);
-            });
-
-            document.getElementById('github-projects').style.display = 'block';
-        }
-
-        // Handle the login button click
         function handleLogin() {
             const token = document.getElementById('github-token-input').value;
             if (token) {
                 localStorage.setItem('githubToken', token);
-                fetchGitHubProjects(token);
+                document.getElementById('login-section').children[0].style.display = 'none';
+                document.getElementById('login-section').children[1].style.display = 'none';
+                document.getElementById('logout-btn').style.display = 'inline-block';
+                fetchGitHubData(token);
                 showNotification('Logged in with GitHub');
             } else {
                 showNotification('Please enter a valid GitHub token.', 'error');
             }
         }
+
+        function logout() {
+            localStorage.removeItem('githubToken');
+            githubData = null;
+            document.getElementById('profile-page').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('login-section').children[0].style.display = 'inline-block';
+            document.getElementById('login-section').children[1].style.display = 'inline-block';
+            document.getElementById('logout-btn').style.display = 'none';
+            showNotification('Logged out');
+        }
+
+        function renderProfilePage() {
+            renderProfileInfo();
+            renderProjectsView();
+            renderProfileAnalytics();
+        }
+
+        function renderProfileInfo() {
+            const container = document.getElementById('profile-info');
+            const { user } = githubData;
+            container.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <img src="${user.avatar_url}" alt="Avatar" style="width: 100px; height: 100px; border-radius: 50%;">
+                    <div>
+                        <h3>${user.login}</h3>
+                        <p>${user.bio || 'No bio available'}</p>
+                        <a href="${user.html_url}" target="_blank">View GitHub Profile</a>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <h3>Cover Letter</h3>
+                    <textarea id="cover-letter" rows="10" style="width: 100%;"></textarea>
+                    <button class="btn-primary" onclick="generateCoverLetter()">Generate Cover Letter</button>
+                </div>
+                <div class="mt-4">
+                    <h3>Resume</h3>
+                    <textarea id="resume" rows="10" style="width: 100%;"></textarea>
+                    <button class="btn-primary" onclick="generateResume()">Generate Resume</button>
+                </div>
+            `;
+        }
+
+        function generateCoverLetter() {
+            document.getElementById('cover-letter').value = "Dear Hiring Manager,\n\nI am writing to express my interest in the [Position] role at [Company]. With my background in [Field], I believe I can contribute to your team.\n\n[More text]\n\nSincerely,\n[Your Name]";
+        }
+
+        function generateResume() {
+            document.getElementById('resume').value = "[Your Name]\n[Contact Information]\n\nObjective:\n[Your objective]\n\nExperience:\n[Your experience]\n\nEducation:\n[Your education]\n\nSkills:\n[Your skills]";
+        }
+
+        function toggleProjectsView() {
+            isProjectsKanbanView = document.getElementById('projects-view-toggle').checked;
+            const tableView = document.getElementById('projects-table-view');
+            const kanbanView = document.getElementById('projects-kanban-view');
+            if (isProjectsKanbanView) {
+                tableView.style.display = 'none';
+                kanbanView.style.display = 'grid';
+                renderProjectsKanban();
+            } else {
+                tableView.style.display = 'block';
+                kanbanView.style.display = 'none';
+                renderProjectsTable();
+            }
+        }
+
+        function renderProjectsView() {
+            if (isProjectsKanbanView) {
+                renderProjectsKanban();
+            } else {
+                renderProjectsTable();
+            }
+        }
+
+        function renderProjectsTable() {
+            const tbody = document.querySelector('#projects-table tbody');
+            tbody.innerHTML = '';
+            let filteredRepos = filterProjects();
+
+            filteredRepos.forEach(repo => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${repo.name}</td>
+                    <td>${repo.description || 'N/A'}</td>
+                    <td>${repo.language || 'N/A'}</td>
+                    <td>${repo.stargazers_count}</td>
+                    <td>${repo.forks_count}</td>
+                    <td>${formatDate(repo.updated_at)}</td>
+                    <td>
+                        <button onclick="openProjectDetails('${repo.name}')" class="action-btn">Details</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            if (filteredRepos.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-tertiary);">No projects found.</td></tr>`;
+            }
+        }
+
+        function filterProjects() {
+            let filteredRepos = [...githubData.repos];
+
+            const nameFilter = document.getElementById('filter-project-name').value.toLowerCase();
+            const descriptionFilter = document.getElementById('filter-project-description').value.toLowerCase();
+            const languageFilter = document.getElementById('filter-project-language').value.toLowerCase();
+            const starsFilter = parseInt(document.getElementById('filter-project-stars').value) || 0;
+            const forksFilter = parseInt(document.getElementById('filter-project-forks').value) || 0;
+            const updatedFilter = document.getElementById('filter-project-updated').value;
+
+            return filteredRepos.filter(repo => {
+                return (
+                    repo.name.toLowerCase().includes(nameFilter) &&
+                    (repo.description || '').toLowerCase().includes(descriptionFilter) &&
+                    (repo.language || '').toLowerCase().includes(languageFilter) &&
+                    repo.stargazers_count >= starsFilter &&
+                    repo.forks_count >= forksFilter &&
+                    (!updatedFilter || new Date(repo.updated_at) >= new Date(updatedFilter))
+                );
+            });
+        }
+
+        function sortProjectsTable(colIndex) {
+            const table = document.getElementById('projects-table');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const sortDirection = table.getAttribute('data-sort-dir') === 'asc' ? 'desc' : 'asc';
+            table.setAttribute('data-sort-dir', sortDirection);
+            rows.sort((a, b) => {
+                let aValue = a.cells[colIndex].textContent.trim();
+                let bValue = b.cells[colIndex].textContent.trim();
+                if (colIndex === 3 || colIndex === 4) { // Stars or Forks
+                    aValue = parseInt(aValue) || 0;
+                    bValue = parseInt(bValue) || 0;
+                    return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+                } else if (colIndex === 5) { // Last Updated
+                    aValue = new Date(aValue);
+                    bValue = new Date(bValue);
+                    return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+                } else {
+                    return sortDirection === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+                }
+            });
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        function renderProjectsKanban() {
+            const container = document.getElementById('projects-kanban-view');
+            container.innerHTML = '';
+            const kanban = document.createElement('div');
+            kanban.className = 'kanban-container';
+            kanban.style.display = 'grid';
+            kanban.style.gridTemplateColumns = 'repeat(2, 1fr)';
+
+            Object.keys(kanbanCategories).forEach(category => {
+                const column = document.createElement('div');
+                column.className = 'kanban-column';
+                column.innerHTML = `<h3>${category}</h3>`;
+                const cardsContainer = document.createElement('div');
+                cardsContainer.className = 'kanban-cards';
+
+                const reposInCategory = githubData.repos.filter(kanbanCategories[category]);
+                reposInCategory.forEach(repo => {
+                    const card = document.createElement('div');
+                    card.className = 'kanban-card';
+                    card.innerHTML = `
+                        <div class="title">${repo.name}</div>
+                        <div class="company">${repo.description || 'No description'}</div>
+                        <button onclick="openProjectDetails('${repo.name}')" class="action-btn">Details</button>
+                    `;
+                    cardsContainer.appendChild(card);
+                });
+
+                if (reposInCategory.length === 0) {
+                    cardsContainer.innerHTML = `<p style="color: var(--text-tertiary); text-align: center;">No projects</p>`;
+                }
+
+                column.appendChild(cardsContainer);
+                kanban.appendChild(column);
+            });
+
+            container.appendChild(kanban);
+        }
+
+        function renderProfileAnalytics() {
+            const container = document.getElementById('profile-analytics');
+            container.innerHTML = '';
+
+            const totalRepos = githubData.repos.length;
+            const languageCounts = githubData.repos.reduce((acc, repo) => {
+                if (repo.language) acc[repo.language] = (acc[repo.language] || 0) + 1;
+                return acc;
+            }, {});
+            const totalStars = githubData.repos.reduce((acc, repo) => acc + repo.stargazers_count, 0);
+            const totalForks = githubData.repos.reduce((acc, repo) => acc + repo.forks_count, 0);
+
+            container.innerHTML = `
+                <div class="analytics">
+                    <div class="analytics-card" title="Total number of repositories">
+                        <div class="analytics-number">${totalRepos}</div>
+                        <div class="analytics-label">Total Repos</div>
+                    </div>
+                    <div class="analytics-card" title="Total stars across all repositories">
+                        <div class="analytics-number">${totalStars}</div>
+                        <div class="analytics-label">Total Stars</div>
+                    </div>
+                    <div class="analytics-card" title="Total forks across all repositories">
+                        <div class="analytics-number">${totalForks}</div>
+                        <div class="analytics-label">Total Forks</div>
+                    </div>
+                </div>
+                <h3 class="mt-4">Repositories by Language</h3>
+                <div class="language-chart">
+                    <canvas id="language-chart"></canvas>
+                </div>
+                <h3 class="mt-4">Repositories Created per Month</h3>
+                <div class="chart-container">
+                    <canvas id="repos-per-month-chart"></canvas>
+                </div>
+                <h3 class="mt-4">Top Starred Repositories</h3>
+                <ul id="top-starred-repos"></ul>
+            `;
+
+            const languageData = {
+                labels: Object.keys(languageCounts),
+                datasets: [{
+                    data: Object.values(languageCounts),
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'],
+                }]
+            };
+            const languageCtx = document.getElementById('language-chart').getContext('2d');
+            if (window.languageChart) window.languageChart.destroy();
+            window.languageChart = new Chart(languageCtx, {
+                type: 'pie',
+                data: languageData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary')
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Repos per month
+            const reposPerMonth = githubData.repos.reduce((acc, repo) => {
+                const month = new Date(repo.created_at).toLocaleString('default', { month: 'short', year: 'numeric' });
+                acc[month] = (acc[month] || 0) + 1;
+                return acc;
+            }, {});
+            const months = Object.keys(reposPerMonth).sort((a, b) => new Date(a) - new Date(b));
+            const reposPerMonthData = {
+                labels: months,
+                datasets: [{
+                    label: 'Repositories Created',
+                    data: months.map(month => reposPerMonth[month]),
+                    backgroundColor: 'rgba(0, 240, 255, 0.2)',
+                    borderColor: 'rgba(0, 240, 255, 1)',
+                    borderWidth: 1,
+                }]
+            };
+            const reposPerMonthCtx = document.getElementById('repos-per-month-chart').getContext('2d');
+            if (window.reposPerMonthChart) window.reposPerMonthChart.destroy();
+            window.reposPerMonthChart = new Chart(reposPerMonthCtx, {
+                type: 'bar',
+                data: reposPerMonthData,
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary') }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                        x: { ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary') }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }
+                    },
+                    plugins: { legend: { labels: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary') } } }
+                }
+            });
+
+            // Top starred repositories
+            const topStarred = githubData.repos.sort((a, b) => b.stargazers_count - a.stargazers_count).slice(0, 5);
+            const topStarredContainer = document.getElementById('top-starred-repos');
+            topStarred.forEach(repo => {
+                const li = document.createElement('li');
+                li.textContent = `${repo.name}: ${repo.stargazers_count} stars`;
+                topStarredContainer.appendChild(li);
+            });
+        }
+
+        function openProjectDetails(repoName) {
+            const repo = githubData.repos.find(r => r.name === repoName);
+            if (repo) {
+                const container = document.getElementById('project-details-content');
+                container.innerHTML = `
+                    <p><strong>Name:</strong> ${repo.name}</p>
+                    <p><strong>Description:</strong> ${repo.description || 'N/A'}</p>
+                    <p><strong>Language:</strong> ${repo.language || 'N/A'}</p>
+                    <p><strong>Stars:</strong> ${repo.stargazers_count}</p>
+                    <p><strong>Forks:</strong> ${repo.forks_count}</p>
+                    <p><strong>Last Updated:</strong> ${formatDate(repo.updated_at)}</p>
+                    <p><strong>Commits:</strong> 100 (placeholder)</p>
+                    <p><strong>Contributors:</strong> 5 (placeholder)</p>
+                    <p><strong>Open Issues:</strong> ${repo.open_issues_count}</p>
+                    <p><strong>Open Pull Requests:</strong> 2 (placeholder)</p>
+                    <p><strong>URL:</strong> <a href="${repo.html_url}" target="_blank">View on GitHub</a></p>
+                    <button onclick="openProjectAnalytics('${repo.name}')" class="btn-primary">View Analytics</button>
+                `;
+                openModal('project-details-modal');
+            }
+        }
+
+        function openProjectAnalytics(repoName) {
+            const repo = githubData.repos.find(r => r.name === repoName);
+            if (repo) {
+                const container = document.getElementById('project-analytics-content');
+                container.innerHTML = `
+                    <p>Analytics for <strong>${repo.name}</strong></p>
+                    <p>Stars: ${repo.stargazers_count}</p>
+                    <p>Forks: ${repo.forks_count}</p>
+                    <p>Watchers: ${repo.watchers_count}</p>
+                    <p>Open Issues: ${repo.open_issues_count}</p>
+                `;
+                openModal('project-analytics-modal');
+            }
+        }
+
+        // Real-time Filtering for Projects
+        document.querySelectorAll('#projects-table-view .filter-inputs input').forEach(input => {
+            input.addEventListener('input', () => {
+                if (!isProjectsKanbanView) renderProjectsTable();
+            });
+        });
     </script>
 </body>
 
