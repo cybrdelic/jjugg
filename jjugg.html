@@ -344,6 +344,12 @@
             z-index: 1000;
             align-items: center;
             justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.active {
+            opacity: 1;
         }
 
         .modal-content {
@@ -355,6 +361,30 @@
             width: 90%;
             max-width: 600px;
             position: relative;
+            max-height: 85vh;
+            overflow-y: auto;
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-primary) var(--bg-tertiary);
+        }
+
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-content::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb {
+            background: var(--accent-primary);
+            border-radius: 4px;
         }
 
         .modal-close {
@@ -366,10 +396,19 @@
             font-size: 1.5rem;
             color: var(--text-secondary);
             cursor: pointer;
+            transition: all 0.2s ease;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
         }
 
         .modal-close:hover {
             color: var(--accent-primary);
+            background: rgba(255, 255, 255, 0.1);
+            transform: rotate(90deg);
         }
 
         form {
@@ -622,6 +661,24 @@
             grid-template-columns: repeat(4, 1fr);
             gap: 1rem;
             overflow-x: auto;
+            scroll-behavior: smooth;
+            padding-bottom: 1rem;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-primary) var(--bg-tertiary);
+        }
+
+        .kanban-container::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .kanban-container::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+        }
+
+        .kanban-container::-webkit-scrollbar-thumb {
+            background: var(--accent-primary);
+            border-radius: 4px;
         }
 
         .kanban-column {
@@ -630,6 +687,8 @@
             border-radius: 8px;
             padding: 1rem;
             min-width: 250px;
+            display: flex;
+            flex-direction: column;
         }
 
         .kanban-column h3 {
@@ -639,10 +698,58 @@
             margin-bottom: 1rem;
             text-transform: uppercase;
             letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .kanban-column h3 .count {
+            font-size: 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 0.2rem 0.5rem;
+            color: var(--text-secondary);
         }
 
         .kanban-cards {
             min-height: 50px;
+            max-height: 70vh;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-primary) var(--bg-tertiary);
+            flex: 1;
+        }
+
+        .kanban-cards::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .kanban-cards::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+        }
+
+        .kanban-cards::-webkit-scrollbar-thumb {
+            background: var(--accent-primary);
+            border-radius: 4px;
+        }
+
+        .kanban-load-more {
+            text-align: center;
+            padding: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            margin-top: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .kanban-load-more:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.1);
         }
 
         .kanban-card {
@@ -654,27 +761,60 @@
             color: var(--text-secondary);
             font-size: 0.9rem;
             transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
         }
 
         .kanban-card:hover {
+            transform: translateY(-2px);
             background: rgba(255, 255, 255, 0.05);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .kanban-card.favorite::before {
+            content: "★";
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent-primary);
+            color: #000;
+            border-radius: 50%;
+            font-size: 0.8rem;
+            transform: rotate(15deg);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .kanban-card .title {
             font-weight: 500;
             margin-bottom: 0.5rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .kanban-card .company {
             font-size: 0.8rem;
             color: var(--text-tertiary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .kanban-card .actions {
             margin-top: 0.5rem;
             display: flex;
             gap: 0.5rem;
+            opacity: 0.5;
+            transition: opacity 0.2s ease;
+        }
+
+        .kanban-card:hover .actions {
+            opacity: 1;
         }
 
         /* Status Indicators */
@@ -742,11 +882,54 @@
             color: var(--text-secondary);
             cursor: pointer;
             transition: all 0.2s ease;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-btn::after {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            background-image: radial-gradient(circle, var(--accent-primary) 10%, transparent 10.01%);
+            background-repeat: no-repeat;
+            background-position: 50%;
+            transform: scale(10, 10);
+            opacity: 0;
+            transition: transform 0.5s, opacity 0.5s;
+        }
+
+        .action-btn:active::after {
+            transform: scale(0, 0);
+            opacity: 0.3;
+            transition: 0s;
         }
 
         .action-btn:hover {
             color: var(--accent-primary);
             background: rgba(255, 255, 255, 0.05);
+        }
+
+        .action-btn.favorite-btn {
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .action-btn.favorite-btn.active {
+            color: gold;
+            transform: scale(1.2);
+        }
+
+        .action-btn.favorite-btn.active:hover {
+            color: gold;
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .action-btn.favorite-btn:hover {
+            transform: scale(1.1);
         }
 
         /* Links */
@@ -953,7 +1136,7 @@
             margin-top: 1.5rem;
         }
 
-        /* Flash Animation */
+        /* Animations */
         .flash {
             animation: flash-animation 0.5s;
         }
@@ -966,6 +1149,93 @@
             100% {
                 opacity: 1;
             }
+        }
+
+        .fade-in {
+            animation: fade-in 0.3s ease forwards;
+        }
+
+        @keyframes fade-in {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .slide-in {
+            animation: slide-in 0.3s ease forwards;
+        }
+
+        @keyframes slide-in {
+            from {
+                transform: translateX(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .pulse {
+            animation: pulse 1.5s ease infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .shake {
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+
+        .bounce {
+            animation: bounce 0.5s ease;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        /* Hover Effects */
+        .hover-lift {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .hover-glow {
+            transition: box-shadow 0.2s ease;
+        }
+
+        .hover-glow:hover {
+            box-shadow: 0 0 10px var(--accent-primary);
         }
 
         /* Responsive Design */
@@ -1541,15 +1811,43 @@
             updateGoalProgress(); // Re-render goal chart
         }
 
-        // Modal Functions
+        // Modal Functions with Animation
         function openModal(modalId) {
-            document.getElementById(modalId).style.display = 'flex';
+            const modal = document.getElementById(modalId);
+            modal.style.display = 'flex';
             document.body.classList.add('modal-open');
+            
+            // Trigger animation after display is set
+            setTimeout(() => {
+                modal.classList.add('active');
+            }, 10);
+            
+            // Add escape key listener for modal
+            document.addEventListener('keydown', function closeOnEsc(e) {
+                if (e.key === 'Escape') {
+                    closeModal(modalId);
+                    document.removeEventListener('keydown', closeOnEsc);
+                }
+            });
+            
+            // Add click outside to close
+            modal.addEventListener('click', function closeOnClick(e) {
+                if (e.target === modal) {
+                    closeModal(modalId);
+                    modal.removeEventListener('click', closeOnClick);
+                }
+            });
         }
 
         function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-            document.body.classList.remove('modal-open');
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('active');
+            
+            // Wait for animation to complete before hiding
+            setTimeout(() => {
+                modal.style.display = 'none';
+                document.body.classList.remove('modal-open');
+            }, 300);
         }
 
         // Navigation Functions
@@ -1693,7 +1991,7 @@
             tbody.innerHTML = '';
             let filteredApps = filterApplications();
 
-            filteredApps.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(app => {
+            filteredApps.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach((app, index) => {
                 const row = document.createElement('tr');
                 const statusClass = {
                     'Applied': 'status-applied',
@@ -1701,6 +1999,16 @@
                     'Offer Received': 'status-offer',
                     'Rejected': 'status-rejected'
                 }[app.status] || '';
+                
+                // Add staggered animation
+                row.classList.add('fade-in');
+                row.style.animationDelay = `${index * 30}ms`;
+                
+                // Add favorite row styling
+                if (app.favorite) {
+                    row.style.background = 'rgba(255, 215, 0, 0.05)';
+                }
+                
                 row.innerHTML = `
                     <td>${app.title}</td>
                     <td>${app.company}</td>
@@ -1709,13 +2017,13 @@
                     <td>${formatCurrency(app.salary.expected)}</td>
                     <td>${formatCurrency(app.salary.offered)}</td>
                     <td>${app.notes}</td>
-                    <td>${app.url ? `<a href="${app.url}" target="_blank">View</a>` : ''}</td>
+                    <td>${app.url ? `<a href="${app.url}" target="_blank" class="hover-glow">View</a>` : ''}</td>
                     <td>
-                        <button onclick="viewDetails(${app.id})" class="action-btn" title="View application details">Details</button>
-                        <button onclick="startEdit(${app.id})" class="action-btn" title="Edit application">Edit</button>
-                        <button onclick="deleteApplication(${app.id})" class="action-btn" title="Delete application">Delete</button>
-                        <button onclick="toggleFavorite(${app.id})" class="action-btn" title="${app.favorite ? 'Remove from favorites' : 'Add to favorites'}">${app.favorite ? '★' : '☆'}</button>
-                        ${app.status === 'Applied' && daysSince(app.date) > 10 ? `<button onclick="markFollowed(${app.id})" class="action-btn" title="Mark as followed up">Follow Up</button>` : ''}
+                        <button onclick="viewDetails(${app.id})" class="action-btn hover-lift" title="View application details">Details</button>
+                        <button onclick="startEdit(${app.id})" class="action-btn hover-lift" title="Edit application">Edit</button>
+                        <button onclick="deleteApplication(${app.id})" class="action-btn hover-lift" title="Delete application">Delete</button>
+                        <button onclick="toggleFavorite(${app.id})" class="action-btn favorite-btn ${app.favorite ? 'active' : ''}" title="${app.favorite ? 'Remove from favorites' : 'Add to favorites'}">${app.favorite ? '★' : '☆'}</button>
+                        ${app.status === 'Applied' && daysSince(app.date) > 10 ? `<button onclick="markFollowed(${app.id})" class="action-btn hover-lift pulse" title="Mark as followed up">Follow Up</button>` : ''}
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -1733,10 +2041,11 @@
             'Rejected': 'rejected'
         };
 
-        // Render Kanban View for Applications
+        // Render Kanban View for Applications with Pagination/Infinite Scroll
         function renderKanban() {
             const statuses = ['Applied', 'Interview Scheduled', 'Offer Received', 'Rejected'];
             let filteredApps = filterApplications();
+            const ITEMS_PER_PAGE = 5; // Number of items to show initially and load more
 
             statuses.forEach(status => {
                 const container = document.getElementById(`kanban-${statusToIdSuffix[status]}`);
@@ -1745,36 +2054,153 @@
                     return;
                 }
                 container.innerHTML = '';
+                
                 const appsInStatus = filteredApps.filter(app => app.status === status);
-                appsInStatus.forEach(app => {
-                    const card = document.createElement('div');
-                    card.className = 'kanban-card';
-                    card.innerHTML = `
-                        <div class="title">${app.title}</div>
-                        <div class="company">${app.company}</div>
-                        <div class="actions">
-                            <button onclick="viewDetails(${app.id})" class="action-btn" title="View application details">Details</button>
-                            <button onclick="startEdit(${app.id})" class="action-btn" title="Edit application">Edit</button>
-                            <button onclick="deleteApplication(${app.id})" class="action-btn" title="Delete application">Delete</button>
-                            <button onclick="toggleFavorite(${app.id})" class="action-btn" title="${app.favorite ? 'Remove from favorites' : 'Add to favorites'}">${app.favorite ? '★' : '☆'}</button>
-                        </div>
-                    `;
-                    container.appendChild(card);
-                });
+                const columnHeader = container.parentElement.querySelector('h3');
+                
+                // Add count badge to the column header
+                columnHeader.innerHTML = `${status} <span class="count">${appsInStatus.length}</span>`;
+                
+                // If no apps, show message
                 if (appsInStatus.length === 0) {
                     container.innerHTML = `<p style="color: var(--text-tertiary); text-align: center;">No applications</p>`;
+                    return;
+                }
+                
+                // Otherwise, render the first batch of cards with animation staggering
+                const initialItems = appsInStatus.slice(0, ITEMS_PER_PAGE);
+                initialItems.forEach((app, index) => {
+                    addKanbanCard(container, app, index * 50); // Stagger animation by 50ms per card
+                });
+                
+                // If there are more items, add "Load More" button
+                if (appsInStatus.length > ITEMS_PER_PAGE) {
+                    const loadMoreBtn = document.createElement('div');
+                    loadMoreBtn.className = 'kanban-load-more';
+                    loadMoreBtn.textContent = `Load ${Math.min(ITEMS_PER_PAGE, appsInStatus.length - ITEMS_PER_PAGE)} more`;
+                    loadMoreBtn.dataset.page = '1';
+                    loadMoreBtn.dataset.status = status;
+                    loadMoreBtn.addEventListener('click', loadMoreKanbanItems);
+                    container.appendChild(loadMoreBtn);
                 }
             });
         }
+        
+        // Function to add a single kanban card with animation
+        function addKanbanCard(container, app, delay = 0) {
+            const card = document.createElement('div');
+            card.className = `kanban-card ${app.favorite ? 'favorite' : ''}`;
+            card.innerHTML = `
+                <div class="title">${app.title}</div>
+                <div class="company">${app.company}</div>
+                <div class="actions">
+                    <button onclick="viewDetails(${app.id})" class="action-btn" title="View application details">Details</button>
+                    <button onclick="startEdit(${app.id})" class="action-btn" title="Edit application">Edit</button>
+                    <button onclick="deleteApplication(${app.id})" class="action-btn" title="Delete application">Delete</button>
+                    <button onclick="toggleFavorite(${app.id})" class="action-btn favorite-btn ${app.favorite ? 'active' : ''}" title="${app.favorite ? 'Remove from favorites' : 'Add to favorites'}">${app.favorite ? '★' : '☆'}</button>
+                </div>
+            `;
+            
+            // Hide initially for animation
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(10px)';
+            
+            container.appendChild(card);
+            
+            // Trigger animation after a delay
+            setTimeout(() => {
+                card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, delay);
+        }
+        
+        // Function to load more kanban items when button is clicked
+        function loadMoreKanbanItems(e) {
+            const btn = e.currentTarget;
+            const status = btn.dataset.status;
+            const page = parseInt(btn.dataset.page);
+            const container = btn.parentElement;
+            const ITEMS_PER_PAGE = 5;
+            
+            // Remove the button temporarily
+            btn.remove();
+            
+            // Get filtered applications of this status
+            const appsInStatus = filterApplications().filter(app => app.status === status);
+            
+            // Calculate start and end indices for this page
+            const startIndex = page * ITEMS_PER_PAGE;
+            const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, appsInStatus.length);
+            
+            // Add the next batch of cards with animation
+            const nextItems = appsInStatus.slice(startIndex, endIndex);
+            nextItems.forEach((app, index) => {
+                addKanbanCard(container, app, index * 50);
+            });
+            
+            // If there are still more items, add the button back
+            if (endIndex < appsInStatus.length) {
+                btn.textContent = `Load ${Math.min(ITEMS_PER_PAGE, appsInStatus.length - endIndex)} more`;
+                btn.dataset.page = (page + 1).toString();
+                setTimeout(() => {
+                    container.appendChild(btn);
+                }, nextItems.length * 50 + 100); // Add button after all cards are added
+            }
+        }
 
-        // Toggle Favorite Status
+        // Toggle Favorite Status with Animation
         function toggleFavorite(id) {
             const app = applications.find(a => a.id === id);
             if (app) {
                 app.favorite = !app.favorite;
                 saveData();
-                if (isKanbanView) renderKanban();
-                else renderTable();
+                
+                // Find all instances of this app in the UI and update them
+                if (isKanbanView) {
+                    // Find and update kanban card
+                    const kanbanCards = document.querySelectorAll('.kanban-card');
+                    kanbanCards.forEach(card => {
+                        const actionButtons = card.querySelectorAll('.actions button');
+                        const favoriteBtn = actionButtons[actionButtons.length - 1];
+                        if (favoriteBtn && favoriteBtn.getAttribute('onclick').includes(`toggleFavorite(${id})`)) {
+                            // Update card class
+                            if (app.favorite) {
+                                card.classList.add('favorite');
+                                card.classList.add('bounce'); // Add bounce animation
+                                setTimeout(() => card.classList.remove('bounce'), 500); // Remove after animation completes
+                            } else {
+                                card.classList.remove('favorite');
+                                card.classList.add('shake'); // Add shake animation
+                                setTimeout(() => card.classList.remove('shake'), 500); // Remove after animation completes
+                            }
+                            
+                            // Update button
+                            favoriteBtn.innerHTML = app.favorite ? '★' : '☆';
+                            favoriteBtn.title = app.favorite ? 'Remove from favorites' : 'Add to favorites';
+                            favoriteBtn.className = `action-btn favorite-btn ${app.favorite ? 'active' : ''}`;
+                        }
+                    });
+                } else {
+                    // Find and update table row
+                    const tableRows = document.querySelectorAll('#applications-table tbody tr');
+                    tableRows.forEach(row => {
+                        const cells = row.querySelectorAll('td');
+                        const actionCell = cells[cells.length - 1];
+                        const favoriteBtn = actionCell.querySelector(`button[onclick*="toggleFavorite(${id})"]`);
+                        if (favoriteBtn) {
+                            favoriteBtn.innerHTML = app.favorite ? '★' : '☆';
+                            favoriteBtn.title = app.favorite ? 'Remove from favorites' : 'Add to favorites';
+                            favoriteBtn.className = `action-btn favorite-btn ${app.favorite ? 'active' : ''}`;
+                            
+                            if (app.favorite) {
+                                row.classList.add('flash');
+                                setTimeout(() => row.classList.remove('flash'), 500);
+                            }
+                        }
+                    });
+                }
+                
                 showNotification(app.favorite ? 'Application favorited' : 'Application unfavorited');
             }
         }
@@ -1800,25 +2226,117 @@
             }
         }
 
-        // Edit Application
+        // Edit Application using Modal instead of prompt
         function startEdit(id) {
             const app = applications.find(a => a.id === id);
             if (app) {
-                const prevStatus = app.status;
-                const newStatus = prompt('Update Status:', app.status);
-                const newNotes = prompt('Update Notes:', app.notes);
-                if (newStatus && newStatus !== prevStatus) {
-                    app.status = newStatus;
-                    app.history.push({ date: new Date().toISOString().split('T')[0], status: newStatus, notes: newNotes || 'Status updated' });
+                // Create an edit modal dynamically
+                const editModalId = 'edit-modal-' + id;
+                let editModal = document.getElementById(editModalId);
+                
+                // If modal doesn't exist, create it
+                if (!editModal) {
+                    editModal = document.createElement('div');
+                    editModal.id = editModalId;
+                    editModal.className = 'modal';
+                    
+                    const modalHtml = `
+                        <div class="modal-content">
+                            <button class="modal-close" onclick="closeModal('${editModalId}')">×</button>
+                            <h2>Edit Application</h2>
+                            <form id="edit-form-${id}">
+                                <div class="form-group">
+                                    <label for="edit-title-${id}">Job Title</label>
+                                    <input type="text" id="edit-title-${id}" value="${app.title}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-company-${id}">Company</label>
+                                    <input type="text" id="edit-company-${id}" value="${app.company}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-date-${id}">Date</label>
+                                    <input type="date" id="edit-date-${id}" value="${app.date}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-status-${id}">Status</label>
+                                    <select id="edit-status-${id}">
+                                        <option value="Applied" ${app.status === 'Applied' ? 'selected' : ''}>Applied</option>
+                                        <option value="Interview Scheduled" ${app.status === 'Interview Scheduled' ? 'selected' : ''}>Interview Scheduled</option>
+                                        <option value="Offer Received" ${app.status === 'Offer Received' ? 'selected' : ''}>Offer Received</option>
+                                        <option value="Rejected" ${app.status === 'Rejected' ? 'selected' : ''}>Rejected</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-expected-${id}">Expected Salary</label>
+                                    <input type="number" id="edit-expected-${id}" value="${app.salary?.expected || ''}" placeholder="$">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-offered-${id}">Offered Salary</label>
+                                    <input type="number" id="edit-offered-${id}" value="${app.salary?.offered || ''}" placeholder="$">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-notes-${id}">Notes</label>
+                                    <textarea id="edit-notes-${id}">${app.notes || ''}</textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-url-${id}">URL</label>
+                                    <input type="url" id="edit-url-${id}" value="${app.url || ''}">
+                                </div>
+                                <button type="submit" class="btn-primary">Save Changes</button>
+                            </form>
+                        </div>
+                    `;
+                    
+                    editModal.innerHTML = modalHtml;
+                    document.body.appendChild(editModal);
+                    
+                    // Add form submission handler
+                    document.getElementById(`edit-form-${id}`).addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        
+                        const prevStatus = app.status;
+                        const newStatus = document.getElementById(`edit-status-${id}`).value;
+                        
+                        // Update app data
+                        app.title = document.getElementById(`edit-title-${id}`).value;
+                        app.company = document.getElementById(`edit-company-${id}`).value;
+                        app.date = document.getElementById(`edit-date-${id}`).value;
+                        app.status = newStatus;
+                        app.notes = document.getElementById(`edit-notes-${id}`).value;
+                        app.url = document.getElementById(`edit-url-${id}`).value;
+                        
+                        // Update salary information
+                        if (!app.salary) app.salary = {};
+                        app.salary.expected = parseFloat(document.getElementById(`edit-expected-${id}`).value) || 0;
+                        app.salary.offered = parseFloat(document.getElementById(`edit-offered-${id}`).value) || null;
+                        
+                        // Add to history if status changed
+                        if (newStatus !== prevStatus) {
+                            if (!app.history) app.history = [];
+                            app.history.push({
+                                date: new Date().toISOString().split('T')[0],
+                                status: newStatus,
+                                notes: `Status changed from ${prevStatus} to ${newStatus}`
+                            });
+                        }
+                        
+                        saveData();
+                        
+                        // Update UI
+                        if (isKanbanView) renderKanban();
+                        else renderTable();
+                        renderAnalytics();
+                        renderReminders();
+                        renderTimeline();
+                        updateGoalProgress();
+                        
+                        closeModal(editModalId);
+                        showNotification('Application updated successfully', 'success');
+                    });
                 }
-                if (newNotes !== null) app.notes = newNotes;
-                saveData();
-                if (isKanbanView) renderKanban();
-                else renderTable();
-                renderAnalytics();
-                renderReminders();
-                renderTimeline();
-                updateGoalProgress();
+                
+                // Open the modal
+                openModal(editModalId);
             }
         }
 
@@ -1859,22 +2377,113 @@
             localStorage.setItem('savedJobs', JSON.stringify(savedJobs));
         }
 
-        // Show Notification
+        // Show Notification with Animation
         function showNotification(message, type = 'success') {
+            // Remove any existing notifications to prevent stacking
+            const existingNotifications = document.querySelectorAll('.notification');
+            existingNotifications.forEach(notification => {
+                notification.classList.add('notification-exit');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            });
+            
+            // Create new notification
             const flash = document.createElement('div');
+            flash.className = 'notification notification-enter';
+            
+            // Set background based on type
+            const bgColor = type === 'success' ? 'rgba(0, 240, 255, 0.2)' : 'rgba(244, 67, 54, 0.2)';
+            const borderColor = type === 'success' ? 'var(--accent-primary)' : 'var(--status-rejected)';
+            const icon = type === 'success' ? '✓' : '✗';
+            
             flash.style.cssText = `
-                position: fixed; top: 20px; right: 20px; padding: 10px 20px;
-                background: ${type === 'success' ? 'rgba(0, 240, 255, 0.2)' : 'rgba(244, 67, 54, 0.2)'};
-                backdrop-filter: blur(10px); border-radius: 6px; color: white;
-                font-weight: 500; z-index: 1000; transition: opacity 0.5s;
+                position: fixed; top: 20px; right: 20px; padding: 12px 20px 12px 40px;
+                background: ${bgColor}; backdrop-filter: blur(10px); 
+                border-radius: 6px; color: white; font-weight: 500; z-index: 1000;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                border-left: 3px solid ${borderColor};
+                transform: translateX(50px); opacity: 0;
+                transition: transform 0.3s ease, opacity 0.3s ease;
             `;
-            flash.textContent = message;
+            
+            // Add icon
+            const iconSpan = document.createElement('span');
+            iconSpan.style.cssText = `
+                position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+                font-size: 1.2em; color: ${borderColor};
+            `;
+            iconSpan.textContent = icon;
+            
+            flash.appendChild(iconSpan);
+            
+            // Add message
+            const messageSpan = document.createElement('span');
+            messageSpan.textContent = message;
+            flash.appendChild(messageSpan);
+            
+            // Add close button
+            const closeBtn = document.createElement('span');
+            closeBtn.style.cssText = `
+                position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+                cursor: pointer; font-size: 1em; opacity: 0.7; transition: opacity 0.2s ease;
+                width: 20px; height: 20px; text-align: center; line-height: 20px;
+            `;
+            closeBtn.textContent = '×';
+            closeBtn.addEventListener('mouseenter', () => { closeBtn.style.opacity = '1'; });
+            closeBtn.addEventListener('mouseleave', () => { closeBtn.style.opacity = '0.7'; });
+            closeBtn.addEventListener('click', () => {
+                flash.classList.add('notification-exit');
+                setTimeout(() => {
+                    if (flash.parentNode) {
+                        flash.parentNode.removeChild(flash);
+                    }
+                }, 300);
+            });
+            
+            flash.appendChild(closeBtn);
+            
+            // Add to document
             document.body.appendChild(flash);
+            
+            // Trigger entrance animation
             setTimeout(() => {
-                flash.style.opacity = '0';
-                setTimeout(() => document.body.removeChild(flash), 500);
-            }, 1500);
+                flash.style.transform = 'translateX(0)';
+                flash.style.opacity = '1';
+            }, 10);
+            
+            // Auto-dismiss
+            setTimeout(() => {
+                flash.classList.add('notification-exit');
+                setTimeout(() => {
+                    if (flash.parentNode) {
+                        flash.parentNode.removeChild(flash);
+                    }
+                }, 300);
+            }, 3000);
         }
+        
+        // Add notification animation styles
+        const notificationStyle = document.createElement('style');
+        notificationStyle.textContent = `
+            .notification-enter {
+                animation: notification-enter 0.3s ease forwards;
+            }
+            .notification-exit {
+                animation: notification-exit 0.3s ease forwards;
+            }
+            @keyframes notification-enter {
+                from { transform: translateX(50px); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes notification-exit {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(50px); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(notificationStyle);
 
         // Render Analytics for Applications
         function renderAnalytics() {
