@@ -565,6 +565,21 @@
             margin-top: 1.5rem;
         }
 
+        /* Flash animation for data saving */
+        .flash {
+            animation: flash-animation 0.5s;
+        }
+
+        @keyframes flash-animation {
+            0% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
         /* Responsive Design */
         @media (max-width: 1200px) {
             main {
@@ -750,11 +765,12 @@
             { id: 5, title: "DevOps Engineer", company: "CloudNet", date: "2025-02-10", status: "Rejected", notes: "Not enough experience", url: "https://cloudnet.com/careers" }
         ];
 
-        let applications = JSON.parse(localStorage.getItem('jobApplications'));
-        if (!applications || applications.length === 0) {
-            applications = fakeData;
-            localStorage.setItem('jobApplications', JSON.stringify(applications));
-        }
+        // First clear any potentially corrupted data
+        localStorage.removeItem('jobApplications');
+
+        // Then initialize with fake data
+        let applications = fakeData;
+        localStorage.setItem('jobApplications', JSON.stringify(applications));
 
         // Form submission handler
         document.getElementById('app-form').addEventListener('submit', (e) => {
@@ -783,11 +799,30 @@
             }, 1000);
         });
 
+        // Calculate days since a date
+        function daysSince(dateString) {
+            const date = new Date(dateString);
+            const today = new Date();
+            const diffTime = Math.abs(today - date);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays;
+        }
+
         // Render applications table
         function renderTable() {
             const tbody = document.querySelector('#applications-table tbody');
             tbody.innerHTML = '';
-            const filter = document.getElementById('filter').value;
+            const filter = document.getElementById('filter').value || 'All';
+
+            console.log("Rendering table with filter:", filter);
+            console.log("Current applications:", applications);
+
+            if (!applications || applications.length === 0) {
+                const emptyRow = document.createElement('tr');
+                emptyRow.innerHTML = `<td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-tertiary);">No applications found. Add your first job application!</td>`;
+                tbody.appendChild(emptyRow);
+                return;
+            }
 
             applications
                 .filter(app => filter === 'All' || app.status === filter)
@@ -938,6 +973,108 @@
             `;
             container.appendChild(card);
         }
+
+        // Sort table functionality
+        function sortTable(colIndex) {
+            const table = document.getElementById('applications-table');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+
+            // Toggle sort direction
+            const sortDirection = table.getAttribute('data-sort-dir') === 'asc' ? 'desc' : 'asc';
+            table.setAttribute('data-sort-dir', sortDirection);
+
+            // Sort rows
+            rows.sort((a, b) => {
+                const aValue = a.cells[colIndex].textContent.trim();
+                const bValue = b.cells[colIndex].textContent.trim();
+
+                // For date columns
+                if (colIndex === 2) {
+                    return sortDirection === 'asc'
+                        ? new Date(aValue) - new Date(bValue)
+                        : new Date(bValue) - new Date(aValue);
+                }
+
+                // For text columns
+                return sortDirection === 'asc'
+                    ? aValue.localeCompare(bValue)
+                    : bValue.localeCompare(aValue);
+            });
+
+            // Reappend rows in new order
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        // Export data function
+        function exportData() {
+            let csv = 'Job Title,Company,Date,Status,Notes,URL\n';
+
+            applications.forEach(app => {
+                csv += `"${app.title}","${app.company}","${app.date}","${app.status}","${app.notes}","${app.url}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'job_applications.csv');
+            a.click();
+        }
+
+        // Render reminders
+        function renderReminders() {
+            const container = document.getElementById('reminders-list');
+            container.innerHTML = '';
+
+            // Find applications that need follow-up (applied over 10 days ago)
+            const reminders = applications.filter(app =>
+                app.status === 'Applied' && daysSince(app.date) > 10);
+
+            if (reminders.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-tertiary); text-align: center; padding: 1rem;">No follow-up reminders at this time.</p>';
+                return;
+            }
+
+            reminders.forEach(app => {
+                const li = document.createElement('li');
+                li.className = 'reminder-item';
+                li.innerHTML = `
+                    <div>
+                        <strong>${app.company}</strong> - ${app.title}<br>
+                        <small>Applied ${daysSince(app.date)} days ago</small>
+                    </div>
+                    <button onclick="markFollowed(${app.id})" class="action-btn">Mark Followed Up</button>
+                `;
+                container.appendChild(li);
+            });
+        }
+
+        // Initialize app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function () {
+            // Load data from localStorage
+            const storedData = localStorage.getItem('jobApplications');
+            if (storedData) {
+                try {
+                    applications = JSON.parse(storedData);
+                } catch (e) {
+                    console.error('Error parsing stored data:', e);
+                    applications = fakeData;
+                    localStorage.setItem('jobApplications', JSON.stringify(applications));
+                }
+            }
+
+            // Initialize the app
+            renderTable();
+            renderAnalytics();
+            renderReminders();
+
+            // Set today's date in the form
+            document.getElementById('date').value = new Date().toISOString().split('T')[0];
+        });
+
+        // Add filter change event listener
+        document.getElementById('filter').addEventListener('change', renderTable);
     </script>
 </body>
 
