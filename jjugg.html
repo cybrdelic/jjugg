@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Mono&display=swap"
         rel="stylesheet">
     <style>
+        /* Root Variables for Theming */
         :root {
             --bg-primary: #000000;
             --bg-secondary: #0a0a0a;
@@ -28,6 +29,7 @@
             --theme-transition: all 0.3s ease;
         }
 
+        /* Light Theme Overrides */
         [data-theme="light"] {
             --bg-primary: #f5f5f7;
             --bg-secondary: #ffffff;
@@ -43,6 +45,7 @@
             --glass-border: rgba(0, 0, 0, 0.05);
         }
 
+        /* Reset and Base Styles */
         * {
             margin: 0;
             padding: 0;
@@ -60,8 +63,6 @@
             min-height: 100vh;
             line-height: 1.6;
             overflow-x: hidden;
-            display: flex;
-            flex-direction: column;
         }
 
         [data-theme="light"] body {
@@ -70,6 +71,7 @@
                 url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000000' fill-opacity='0.03'%3E%3Cpath d='M0 0h25v25H0zM25 0h25v25H25zM50 0h25v25H50zM75 0h25v25H75zM0 25h25v25H0zM25 25h25v25H25zM50 25h25v25H50zM75 25h25v25H75zM0 50h25v25H0zM25 50h25v25H25zM50 50h25v25H50zM75 50h25v25H75zM0 75h25v25H0zM25 75h25v25H25zM50 75h25v25H50zM75 75h25v25H75z'/%3E%3C/g%3E%3C/svg%3E");
         }
 
+        /* Background Overlay */
         body::before {
             content: "";
             position: fixed;
@@ -91,6 +93,7 @@
                 linear-gradient(90deg, transparent 0%, transparent 99%, rgba(0, 0, 0, 0.04) 100%);
         }
 
+        /* Header Styles */
         header {
             padding: 2rem 0;
             position: relative;
@@ -178,6 +181,7 @@
             -webkit-text-stroke: 1px rgba(0, 0, 0, 0.1);
         }
 
+        /* Theme Toggle */
         .theme-toggle {
             position: absolute;
             top: 20px;
@@ -207,11 +211,9 @@
             height: 16px;
         }
 
+        /* Main Content */
         main {
             flex: 1;
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 2rem;
             max-width: 1800px;
             width: 95%;
             margin: 0 auto;
@@ -226,7 +228,7 @@
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             position: relative;
-            margin-bottom: 1.5rem;
+            margin-bottom: 2rem;
         }
 
         .card-header {
@@ -234,6 +236,9 @@
             position: relative;
             overflow: hidden;
             border-bottom: var(--border-thin);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .card-header::before {
@@ -273,55 +278,70 @@
             padding: 1.5rem;
         }
 
-        .tab-container {
-            margin-bottom: 1rem;
-        }
-
-        .tab-buttons {
+        /* Action Buttons */
+        .action-buttons {
             display: flex;
-            border-bottom: var(--border-thin);
+            gap: 1rem;
             margin-bottom: 1rem;
         }
 
-        .tab-button {
-            padding: 0.8rem 1.2rem;
-            background: none;
-            border: none;
+        .btn-modal {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-thin);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
             color: var(--text-secondary);
-            font-family: 'Space Mono', monospace;
-            font-size: 0.8rem;
             cursor: pointer;
-            position: relative;
+            font-family: 'Space Mono', monospace;
             text-transform: uppercase;
             letter-spacing: 1px;
+            transition: all 0.3s ease;
         }
 
-        .tab-button.active {
-            color: var(--accent-primary);
+        .btn-modal:hover {
+            background: var(--accent-primary);
+            color: #000;
+            border-color: var(--accent-primary);
         }
 
-        .tab-button.active::after {
-            content: "";
-            position: absolute;
-            bottom: -1px;
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
             left: 0;
             width: 100%;
-            height: 2px;
-            background: var(--accent-primary);
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
         }
 
-        .tab-content {
-            display: none;
+        .modal-content {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: var(--border-medium);
+            border-radius: 12px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 600px;
+            position: relative;
         }
 
-        .tab-content.active {
-            display: block;
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
         }
 
-        .input-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
+        .modal-close:hover {
+            color: var(--accent-primary);
         }
 
         form {
@@ -331,12 +351,6 @@
 
         .form-group {
             position: relative;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
         }
 
         label {
@@ -381,70 +395,17 @@
             min-height: 100px;
         }
 
-        .form-group::after {
-            content: "";
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
-            transition: width 0.3s ease;
-        }
-
-        .form-group:focus-within::after {
-            width: 100%;
-        }
-
-        button {
-            background: var(--bg-tertiary);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 0.7rem 1.2rem;
-            border-radius: 6px;
-            color: var(--text-primary);
-            font-family: 'Space Mono', monospace;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-
-        [data-theme="light"] button {
-            border: 1px solid rgba(0, 0, 0, 0.1);
-        }
-
-        button::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-            transition: all 0.5s ease;
-        }
-
-        button:hover {
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
-        }
-
-        [data-theme="light"] button:hover {
-            box-shadow: 0 0 10px rgba(0, 102, 204, 0.2);
-        }
-
-        button:hover::before {
-            left: 100%;
-        }
-
         .btn-primary {
             background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
             border: none;
             color: #ffffff;
-            font-weight: 600;
+            padding: 0.7rem 1.2rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Space Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
         }
 
         .btn-primary:hover {
@@ -457,17 +418,18 @@
             box-shadow: 0 5px 15px rgba(0, 102, 204, 0.3);
         }
 
-        .data-panel {
+        /* Filter and Toggle Controls */
+        .controls {
             display: flex;
-            flex-direction: column;
-            gap: 2rem;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
         }
 
         .filter-control {
             display: flex;
             align-items: center;
             gap: 1rem;
-            margin-bottom: 1rem;
         }
 
         .filter-control select,
@@ -496,9 +458,69 @@
             font-size: 0.8rem;
         }
 
+        /* Toggle Switch */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toggle-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--bg-tertiary);
+            transition: 0.4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: var(--text-primary);
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--accent-primary);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(26px);
+        }
+
+        /* Table Styles */
         .table-container {
             overflow-x: auto;
             border-radius: 6px;
+            display: block;
         }
 
         table {
@@ -566,6 +588,63 @@
             background: rgba(0, 0, 0, 0.03);
         }
 
+        /* Kanban Board Styles */
+        .kanban-container {
+            display: none;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            overflow-x: auto;
+        }
+
+        .kanban-column {
+            background: var(--glass-bg);
+            border: var(--border-medium);
+            border-radius: 8px;
+            padding: 1rem;
+            min-width: 250px;
+        }
+
+        .kanban-column h3 {
+            font-family: 'Space Mono', monospace;
+            font-size: 1rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .kanban-card {
+            background: var(--bg-tertiary);
+            border: var(--border-thin);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .kanban-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .kanban-card .title {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .kanban-card .company {
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
+        }
+
+        .kanban-card .actions {
+            margin-top: 0.5rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Status Indicators */
         .status {
             display: inline-flex;
             align-items: center;
@@ -620,12 +699,22 @@
             background: var(--status-rejected);
         }
 
+        /* Action Buttons in Table/Kanban */
         .action-btn {
             padding: 0.4rem 0.7rem;
             font-size: 0.75rem;
             margin-right: 0.3rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
         }
 
+        .action-btn:hover {
+            color: var(--accent-primary);
+        }
+
+        /* Links */
         a {
             color: var(--accent-primary);
             text-decoration: none;
@@ -652,6 +741,7 @@
             width: 100%;
         }
 
+        /* Analytics Styles */
         .analytics {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -661,13 +751,14 @@
 
         .analytics-card {
             padding: 1.2rem;
-            background: rgba(0, 0, 0, 0.2);
+            background: var(--glass-bg);
             border-radius: 8px;
             border: var(--border-thin);
+            text-align: center;
         }
 
         [data-theme="light"] .analytics-card {
-            background: rgba(0, 0, 0, 0.05);
+            background: var(--glass-bg);
         }
 
         .analytics-number {
@@ -687,6 +778,7 @@
             letter-spacing: 1px;
         }
 
+        /* Reminders Styles */
         .reminders-list {
             list-style: none;
         }
@@ -703,12 +795,14 @@
             align-items: center;
         }
 
+        /* Export Button */
         .export-container {
             display: flex;
             justify-content: flex-end;
             margin-top: 1.5rem;
         }
 
+        /* Flash Animation */
         .flash {
             animation: flash-animation 0.5s;
         }
@@ -723,6 +817,7 @@
             }
         }
 
+        /* Timeline Styles */
         .timeline {
             position: relative;
             padding: 1rem 0;
@@ -770,15 +865,16 @@
 
         .timeline-content {
             padding: 0.8rem;
-            background: rgba(0, 0, 0, 0.2);
+            background: var(--glass-bg);
             border-radius: 6px;
             margin-top: 0.5rem;
         }
 
         [data-theme="light"] .timeline-content {
-            background: rgba(0, 0, 0, 0.05);
+            background: var(--glass-bg);
         }
 
+        /* Goal Progress */
         .goal-progress {
             width: 100%;
             height: 8px;
@@ -806,12 +902,14 @@
             color: var(--text-secondary);
         }
 
+        /* Chart Container */
         .chart-container {
             width: 100%;
             height: 250px;
             margin-top: 1rem;
         }
 
+        /* Salary Information */
         .salary-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -821,7 +919,7 @@
 
         .salary-card {
             padding: 1rem;
-            background: rgba(0, 0, 0, 0.2);
+            background: var(--glass-bg);
             border-radius: 8px;
             display: flex;
             flex-direction: column;
@@ -829,7 +927,7 @@
         }
 
         [data-theme="light"] .salary-card {
-            background: rgba(0, 0, 0, 0.05);
+            background: var(--glass-bg);
         }
 
         .salary-amount {
@@ -851,9 +949,14 @@
             margin-top: 1rem;
         }
 
+        /* Responsive Design */
         @media (max-width: 1200px) {
-            main {
-                grid-template-columns: 1fr;
+            .filter-inputs {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .kanban-container {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
 
@@ -890,16 +993,16 @@
                 grid-template-columns: 1fr 1fr;
             }
 
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-
             .salary-container {
                 grid-template-columns: 1fr;
             }
 
             .filter-inputs {
                 grid-template-columns: 1fr 1fr;
+            }
+
+            .kanban-container {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -929,6 +1032,7 @@
 </head>
 
 <body>
+    <!-- Theme Toggle Button -->
     <div class="theme-toggle" onclick="toggleTheme()">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="theme-icon">
@@ -945,6 +1049,7 @@
         <span id="theme-text">Light Mode</span>
     </div>
 
+    <!-- Header -->
     <header>
         <div class="logo-container">
             <div class="logo-circle"></div>
@@ -954,83 +1059,28 @@
         <h1>jjugg</h1>
     </header>
 
+    <!-- Main Content -->
     <main>
-        <section class="input-panel card">
-            <div class="card-header">
-                <h2>New Application</h2>
-            </div>
-            <div class="card-content">
-                <div class="tab-container">
-                    <div class="tab-buttons">
-                        <button class="tab-button active" onclick="showTab('basic-info')">Basic Info</button>
-                        <button class="tab-button" onclick="showTab('salary-info')">Salary</button>
-                    </div>
-
-                    <div id="basic-info" class="tab-content active">
-                        <form id="app-form">
-                            <div class="form-group">
-                                <label for="title">Job Title</label>
-                                <input type="text" id="title" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="company">Company</label>
-                                <input type="text" id="company" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="date">Date</label>
-                                <input type="date" id="date" value="2025-03-05">
-                            </div>
-                            <div class="form-group">
-                                <label for="status">Status</label>
-                                <select id="status">
-                                    <option value="Applied">Applied</option>
-                                    <option value="Interview Scheduled">Interview Scheduled</option>
-                                    <option value="Offer Received">Offer Received</option>
-                                    <option value="Rejected">Rejected</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="notes">Notes</label>
-                                <textarea id="notes"></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label for="url">URL</label>
-                                <input type="url" id="url">
-                            </div>
-                            <button type="submit" class="btn-primary">Add Application</button>
-                        </form>
-                    </div>
-
-                    <div id="salary-info" class="tab-content">
-                        <form id="salary-form">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="expected-salary">Expected Salary</label>
-                                    <input type="number" id="expected-salary" placeholder="$">
-                                </div>
-                                <div class="form-group">
-                                    <label for="offered-salary">Offered Salary</label>
-                                    <input type="number" id="offered-salary" placeholder="$">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="benefits">Benefits</label>
-                                <textarea id="benefits" placeholder="Healthcare, 401k, etc."></textarea>
-                            </div>
-                            <button type="button" class="btn-primary" onclick="saveSalaryInfo()">Save Salary
-                                Info</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
+        <!-- Action Buttons -->
+        <section class="action-buttons">
+            <button class="btn-modal" onclick="openModal('app-modal')">Add Application</button>
+            <button class="btn-modal" onclick="openModal('save-job-modal')">Save Job</button>
         </section>
 
-        <section class="data-panel">
-            <div class="card">
-                <div class="card-header">
-                    <h2>Applications</h2>
+        <!-- Applications Grid -->
+        <section class="card">
+            <div class="card-header">
+                <h2>Applications</h2>
+                <div class="toggle-container">
+                    <label class="toggle-label" for="view-toggle">Kanban View</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="view-toggle" onchange="toggleView()">
+                        <span class="slider"></span>
+                    </label>
                 </div>
-                <div class="card-content">
+            </div>
+            <div class="card-content">
+                <div class="controls">
                     <div class="filter-control">
                         <select id="filter">
                             <option value="All">All Applications</option>
@@ -1038,123 +1088,269 @@
                             <option value="Interview Scheduled">Interview Scheduled</option>
                             <option value="Offer Received">Offer Received</option>
                             <option value="Rejected">Rejected</option>
+                            <option value="Favorites">Favorites</option>
                         </select>
                     </div>
-                    <div class="filter-inputs">
-                        <input type="text" id="filter-title" placeholder="Filter Title">
-                        <input type="text" id="filter-company" placeholder="Filter Company">
-                        <input type="date" id="filter-date">
-                        <select id="filter-status">
-                            <option value="">All Statuses</option>
-                            <option value="Applied">Applied</option>
-                            <option value="Interview Scheduled">Interview Scheduled</option>
-                            <option value="Offer Received">Offer Received</option>
-                            <option value="Rejected">Rejected</option>
-                        </select>
-                        <input type="number" id="filter-expected" placeholder="Min Expected $">
-                        <input type="number" id="filter-offered" placeholder="Min Offered $">
-                        <input type="text" id="filter-notes" placeholder="Filter Notes">
-                        <input type="text" id="filter-url" placeholder="Filter URL">
+                </div>
+                <div class="filter-inputs">
+                    <input type="text" id="filter-title" placeholder="Filter Title">
+                    <input type="text" id="filter-company" placeholder="Filter Company">
+                    <input type="date" id="filter-date">
+                    <select id="filter-status">
+                        <option value="">All Statuses</option>
+                        <option value="Applied">Applied</option>
+                        <option value="Interview Scheduled">Interview Scheduled</option>
+                        <option value="Offer Received">Offer Received</option>
+                        <option value="Rejected">Rejected</option>
+                    </select>
+                    <input type="number" id="filter-expected" placeholder="Min Expected $">
+                    <input type="number" id="filter-offered" placeholder="Min Offered $">
+                    <input type="text" id="filter-notes" placeholder="Filter Notes">
+                    <input type="text" id="filter-url" placeholder="Filter URL">
+                </div>
+                <div class="table-container" id="table-view">
+                    <table id="applications-table">
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable(0)">Job Title</th>
+                                <th onclick="sortTable(1)">Company</th>
+                                <th onclick="sortTable(2)">Date</th>
+                                <th onclick="sortTable(3)">Status</th>
+                                <th onclick="sortTable(4)">Expected Salary</th>
+                                <th onclick="sortTable(5)">Offered Salary</th>
+                                <th onclick="sortTable(6)">Notes</th>
+                                <th onclick="sortTable(7)">URL</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="kanban-container" id="kanban-view">
+                    <div class="kanban-column" data-status="Applied">
+                        <h3>Applied</h3>
+                        <div class="kanban-cards" id="kanban-applied"></div>
                     </div>
-                    <div class="table-container">
-                        <table id="applications-table">
-                            <thead>
-                                <tr>
-                                    <th onclick="sortTable(0)">Job Title</th>
-                                    <th onclick="sortTable(1)">Company</th>
-                                    <th onclick="sortTable(2)">Date</th>
-                                    <th onclick="sortTable(3)">Status</th>
-                                    <th onclick="sortTable(4)">Expected Salary</th>
-                                    <th onclick="sortTable(5)">Offered Salary</th>
-                                    <th onclick="sortTable(6)">Notes</th>
-                                    <th onclick="sortTable(7)">URL</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
+                    <div class="kanban-column" data-status="Interview Scheduled">
+                        <h3>Interview Scheduled</h3>
+                        <div class="kanban-cards" id="kanban-interview"></div>
                     </div>
-                    <div class="export-container">
-                        <button onclick="exportData()">Export Data</button>
+                    <div class="kanban-column" data-status="Offer Received">
+                        <h3>Offer Received</h3>
+                        <div class="kanban-cards" id="kanban-offer"></div>
+                    </div>
+                    <div class="kanban-column" data-status="Rejected">
+                        <h3>Rejected</h3>
+                        <div class="kanban-cards" id="kanban-rejected"></div>
+                    </div>
+                </div>
+                <div class="export-container">
+                    <button onclick="exportData()">Export Data</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Analytics Section -->
+        <section class="card">
+            <div class="card-header">
+                <h2>Analytics</h2>
+            </div>
+            <div class="card-content">
+                <div class="analytics" id="analytics-container"></div>
+                <h3 class="mt-4">Salary Information</h3>
+                <div class="salary-container">
+                    <div class="salary-card">
+                        <div class="salary-label">Average Expected</div>
+                        <div class="salary-amount" id="avg-expected">$0</div>
+                    </div>
+                    <div class="salary-card">
+                        <div class="salary-label">Average Offered</div>
+                        <div class="salary-amount" id="avg-offered">$0</div>
                     </div>
                 </div>
             </div>
+        </section>
 
-            <div class="card">
-                <div class="card-header">
-                    <h2>Job Search Goals</h2>
-                </div>
-                <div class="card-content">
-                    <div class="goal-container">
-                        <h3>Weekly Application Target</h3>
-                        <div class="goal-progress">
-                            <div class="goal-bar" id="weekly-goal-progress"></div>
-                        </div>
-                        <div class="goal-stats">
-                            <span id="weekly-apps-submitted">0 applications</span>
-                            <span id="weekly-goal-target">Goal: 10/week</span>
-                        </div>
-                        <h3 class="mt-4">Application Activity</h3>
-                        <div class="chart-container">
-                            <canvas id="application-chart"></canvas>
-                        </div>
+        <!-- Goals Section -->
+        <section class="card">
+            <div class="card-header">
+                <h2>Job Search Goals</h2>
+            </div>
+            <div class="card-content">
+                <div class="goal-container">
+                    <h3>Weekly Application Target</h3>
+                    <div class="goal-progress">
+                        <div class="goal-bar" id="weekly-goal-progress"></div>
+                    </div>
+                    <div class="goal-stats">
+                        <span id="weekly-apps-submitted">0 applications</span>
+                        <span id="weekly-goal-target">Goal: 10/week</span>
+                    </div>
+                    <h3 class="mt-4">Application Activity</h3>
+                    <div class="chart-container">
+                        <canvas id="application-chart"></canvas>
                     </div>
                 </div>
             </div>
+        </section>
 
-            <div class="card">
-                <div class="card-header">
-                    <h2>Analytics</h2>
-                </div>
-                <div class="card-content">
-                    <div class="analytics" id="analytics-container"></div>
-                    <h3 class="mt-4">Salary Information</h3>
-                    <div class="salary-container">
-                        <div class="salary-card">
-                            <div class="salary-label">Average Expected</div>
-                            <div class="salary-amount" id="avg-expected">$0</div>
-                        </div>
-                        <div class="salary-card">
-                            <div class="salary-label">Average Offered</div>
-                            <div class="salary-amount" id="avg-offered">$0</div>
-                        </div>
-                    </div>
-                </div>
+        <!-- Timeline Section -->
+        <section class="card">
+            <div class="card-header">
+                <h2>Application Timeline</h2>
             </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <h2>Application Timeline</h2>
-                </div>
-                <div class="card-content">
-                    <div class="timeline" id="app-timeline"></div>
-                </div>
+            <div class="card-content">
+                <div class="timeline" id="app-timeline"></div>
             </div>
+        </section>
 
-            <div class="card">
-                <div class="card-header">
-                    <h2>Follow-up Reminders</h2>
-                </div>
-                <div class="card-content">
-                    <ul class="reminders-list" id="reminders-list"></ul>
-                </div>
+        <!-- Reminders Section -->
+        <section class="card">
+            <div class="card-header">
+                <h2>Follow-up Reminders</h2>
+            </div>
+            <div class="card-content">
+                <ul class="reminders-list" id="reminders-list"></ul>
             </div>
         </section>
     </main>
 
+    <!-- Add Application Modal -->
+    <div class="modal" id="app-modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('app-modal')">×</button>
+            <h2>Add Application</h2>
+            <form id="app-form">
+                <div class="form-group">
+                    <label for="title">Job Title</label>
+                    <input type="text" id="title" required>
+                </div>
+                <div class="form-group">
+                    <label for="company">Company</label>
+                    <input type="text" id="company" required>
+                </div>
+                <div class="form-group">
+                    <label for="date">Date</label>
+                    <input type="date" id="date" required>
+                </div>
+                <div class="form-group">
+                    <label for="status">Status</label>
+                    <select id="status">
+                        <option value="Applied">Applied</option>
+                        <option value="Interview Scheduled">Interview Scheduled</option>
+                        <option value="Offer Received">Offer Received</option>
+                        <option value="Rejected">Rejected</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="expected-salary">Expected Salary</label>
+                    <input type="number" id="expected-salary" placeholder="$">
+                </div>
+                <div class="form-group">
+                    <label for="offered-salary">Offered Salary</label>
+                    <input type="number" id="offered-salary" placeholder="$">
+                </div>
+                <div class="form-group">
+                    <label for="notes">Notes</label>
+                    <textarea id="notes"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="url">URL</label>
+                    <input type="url" id="url">
+                </div>
+                <button type="submit" class="btn-primary">Add Application</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Save Job Modal -->
+    <div class="modal" id="save-job-modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('save-job-modal')">×</button>
+            <h2>Save Job</h2>
+            <form id="save-job-form">
+                <div class="form-group">
+                    <label for="save-title">Job Title</label>
+                    <input type="text" id="save-title" required>
+                </div>
+                <div class="form-group">
+                    <label for="save-company">Company</label>
+                    <input type="text" id="save-company" required>
+                </div>
+                <div class="form-group">
+                    <label for="save-url">URL</label>
+                    <input type="url" id="save-url">
+                </div>
+                <div class="form-group">
+                    <label for="save-notes">Notes</label>
+                    <textarea id="save-notes"></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Save Job</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
     <script>
+        // Initial Data with Favorite Property
         const fakeData = [
-            { id: 1, title: "Software Engineer", company: "TechCorp", date: "2025-02-20", status: "Applied", notes: "Submitted via company site", url: "https://techcorp.com/jobs", history: [{ date: "2025-02-20", status: "Applied", notes: "Submitted application" }], salary: { expected: 120000, offered: null, benefits: "Healthcare, 401k" } },
-            { id: 2, title: "Data Analyst", company: "DataWorks", date: "2025-02-15", status: "Interview Scheduled", notes: "Phone screen next week", url: "https://dataworks.com/careers", history: [{ date: "2025-02-15", status: "Applied", notes: "Submitted application" }, { date: "2025-02-18", status: "Interview Scheduled", notes: "Got email for phone screen" }], salary: { expected: 95000, offered: null, benefits: "" } },
-            { id: 3, title: "Product Manager", company: "Innovate Inc", date: "2025-01-25", status: "Applied", notes: "Awaiting response", url: "https://innovateinc.com/apply", history: [{ date: "2025-01-25", status: "Applied", notes: "Applied through referral" }], salary: { expected: 140000, offered: null, benefits: "" } },
-            { id: 4, title: "UX Designer", company: "Designify", date: "2025-03-01", status: "Offer Received", notes: "Negotiating salary", url: "https://designify.com/jobs", history: [{ date: "2025-03-01", status: "Applied", notes: "Applied online" }, { date: "2025-03-05", status: "Interview Scheduled", notes: "Portfolio review" }, { date: "2025-03-10", status: "Interview Scheduled", notes: "Team interview" }, { date: "2025-03-15", status: "Offer Received", notes: "Initial offer made" }], salary: { expected: 110000, offered: 105000, benefits: "Healthcare, 401k, Remote work" } },
-            { id: 5, title: "DevOps Engineer", company: "CloudNet", date: "2025-02-10", status: "Rejected", notes: "Not enough experience", url: "https://cloudnet.com/careers", history: [{ date: "2025-02-10", status: "Applied", notes: "Applied online" }, { date: "2025-02-15", status: "Interview Scheduled", notes: "Technical screen" }, { date: "2025-02-20", status: "Rejected", notes: "Got rejection email" }], salary: { expected: 130000, offered: null, benefits: "" } }
+            { id: 1, title: "Software Engineer", company: "TechCorp", date: "2025-02-20", status: "Applied", notes: "Submitted via company site", url: "https://techcorp.com/jobs", history: [{ date: "2025-02-20", status: "Applied", notes: "Submitted application" }], salary: { expected: 120000, offered: null, benefits: "Healthcare, 401k" }, favorite: false },
+            { id: 2, title: "Data Analyst", company: "DataWorks", date: "2025-02-15", status: "Interview Scheduled", notes: "Phone screen next week", url: "https://dataworks.com/careers", history: [{ date: "2025-02-15", status: "Applied", notes: "Submitted application" }, { date: "2025-02-18", status: "Interview Scheduled", notes: "Got email for phone screen" }], salary: { expected: 95000, offered: null, benefits: "" }, favorite: false },
+            { id: 3, title: "Product Manager", company: "Innovate Inc", date: "2025-01-25", status: "Applied", notes: "Awaiting response", url: "https://innovateinc.com/apply", history: [{ date: "2025-01-25", status: "Applied", notes: "Applied through referral" }], salary: { expected: 140000, offered: null, benefits: "" }, favorite: false },
+            { id: 4, title: "UX Designer", company: "Designify", date: "2025-03-01", status: "Offer Received", notes: "Negotiating salary", url: "https://designify.com/jobs", history: [{ date: "2025-03-01", status: "Applied", notes: "Applied online" }, { date: "2025-03-05", status: "Interview Scheduled", notes: "Portfolio review" }, { date: "2025-03-10", status: "Interview Scheduled", notes: "Team interview" }, { date: "2025-03-15", status: "Offer Received", notes: "Initial offer made" }], salary: { expected: 110000, offered: 105000, benefits: "Healthcare, 401k, Remote work" }, favorite: false },
+            { id: 5, title: "DevOps Engineer", company: "CloudNet", date: "2025-02-10", status: "Rejected", notes: "Not enough experience", url: "https://cloudnet.com/careers", history: [{ date: "2025-02-10", status: "Applied", notes: "Applied online" }, { date: "2025-02-15", status: "Interview Scheduled", notes: "Technical screen" }, { date: "2025-02-20", status: "Rejected", notes: "Got rejection email" }], salary: { expected: 130000, offered: null, benefits: "" }, favorite: false }
         ];
 
         let applications = fakeData;
-        localStorage.setItem('jobApplications', JSON.stringify(applications));
+        let savedJobs = [];
+        let isKanbanView = false;
 
+        // Load Data on Page Load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                document.getElementById('theme-text').textContent = savedTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
+            }
+
+            const storedApps = localStorage.getItem('jobApplications');
+            if (storedApps) {
+                try {
+                    applications = JSON.parse(storedApps).map(app => ({ ...app, favorite: app.favorite || false }));
+                } catch (e) {
+                    console.error('Error parsing stored applications:', e);
+                    applications = fakeData;
+                }
+            }
+
+            const storedSavedJobs = localStorage.getItem('savedJobs');
+            if (storedSavedJobs) {
+                try {
+                    savedJobs = JSON.parse(storedSavedJobs);
+                } catch (e) {
+                    console.error('Error parsing stored saved jobs:', e);
+                    savedJobs = [];
+                }
+            }
+
+            renderTable();
+            renderAnalytics();
+            renderReminders();
+            renderTimeline();
+            updateGoalProgress();
+            document.getElementById('date').value = new Date().toISOString().split('T')[0];
+
+            // Real-time Filtering
+            document.querySelectorAll('.filter-inputs input, .filter-inputs select, #filter').forEach(input => {
+                input.addEventListener('input', () => {
+                    if (isKanbanView) renderKanban();
+                    else renderTable();
+                });
+            });
+        });
+
+        // Theme Toggle Function
         function toggleTheme() {
             const html = document.documentElement;
             const themeText = document.getElementById('theme-text');
@@ -1165,28 +1361,32 @@
             localStorage.setItem('theme', newTheme);
         }
 
-        function showTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-button').forEach(button => button.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
+        // Modal Functions
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
         }
 
-        function saveSalaryInfo() {
-            const expectedSalary = parseFloat(document.getElementById('expected-salary').value) || 0;
-            const offeredSalary = parseFloat(document.getElementById('offered-salary').value) || null;
-            const benefits = document.getElementById('benefits').value;
-            const latestApp = applications[applications.length - 1];
-            if (latestApp) {
-                latestApp.salary = { expected: expectedSalary, offered: offeredSalary, benefits: benefits };
-                saveData();
-                renderSalaryAnalytics();
-                showNotification('Salary information updated');
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Toggle View Function
+        function toggleView() {
+            isKanbanView = document.getElementById('view-toggle').checked;
+            const tableView = document.getElementById('table-view');
+            const kanbanView = document.getElementById('kanban-view');
+            if (isKanbanView) {
+                tableView.style.display = 'none';
+                kanbanView.style.display = 'grid';
+                renderKanban();
             } else {
-                showNotification('Please add an application first', 'error');
+                tableView.style.display = 'block';
+                kanbanView.style.display = 'none';
+                renderTable();
             }
         }
 
+        // Add Application Form Submission
         document.getElementById('app-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const app = {
@@ -1198,21 +1398,43 @@
                 notes: document.getElementById('notes').value,
                 url: document.getElementById('url').value,
                 history: [{ date: document.getElementById('date').value, status: document.getElementById('status').value, notes: document.getElementById('notes').value }],
-                salary: { expected: 0, offered: null, benefits: "" }
+                salary: {
+                    expected: parseFloat(document.getElementById('expected-salary').value) || 0,
+                    offered: parseFloat(document.getElementById('offered-salary').value) || null,
+                    benefits: ""
+                },
+                favorite: false
             };
             applications.push(app);
             saveData();
-            renderTable();
+            if (isKanbanView) renderKanban();
+            else renderTable();
             renderAnalytics();
             renderReminders();
             renderTimeline();
             updateGoalProgress();
-            e.target.reset();
-            document.getElementById('date').value = new Date().toISOString().split('T')[0];
-            document.querySelector('.data-panel').classList.add('flash');
-            setTimeout(() => document.querySelector('.data-panel').classList.remove('flash'), 1000);
+            closeModal('app-modal');
+            showNotification('Application added successfully');
         });
 
+        // Save Job Form Submission
+        document.getElementById('save-job-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const job = {
+                id: Date.now(),
+                title: document.getElementById('save-title').value,
+                company: document.getElementById('save-company').value,
+                url: document.getElementById('save-url').value,
+                notes: document.getElementById('save-notes').value,
+                dateSaved: new Date().toISOString().split('T')[0]
+            };
+            savedJobs.push(job);
+            saveData();
+            closeModal('save-job-modal');
+            showNotification('Job saved successfully');
+        });
+
+        // Utility Functions
         function daysSince(dateString) {
             const date = new Date(dateString);
             const today = new Date();
@@ -1220,13 +1442,25 @@
             return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         }
 
-        function renderTable() {
-            const tbody = document.querySelector('#applications-table tbody');
-            tbody.innerHTML = '';
-            const filter = document.getElementById('filter').value;
-            let filteredApps = filter === 'All' ? applications : applications.filter(app => app.status === filter);
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
 
-            // Apply column filters
+        function formatCurrency(value) {
+            if (value == null) return 'N/A';
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
+        }
+
+        // Filter Applications
+        function filterApplications() {
+            let filteredApps = [...applications];
+            const filter = document.getElementById('filter').value;
+            if (filter === 'Favorites') {
+                filteredApps = filteredApps.filter(app => app.favorite);
+            } else if (filter !== 'All') {
+                filteredApps = filteredApps.filter(app => app.status === filter);
+            }
+
             const titleFilter = document.getElementById('filter-title').value.toLowerCase();
             const companyFilter = document.getElementById('filter-company').value.toLowerCase();
             const dateFilter = document.getElementById('filter-date').value;
@@ -1236,7 +1470,7 @@
             const notesFilter = document.getElementById('filter-notes').value.toLowerCase();
             const urlFilter = document.getElementById('filter-url').value.toLowerCase();
 
-            filteredApps = filteredApps.filter(app => {
+            return filteredApps.filter(app => {
                 return (
                     app.title.toLowerCase().includes(titleFilter) &&
                     app.company.toLowerCase().includes(companyFilter) &&
@@ -1248,6 +1482,13 @@
                     (app.url || '').toLowerCase().includes(urlFilter)
                 );
             });
+        }
+
+        // Render Table View
+        function renderTable() {
+            const tbody = document.querySelector('#applications-table tbody');
+            tbody.innerHTML = '';
+            let filteredApps = filterApplications();
 
             filteredApps.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(app => {
                 const row = document.createElement('tr');
@@ -1270,6 +1511,7 @@
                         <button onclick="viewDetails(${app.id})" class="action-btn">Details</button>
                         <button onclick="startEdit(${app.id})" class="action-btn">Edit</button>
                         <button onclick="deleteApplication(${app.id})" class="action-btn">Delete</button>
+                        <button onclick="toggleFavorite(${app.id})" class="action-btn">${app.favorite ? '★' : '☆'}</button>
                         ${app.status === 'Applied' && daysSince(app.date) > 10 ? `<button onclick="markFollowed(${app.id})" class="action-btn">Follow Up</button>` : ''}
                     </td>
                 `;
@@ -1281,26 +1523,58 @@
             }
         }
 
+        // Render Kanban View
+        function renderKanban() {
+            const statuses = ['Applied', 'Interview Scheduled', 'Offer Received', 'Rejected'];
+            let filteredApps = filterApplications();
+
+            statuses.forEach(status => {
+                const container = document.getElementById(`kanban-${status.toLowerCase().replace(' ', '-')}`);
+                container.innerHTML = '';
+                const appsInStatus = filteredApps.filter(app => app.status === status);
+                appsInStatus.forEach(app => {
+                    const card = document.createElement('div');
+                    card.className = 'kanban-card';
+                    card.innerHTML = `
+                        <div class="title">${app.title}</div>
+                        <div class="company">${app.company}</div>
+                        <div class="actions">
+                            <button onclick="viewDetails(${app.id})" class="action-btn">Details</button>
+                            <button onclick="startEdit(${app.id})" class="action-btn">Edit</button>
+                            <button onclick="deleteApplication(${app.id})" class="action-btn">Delete</button>
+                            <button onclick="toggleFavorite(${app.id})" class="action-btn">${app.favorite ? '★' : '☆'}</button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+                if (appsInStatus.length === 0) {
+                    container.innerHTML = `<p style="color: var(--text-tertiary); text-align: center;">No applications</p>`;
+                }
+            });
+        }
+
+        // Toggle Favorite Status
+        function toggleFavorite(id) {
+            const app = applications.find(a => a.id === id);
+            if (app) {
+                app.favorite = !app.favorite;
+                saveData();
+                if (isKanbanView) renderKanban();
+                else renderTable();
+                showNotification(app.favorite ? 'Application favorited' : 'Application unfavorited');
+            }
+        }
+
+        // View Application Details
         function viewDetails(id) {
             const app = applications.find(a => a.id === id);
             if (app) {
                 renderTimeline(app);
-                document.getElementById('expected-salary').value = app.salary.expected || '';
-                document.getElementById('offered-salary').value = app.salary.offered || '';
-                document.getElementById('benefits').value = app.salary.benefits || '';
-                document.querySelector('.card:nth-child(4)').scrollIntoView({ behavior: 'smooth' });
+                document.querySelector('#app-timeline').scrollIntoView({ behavior: 'smooth' });
             }
         }
 
-        function formatDate(dateString) {
-            return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-        }
-
-        function formatCurrency(value) {
-            if (value == null) return 'N/A';
-            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
-        }
-
+        // Edit Application
         function startEdit(id) {
             const app = applications.find(a => a.id === id);
             if (app) {
@@ -1313,7 +1587,8 @@
                 }
                 if (newNotes !== null) app.notes = newNotes;
                 saveData();
-                renderTable();
+                if (isKanbanView) renderKanban();
+                else renderTable();
                 renderAnalytics();
                 renderReminders();
                 renderTimeline(app);
@@ -1321,18 +1596,22 @@
             }
         }
 
+        // Delete Application
         function deleteApplication(id) {
             if (confirm('Are you sure you want to delete this application?')) {
                 applications = applications.filter(a => a.id !== id);
                 saveData();
-                renderTable();
+                if (isKanbanView) renderKanban();
+                else renderTable();
                 renderAnalytics();
                 renderReminders();
                 renderTimeline();
                 updateGoalProgress();
+                showNotification('Application deleted');
             }
         }
 
+        // Mark as Followed Up
         function markFollowed(id) {
             const app = applications.find(a => a.id === id);
             if (app) {
@@ -1340,18 +1619,21 @@
                 app.notes += ` - Followed up on ${today}`;
                 app.history.push({ date: today, status: app.status, notes: 'Followed up on application' });
                 saveData();
-                renderTable();
+                if (isKanbanView) renderKanban();
+                else renderTable();
                 renderAnalytics();
                 renderReminders();
                 renderTimeline(app);
             }
         }
 
+        // Save Data to LocalStorage
         function saveData() {
             localStorage.setItem('jobApplications', JSON.stringify(applications));
-            showNotification('Changes saved');
+            localStorage.setItem('savedJobs', JSON.stringify(savedJobs));
         }
 
+        // Show Notification
         function showNotification(message, type = 'success') {
             const flash = document.createElement('div');
             flash.style.cssText = `
@@ -1368,6 +1650,7 @@
             }, 1500);
         }
 
+        // Render Analytics
         function renderAnalytics() {
             const container = document.getElementById('analytics-container');
             container.innerHTML = '';
@@ -1386,6 +1669,7 @@
             renderSalaryAnalytics();
         }
 
+        // Render Salary Analytics
         function renderSalaryAnalytics() {
             const totals = applications.reduce((acc, app) => {
                 if (app.salary.expected) {
@@ -1411,6 +1695,7 @@
             container.appendChild(card);
         }
 
+        // Sort Table
         function sortTable(colIndex) {
             const table = document.getElementById('applications-table');
             const tbody = table.querySelector('tbody');
@@ -1432,10 +1717,11 @@
             rows.forEach(row => tbody.appendChild(row));
         }
 
+        // Export Data to CSV
         function exportData() {
-            let csv = 'Job Title,Company,Date,Status,Expected Salary,Offered Salary,Notes,URL\n';
+            let csv = 'Job Title,Company,Date,Status,Expected Salary,Offered Salary,Notes,URL,Favorite\n';
             applications.forEach(app => {
-                csv += `"${app.title}","${app.company}","${app.date}","${app.status}","${app.salary.expected || ''}","${app.salary.offered || ''}","${app.notes}","${app.url || ''}"\n`;
+                csv += `"${app.title}","${app.company}","${app.date}","${app.status}","${app.salary.expected || ''}","${app.salary.offered || ''}","${app.notes}","${app.url || ''}","${app.favorite ? 'Yes' : 'No'}"\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = URL.createObjectURL(blob);
@@ -1445,6 +1731,7 @@
             a.click();
         }
 
+        // Render Reminders
         function renderReminders() {
             const container = document.getElementById('reminders-list');
             container.innerHTML = '';
@@ -1464,6 +1751,7 @@
             });
         }
 
+        // Render Timeline
         function renderTimeline(selectedApp = null) {
             const container = document.getElementById('app-timeline');
             container.innerHTML = '';
@@ -1502,6 +1790,7 @@
             container.appendChild(item);
         }
 
+        // Update Goal Progress
         function updateGoalProgress() {
             const today = new Date();
             const weekAgo = new Date(today);
@@ -1519,6 +1808,7 @@
             renderApplicationChart();
         }
 
+        // Render Application Chart
         function renderApplicationChart() {
             const today = new Date();
             const fourWeeksAgo = new Date(today);
@@ -1558,36 +1848,6 @@
                 }
             });
         }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme) {
-                document.documentElement.setAttribute('data-theme', savedTheme);
-                document.getElementById('theme-text').textContent = savedTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
-            }
-            const storedData = localStorage.getItem('jobApplications');
-            if (storedData) {
-                try {
-                    applications = JSON.parse(storedData);
-                } catch (e) {
-                    console.error('Error parsing stored data:', e);
-                    applications = fakeData;
-                    localStorage.setItem('jobApplications', JSON.stringify(applications));
-                }
-            }
-            renderTable();
-            renderAnalytics();
-            renderReminders();
-            renderTimeline();
-            updateGoalProgress();
-            document.getElementById('date').value = new Date().toISOString().split('T')[0];
-
-            // Add event listeners for real-time filtering
-            document.querySelectorAll('.filter-inputs input, .filter-inputs select').forEach(input => {
-                input.addEventListener('input', renderTable);
-            });
-            document.getElementById('filter').addEventListener('change', renderTable);
-        });
     </script>
 </body>
 
