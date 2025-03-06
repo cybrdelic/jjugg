@@ -8,6 +8,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Mono&display=swap"
         rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         /* Root Variables for Theming */
         :root {
@@ -16,6 +18,9 @@
             --bg-tertiary: rgba(20, 20, 20, 0.7);
             --accent-primary: #00f0ff;
             --accent-secondary: #9d00ff;
+            --accent-tertiary: #ff2a6d;
+            --accent-quaternary: #05ffa1;
+            --accent-highlight: #ff00ff;
             --text-primary: #ffffff;
             --text-secondary: rgba(255, 255, 255, 0.7);
             --text-tertiary: rgba(255, 255, 255, 0.4);
@@ -27,7 +32,12 @@
             --status-interview: #FF9800;
             --status-offer: #4CAF50;
             --status-rejected: #F44336;
+            --neon-glow: 0 0 10px var(--accent-primary), 0 0 20px var(--accent-primary), 0 0 30px var(--accent-primary);
+            --neon-glow-intense: 0 0 10px var(--accent-highlight), 0 0 20px var(--accent-highlight), 0 0 30px var(--accent-highlight);
             --theme-transition: all 0.3s ease;
+            --sidebar-width: 230px;
+            --header-height: 60px;
+            --cyber-grid: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath stroke='%2300f0ff' stroke-width='0.2' fill='none' d='M0,0 L100,0 L100,100 L0,100 Z' /%3E%3Cpath stroke='%2300f0ff' stroke-width='0.1' fill='none' d='M50,0 L50,100 M0,50 L100,50' /%3E%3C/svg%3E");
         }
 
         /* Light Theme Overrides */
@@ -197,35 +207,48 @@
 
         #login-section {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             gap: 0.5rem;
-            margin-top: 0.5rem;
+            margin: 0.5rem 0 1rem 0;
+            width: 100%;
         }
 
         #login-section input,
         #login-section button {
-            padding: 0.3rem 0.6rem;
+            padding: 0.5rem 0.6rem;
             font-size: 0.8rem;
+            width: 100%;
+        }
+
+        /* App Title */
+        .app-title {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            margin: 1rem 0;
+            text-transform: uppercase;
+            color: var(--text-primary);
         }
 
         /* Theme Toggle */
         .theme-toggle {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 100;
             display: flex;
             align-items: center;
+            justify-content: center;
             cursor: pointer;
-            padding: 5px 10px;
-            border-radius: 20px;
+            padding: 8px 10px;
+            margin-bottom: 10px;
+            border-radius: 6px;
             background: var(--glass-bg);
             border: var(--border-thin);
             color: var(--text-secondary);
             font-family: 'Space Mono', monospace;
             font-size: 0.8rem;
             transition: all 0.3s ease;
+            width: 100%;
         }
 
         .theme-toggle:hover {
@@ -1115,12 +1138,101 @@
             color: var(--text-secondary);
         }
 
+        /* Standard Styling for Charts and Components */
+        .cyber-card,
+        .card {
+            background: var(--glass-bg);
+            border: var(--border-medium);
+            border-radius: 8px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .cyber-title,
+        .card h4 {
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .cyber-value,
+        .metric-value {
+            position: relative;
+            display: inline-block;
+            font-weight: 600;
+        }
+        
+        /* Sankey Diagram */
+        .sankey-container {
+            height: 300px;
+            position: relative;
+            z-index: 5;
+        }
+        
+        .sankey-container .node rect {
+            fill-opacity: 0.8;
+            shape-rendering: crispEdges;
+            stroke: var(--border-thin);
+            stroke-width: 1px;
+        }
+        
+        .sankey-container .node text {
+            fill: var(--text-primary);
+            font-size: 12px;
+        }
+        
+        .sankey-container .link {
+            fill: none;
+            stroke-opacity: 0.3;
+        }
+        
+        .sankey-container .link:hover {
+            stroke-opacity: 0.7;
+        }
+        
+        /* Funnel Chart */
+        .funnel-chart {
+            height: 300px;
+            position: relative;
+            z-index: 5;
+        }
+        
+        .funnel-chart .funnel-stage {
+            stroke: var(--bg-primary);
+            stroke-width: 1px;
+            transition: opacity 0.3s ease;
+        }
+        
+        .funnel-chart .funnel-stage:hover {
+            opacity: 0.8;
+        }
+        
+        .funnel-chart .funnel-label {
+            fill: var(--text-primary);
+            font-size: 12px;
+            text-anchor: middle;
+        }
+        
+        .funnel-chart .funnel-value {
+            fill: var(--text-primary);
+            font-size: 12px;
+            font-weight: bold;
+            text-anchor: middle;
+        }
+        
         /* Application Funnel */
         .funnel-container {
             display: grid;
             grid-template-columns: 2fr 1fr;
             gap: 2rem;
-            align-items: center;
+            align-items: start;
+            margin-top: 1.5rem;
         }
 
         .funnel-chart-wrapper {
@@ -1137,8 +1249,18 @@
         .funnel-metric {
             background: rgba(0, 0, 0, 0.1);
             padding: 1rem;
-            border-radius: 8px;
+            border-radius: 4px;
             transition: all 0.3s ease;
+        }
+        
+        .cyberpunk-metric,
+        .funnel-metric {
+            background: var(--glass-bg);
+            border: var(--border-thin);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            border-radius: 6px;
         }
 
         [data-theme="light"] .funnel-metric {
@@ -1148,6 +1270,7 @@
         .funnel-metric:hover {
             background: rgba(0, 240, 255, 0.1);
             transform: translateX(5px);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
         }
 
         .metric-label {
@@ -1195,6 +1318,55 @@
         .insight:hover {
             background: rgba(0, 240, 255, 0.1);
             transform: translateX(5px);
+        }
+        
+        /* Insights styling */
+        .cyberpunk-insights,
+        .trend-insights {
+            margin-top: 1rem;
+        }
+        
+        .cyber-insight,
+        .insight {
+            background: var(--glass-bg);
+            border: var(--border-thin);
+            border-left: 3px solid var(--accent-primary);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border-radius: 4px;
+        }
+        
+        .cyber-insight:hover,
+        .insight:hover {
+            transform: translateX(5px);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .cyber-icon,
+        .insight-icon {
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            position: relative;
+        }
+        
+        .cyber-insight-title,
+        .insight-content h4 {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .cyber-data-point,
+        .insight-content span {
+            font-weight: 600;
+            color: var(--accent-primary);
+            position: relative;
         }
 
         .insight-icon {
@@ -1782,6 +1954,272 @@
             box-shadow: 0 0 10px var(--accent-primary);
         }
 
+        /* Sidebar Navigation Styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background: var(--bg-secondary);
+            border-right: var(--border-thin);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow-y: auto;
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-nav {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-secondary);
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-item svg {
+            margin-right: 1rem;
+        }
+        
+        .sidebar-item:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        
+        .sidebar-item.active {
+            background: var(--bg-tertiary);
+            color: var(--accent-primary);
+            border-left: 3px solid var(--accent-primary);
+        }
+        
+        .sidebar-footer {
+            padding: 1rem;
+            border-top: var(--border-thin);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: auto;
+        }
+        
+        .add-application-btn, .save-job-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content Area Styles */
+        .content-area {
+            margin-left: var(--sidebar-width);
+            padding: 1rem;
+            min-height: 100vh;
+        }
+        
+        /* Section Content Display */
+        .section-content {
+            display: none;
+        }
+        
+        .section-content.active {
+            display: block;
+        }
+        
+        /* Dashboard Home Styles */
+        .quick-actions {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .dashboard-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        .dashboard-column {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        
+        .dashboard-column h3 {
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            color: var(--text-primary);
+        }
+        
+        .view-all-btn {
+            width: 100%;
+            padding: 0.5rem;
+            margin-top: 1rem;
+            background: var(--bg-secondary);
+            border: var(--border-thin);
+            color: var(--text-secondary);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .view-all-btn:hover {
+            background: var(--accent-primary);
+            color: black;
+        }
+        
+        .dashboard-goal-progress {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        
+        .dashboard-app-card {
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            padding: 0.8rem;
+            margin-bottom: 0.8rem;
+            transition: all 0.2s ease;
+        }
+        
+        .dashboard-app-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dashboard-app-title {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .dashboard-app-company {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.3rem;
+        }
+        
+        .dashboard-app-date, .dashboard-app-status {
+            font-size: 0.8rem;
+            display: inline-block;
+            margin-right: 1rem;
+        }
+        
+        .dashboard-app-date {
+            color: var(--text-tertiary);
+        }
+        
+        .dashboard-app-status {
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            background: rgba(33, 150, 243, 0.1);
+            color: var(--status-applied);
+        }
+        
+        .status-applied {
+            background: rgba(33, 150, 243, 0.1);
+            color: var(--status-applied);
+        }
+        
+        .status-interview-scheduled {
+            background: rgba(255, 152, 0, 0.1);
+            color: var(--status-interview);
+        }
+        
+        .status-offer-received {
+            background: rgba(76, 175, 80, 0.1);
+            color: var(--status-offer);
+        }
+        
+        .status-rejected {
+            background: rgba(244, 67, 54, 0.1);
+            color: var(--status-rejected);
+        }
+        
+        .dashboard-reminder {
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            padding: 0.8rem;
+            margin-bottom: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+        
+        .dashboard-reminder-title {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .dashboard-reminder-days {
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
+        }
+        
+        .reminder-action-btn {
+            align-self: flex-start;
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .reminder-action-btn:hover {
+            background: var(--accent-primary);
+            color: black;
+        }
+        
+        /* Analytics Tabs Styles */
+        .analytics-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: var(--border-thin);
+            padding-bottom: 0.5rem;
+        }
+        
+        .analytics-tab {
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border: none;
+            border-radius: 4px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .analytics-tab:hover {
+            background: rgba(0, 240, 255, 0.1);
+            color: var(--text-primary);
+        }
+        
+        .analytics-tab.active {
+            background: var(--accent-primary);
+            color: black;
+        }
+        
+        .analytics-tab-content {
+            display: none;
+        }
+        
+        .analytics-tab-content.active {
+            display: block;
+        }
+
         /* Responsive Design */
         @media (max-width: 1200px) {
             .filter-inputs {
@@ -1790,6 +2228,32 @@
 
             .kanban-container {
                 grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .dashboard-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 60px;
+            }
+            
+            .sidebar-item span {
+                display: none;
+            }
+            
+            .sidebar-item svg {
+                margin-right: 0;
+            }
+            
+            .sidebar-footer {
+                display: none;
+            }
+            
+            .content-area {
+                margin-left: 60px;
             }
         }
 
@@ -1850,10 +2314,59 @@
             }
         }
 
+        @media (max-width: 576px) {
+            .sidebar {
+                width: 100%;
+                height: 60px;
+                bottom: 0;
+                top: auto;
+                border-top: var(--border-thin);
+                border-right: none;
+                flex-direction: row;
+            }
+            
+            .sidebar-nav {
+                display: flex;
+                width: 100%;
+                justify-content: space-around;
+            }
+            
+            .sidebar-item {
+                flex-direction: column;
+                padding: 0.5rem;
+                border-left: none;
+                border-top: 3px solid transparent;
+                font-size: 0.7rem;
+            }
+            
+            .sidebar-item.active {
+                border-left: none;
+                border-top: 3px solid var(--accent-primary);
+            }
+            
+            .sidebar-item svg {
+                margin-right: 0;
+                margin-bottom: 0.3rem;
+                width: 16px;
+                height: 16px;
+            }
+            
+            .sidebar-item span {
+                display: block;
+                font-size: 0.7rem;
+            }
+            
+            .content-area {
+                margin-left: 0;
+                margin-bottom: 60px;
+                padding: 0.5rem;
+            }
+        }
+
         @media (max-width: 480px) {
             main {
                 width: 100%;
-                padding: 1rem;
+                padding: 0.5rem;
             }
 
             .chart-container {
@@ -1888,492 +2401,580 @@
 </head>
 
 <body>
-    <!-- Theme Toggle Button -->
-    <div class="theme-toggle" onclick="toggleTheme()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="theme-icon">
-            <circle cx="12" cy="12" r="5"></circle>
-            <line x1="12" y1="1" x2="12" y2="3"></line>
-            <line x1="12" y1="21" x2="12" y2="23"></line>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-            <line x1="1" y1="12" x2="3" y2="12"></line>
-            <line x1="21" y1="12" x2="23" y2="12"></line>
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-        </svg>
-        <span id="theme-text">Light Mode</span>
-    </div>
+    <!-- Simple application title -->
+    <h1 class="app-title">jjugg</h1>
 
-    <!-- Header -->
-    <header>
-        <div class="logo-container">
-            <div class="logo-circle"></div>
-            <div class="logo-circle"></div>
-            <div class="logo-circle"></div>
-        </div>
-        <h1>jjugg</h1>
-        <nav>
-            <button class="btn-modal" onclick="showDashboard()">Dashboard</button>
-            <button class="btn-modal" onclick="showProfile()">Profile</button>
-        </nav>
-        <div id="login-section">
-            <input type="text" id="github-token-input" placeholder="Enter your GitHub PAT" />
-            <button class="btn-modal" onclick="handleLogin()">Login with GitHub</button>
-            <button class="btn-modal" onclick="logout()" id="logout-btn" style="display: none;">Logout</button>
-        </div>
-    </header>
-
-    <!-- Main Content -->
+    <!-- Main Content with Sidebar Navigation -->
     <main>
-        <!-- Dashboard -->
-        <div id="dashboard">
-            <!-- Action Buttons -->
-            <section class="action-buttons">
-                <button class="btn-modal" onclick="openModal('app-modal')">Add Application</button>
-                <button class="btn-modal" onclick="openModal('save-job-modal')">Save Job</button>
-            </section>
-
-            <!-- Applications Grid -->
-            <section class="card">
-                <div class="card-header">
-                    <h2>Applications</h2>
-                    <div class="toggle-container">
-                        <label class="toggle-label" for="view-toggle">Kanban View</label>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="view-toggle" onchange="toggleView()">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
+        <!-- Sidebar Navigation -->
+        <div class="sidebar">
+            <ul class="sidebar-nav">
+                <li class="sidebar-item active" data-target="dashboard-home">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    <span>Home</span>
+                </li>
+                <li class="sidebar-item" data-target="applications-section">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                    <span>Applications</span>
+                </li>
+                <li class="sidebar-item" data-target="reminders-section">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    <span>Reminders</span>
+                </li>
+                <li class="sidebar-item" data-target="analytics-section">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                    <span>Analytics</span>
+                </li>
+                <li class="sidebar-item" data-target="goals-section">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    <span>Goals</span>
+                </li>
+                <li class="sidebar-item" data-target="timeline-section">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                    <span>Timeline</span>
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <!-- Theme Toggle -->
+                <div class="theme-toggle" onclick="toggleTheme()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="theme-icon">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <span id="theme-text">Light Mode</span>
                 </div>
-                <div class="card-content">
-                    <div class="controls">
-                        <div class="filter-control">
-                            <select id="filter" title="Filter applications by status or favorites">
-                                <option value="All">All Applications</option>
+                
+                <!-- Login Section -->
+                <div id="login-section">
+                    <input type="text" id="github-token-input" placeholder="Enter your GitHub PAT" />
+                    <button class="btn-modal" onclick="handleLogin()">Login with GitHub</button>
+                    <button class="btn-modal" onclick="logout()" id="logout-btn" style="display: none;">Logout</button>
+                </div>
+                
+                <button class="btn-primary add-application-btn" onclick="openModal('app-modal')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Add Application
+                </button>
+                <button class="btn-modal save-job-btn" onclick="openModal('save-job-modal')">Save Job</button>
+            </div>
+        </div>
+        
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Dashboard -->
+            <div id="dashboard">
+                <!-- Dashboard Home Section -->
+                <section class="card section-content" id="dashboard-home">
+                    <div class="card-header">
+                        <h2>Dashboard</h2>
+                    </div>
+                    <div class="card-content">
+                        <!-- Quick Actions -->
+                        <div class="quick-actions">
+                            <button class="btn-primary" onclick="openModal('app-modal')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                Add Application
+                            </button>
+                            <button class="btn-modal" onclick="openModal('save-job-modal')">Save Job</button>
+                        </div>
+                        
+                        <!-- KPI Dashboard (Key metrics only) -->
+                        <div class="kpi-dashboard">
+                            <div class="kpi-card" id="kpi-application-count">
+                                <div class="kpi-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                                </div>
+                                <div class="kpi-content">
+                                    <div class="kpi-label">Total Applications</div>
+                                    <div class="kpi-value" id="total-applications">0</div>
+                                    <div class="kpi-change" id="application-rate">0/week <span class="arrow">→</span></div>
+                                </div>
+                            </div>
+                            <div class="kpi-card" id="kpi-response-rate">
+                                <div class="kpi-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                                </div>
+                                <div class="kpi-content">
+                                    <div class="kpi-label">Response Rate</div>
+                                    <div class="kpi-value" id="response-rate-value">0%</div>
+                                    <div class="kpi-change" id="response-rate-change">0% <span class="arrow">→</span></div>
+                                </div>
+                            </div>
+                            <div class="kpi-card" id="kpi-interview-rate">
+                                <div class="kpi-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                                </div>
+                                <div class="kpi-content">
+                                    <div class="kpi-label">Interview Rate</div>
+                                    <div class="kpi-value" id="interview-rate-value">0%</div>
+                                    <div class="kpi-change" id="interview-rate-change">0% <span class="arrow">→</span></div>
+                                </div>
+                            </div>
+                            <div class="kpi-card" id="kpi-active-applications">
+                                <div class="kpi-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                </div>
+                                <div class="kpi-content">
+                                    <div class="kpi-label">Active Applications</div>
+                                    <div class="kpi-value" id="active-applications">0</div>
+                                    <div class="kpi-change" id="active-applications-change">0 pending <span class="arrow">→</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Recent Applications & Reminders -->
+                        <div class="dashboard-columns">
+                            <div class="dashboard-column">
+                                <h3>Recent Applications</h3>
+                                <div id="recent-applications">
+                                    <!-- Recent applications will be populated here by JavaScript -->
+                                </div>
+                                <button class="view-all-btn" onclick="switchToSection('applications-section')">View All</button>
+                            </div>
+                            <div class="dashboard-column">
+                                <h3>Follow-up Reminders</h3>
+                                <div id="dashboard-reminders">
+                                    <!-- Reminders will be populated here by JavaScript -->
+                                </div>
+                                <button class="view-all-btn" onclick="switchToSection('reminders-section')">View All</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Weekly Goal Progress -->
+                        <div class="dashboard-goal-progress">
+                            <h3>Weekly Application Target</h3>
+                            <div class="goal-progress">
+                                <div class="goal-bar" id="dashboard-weekly-goal-progress"></div>
+                            </div>
+                            <div class="goal-stats">
+                                <span id="dashboard-weekly-apps-submitted">0 applications</span>
+                                <span id="dashboard-weekly-goal-target">Goal: 10/week</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Applications Section -->
+                <section class="card section-content" id="applications-section" style="display: none;">
+                    <div class="card-header">
+                        <h2>Applications</h2>
+                        <div class="toggle-container">
+                            <label class="toggle-label" for="view-toggle">Kanban View</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="view-toggle" onchange="toggleView()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <div class="controls">
+                            <div class="filter-control">
+                                <select id="filter" title="Filter applications by status or favorites">
+                                    <option value="All">All Applications</option>
+                                    <option value="Applied">Applied</option>
+                                    <option value="Interview Scheduled">Interview Scheduled</option>
+                                    <option value="Offer Received">Offer Received</option>
+                                    <option value="Rejected">Rejected</option>
+                                    <option value="Favorites">Favorites</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="filter-inputs">
+                            <input type="text" id="filter-title" placeholder="Filter Title" title="Filter by job title">
+                            <input type="text" id="filter-company" placeholder="Filter Company"
+                                title="Filter by company name">
+                            <input type="date" id="filter-date" title="Filter by application date">
+                            <select id="filter-status" title="Filter by status">
+                                <option value="">All Statuses</option>
                                 <option value="Applied">Applied</option>
                                 <option value="Interview Scheduled">Interview Scheduled</option>
                                 <option value="Offer Received">Offer Received</option>
                                 <option value="Rejected">Rejected</option>
-                                <option value="Favorites">Favorites</option>
                             </select>
+                            <input type="number" id="filter-expected" placeholder="Min Expected $"
+                                title="Filter by minimum expected salary">
+                            <input type="number" id="filter-offered" placeholder="Min Offered $"
+                                title="Filter by minimum offered salary">
+                            <input type="text" id="filter-notes" placeholder="Filter Notes" title="Filter by notes">
+                            <input type="text" id="filter-url" placeholder="Filter URL" title="Filter by URL">
+                        </div>
+                        <div class="table-container" id="table-view">
+                            <table id="applications-table">
+                                <thead>
+                                    <tr>
+                                        <th onclick="sortTable(0)">Job Title</th>
+                                        <th onclick="sortTable(1)">Company</th>
+                                        <th onclick="sortTable(2)">Date</th>
+                                        <th onclick="sortTable(3)">Status</th>
+                                        <th onclick="sortTable(4)">Expected Salary</th>
+                                        <th onclick="sortTable(5)">Offered Salary</th>
+                                        <th onclick="sortTable(6)">Notes</th>
+                                        <th onclick="sortTable(7)">URL</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <div class="kanban-container" id="kanban-view">
+                            <div class="kanban-column" data-status="Applied">
+                                <h3>Applied</h3>
+                                <div class="kanban-cards" id="kanban-applied"></div>
+                            </div>
+                            <div class="kanban-column" data-status="Interview Scheduled">
+                                <h3>Interview Scheduled</h3>
+                                <div class="kanban-cards" id="kanban-interview"></div>
+                            </div>
+                            <div class="kanban-column" data-status="Offer Received">
+                                <h3>Offer Received</h3>
+                                <div class="kanban-cards" id="kanban-offer"></div>
+                            </div>
+                            <div class="kanban-column" data-status="Rejected">
+                                <h3>Rejected</h3>
+                                <div class="kanban-cards" id="kanban-rejected"></div>
+                            </div>
+                        </div>
+                        <div class="export-container">
+                            <button onclick="exportData()" title="Export application data to CSV">Export Data</button>
                         </div>
                     </div>
-                    <div class="filter-inputs">
-                        <input type="text" id="filter-title" placeholder="Filter Title" title="Filter by job title">
-                        <input type="text" id="filter-company" placeholder="Filter Company"
-                            title="Filter by company name">
-                        <input type="date" id="filter-date" title="Filter by application date">
-                        <select id="filter-status" title="Filter by status">
-                            <option value="">All Statuses</option>
-                            <option value="Applied">Applied</option>
-                            <option value="Interview Scheduled">Interview Scheduled</option>
-                            <option value="Offer Received">Offer Received</option>
-                            <option value="Rejected">Rejected</option>
+                </section>
+
+                <!-- Reminders Section -->
+                <section class="card section-content" id="reminders-section" style="display: none;">
+                    <div class="card-header">
+                        <h2>Follow-up Reminders</h2>
+                    </div>
+                    <div class="card-content">
+                        <ul class="reminders-list" id="reminders-list"></ul>
+                    </div>
+                </section>
+
+                <!-- Analytics Section -->
+                <section class="card section-content" id="analytics-section" style="display: none;">
+                    <div class="card-header">
+                        <h2>Job Search Analytics</h2>
+                        <select id="analytics-time-range" class="analytics-filter" title="Filter analytics by time range">
+                            <option value="all">All Time</option>
+                            <option value="year">Past Year</option>
+                            <option value="quarter">Past Quarter</option>
+                            <option value="month" selected>Past Month</option>
+                            <option value="week">Past Week</option>
                         </select>
-                        <input type="number" id="filter-expected" placeholder="Min Expected $"
-                            title="Filter by minimum expected salary">
-                        <input type="number" id="filter-offered" placeholder="Min Offered $"
-                            title="Filter by minimum offered salary">
-                        <input type="text" id="filter-notes" placeholder="Filter Notes" title="Filter by notes">
-                        <input type="text" id="filter-url" placeholder="Filter URL" title="Filter by URL">
                     </div>
-                    <div class="table-container" id="table-view">
-                        <table id="applications-table">
-                            <thead>
-                                <tr>
-                                    <th onclick="sortTable(0)">Job Title</th>
-                                    <th onclick="sortTable(1)">Company</th>
-                                    <th onclick="sortTable(2)">Date</th>
-                                    <th onclick="sortTable(3)">Status</th>
-                                    <th onclick="sortTable(4)">Expected Salary</th>
-                                    <th onclick="sortTable(5)">Offered Salary</th>
-                                    <th onclick="sortTable(6)">Notes</th>
-                                    <th onclick="sortTable(7)">URL</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                    <div class="kanban-container" id="kanban-view">
-                        <div class="kanban-column" data-status="Applied">
-                            <h3>Applied</h3>
-                            <div class="kanban-cards" id="kanban-applied"></div>
+                    <div class="card-content">
+                        <!-- Analytics Tabs -->
+                        <div class="analytics-tabs">
+                            <button class="analytics-tab active" data-tab="pipeline">Application Pipeline</button>
+                            <button class="analytics-tab" data-tab="activity">Activity & Trends</button>
+                            <button class="analytics-tab" data-tab="remote">Remote Jobs</button>
+                            <button class="analytics-tab" data-tab="salary">Salary Insights</button>
+                            <button class="analytics-tab" data-tab="sources">Source Analysis</button>
                         </div>
-                        <div class="kanban-column" data-status="Interview Scheduled">
-                            <h3>Interview Scheduled</h3>
-                            <div class="kanban-cards" id="kanban-interview"></div>
-                        </div>
-                        <div class="kanban-column" data-status="Offer Received">
-                            <h3>Offer Received</h3>
-                            <div class="kanban-cards" id="kanban-offer"></div>
-                        </div>
-                        <div class="kanban-column" data-status="Rejected">
-                            <h3>Rejected</h3>
-                            <div class="kanban-cards" id="kanban-rejected"></div>
-                        </div>
-                    </div>
-                    <div class="export-container">
-                        <button onclick="exportData()" title="Export application data to CSV">Export Data</button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- World-Class Analytics Section for Job Seekers -->
-            <section class="card">
-                <div class="card-header">
-                    <h2>Job Search Analytics</h2>
-                    <select id="analytics-time-range" class="analytics-filter" title="Filter analytics by time range">
-                        <option value="all">All Time</option>
-                        <option value="year">Past Year</option>
-                        <option value="quarter">Past Quarter</option>
-                        <option value="month" selected>Past Month</option>
-                        <option value="week">Past Week</option>
-                    </select>
-                </div>
-                <div class="card-content">
-                    <!-- Application Status Dashboard -->
-                    <div class="kpi-dashboard">
-                        <div class="kpi-card" id="kpi-application-count">
-                            <div class="kpi-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                        
+                        <!-- Application Pipeline Tab -->
+                        <div class="analytics-tab-content active" id="pipeline-tab">
+                            <div class="card">
+                                <h4>Application Journey</h4>
+                                <div id="sankey-diagram" class="sankey-container"></div>
                             </div>
-                            <div class="kpi-content">
-                                <div class="kpi-label">Total Applications</div>
-                                <div class="kpi-value" id="total-applications">0</div>
-                                <div class="kpi-change" id="application-rate">0/week <span class="arrow">→</span></div>
-                            </div>
-                        </div>
-                        <div class="kpi-card" id="kpi-response-rate">
-                            <div class="kpi-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-                            </div>
-                            <div class="kpi-content">
-                                <div class="kpi-label">Response Rate</div>
-                                <div class="kpi-value" id="response-rate-value">0%</div>
-                                <div class="kpi-change" id="response-rate-change">0% <span class="arrow">→</span></div>
-                            </div>
-                        </div>
-                        <div class="kpi-card" id="kpi-interview-rate">
-                            <div class="kpi-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                            </div>
-                            <div class="kpi-content">
-                                <div class="kpi-label">Interview Rate</div>
-                                <div class="kpi-value" id="interview-rate-value">0%</div>
-                                <div class="kpi-change" id="interview-rate-change">0% <span class="arrow">→</span></div>
-                            </div>
-                        </div>
-                        <div class="kpi-card" id="kpi-active-applications">
-                            <div class="kpi-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                            </div>
-                            <div class="kpi-content">
-                                <div class="kpi-label">Active Applications</div>
-                                <div class="kpi-value" id="active-applications">0</div>
-                                <div class="kpi-change" id="active-applications-change">0 pending <span class="arrow">→</span></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Application Funnel Analysis -->
-                    <div class="analytics-panel">
-                        <h3>Application Pipeline</h3>
-                        <div class="funnel-container">
-                            <div class="funnel-chart-wrapper">
-                                <canvas id="funnel-chart"></canvas>
-                            </div>
-                            <div class="funnel-metrics">
-                                <div class="funnel-metric">
-                                    <div class="metric-label">Time to First Response</div>
-                                    <div class="metric-value" id="time-to-response">0 days</div>
+                            
+                            <div class="funnel-container">
+                                <div class="card">
+                                    <h4>Conversion Funnel</h4>
+                                    <div id="funnel-chart-container" class="funnel-chart"></div>
                                 </div>
-                                <div class="funnel-metric">
-                                    <div class="metric-label">Time to Interview</div>
-                                    <div class="metric-value" id="time-to-interview">0 days</div>
-                                </div>
-                                <div class="funnel-metric">
-                                    <div class="metric-label">Time to Offer</div>
-                                    <div class="metric-value" id="time-to-offer">0 days</div>
-                                </div>
-                                <div class="funnel-metric">
-                                    <div class="metric-label">Average Cycle</div>
-                                    <div class="metric-value" id="avg-cycle-time">0 days</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Application Activity & Trends -->
-                    <div class="analytics-panel">
-                        <h3>Application Activity</h3>
-                        <div class="trends-container">
-                            <div class="chart-container expanded">
-                                <canvas id="application-trends-chart"></canvas>
-                            </div>
-                            <div class="trend-insights" id="trend-insights">
-                                <div class="insight">
-                                    <div class="insight-icon">📈</div>
-                                    <div class="insight-content">
-                                        <h4>Optimal Application Day</h4>
-                                        <p>Your most successful applications were submitted on <span id="peak-day">Wednesday</span>.</p>
+                                <div class="funnel-metrics">
+                                    <div class="funnel-metric">
+                                        <div class="metric-label">Time to First Response</div>
+                                        <div class="metric-value" id="time-to-response">0 days</div>
                                     </div>
-                                </div>
-                                <div class="insight">
-                                    <div class="insight-icon">🔍</div>
-                                    <div class="insight-content">
-                                        <h4>Job Board Performance</h4>
-                                        <p><span id="best-job-board">LinkedIn</span> has provided the best response rate at <span id="best-job-board-rate">35%</span>.</p>
+                                    <div class="funnel-metric">
+                                        <div class="metric-label">Time to Interview</div>
+                                        <div class="metric-value" id="time-to-interview">0 days</div>
                                     </div>
-                                </div>
-                                <div class="insight">
-                                    <div class="insight-icon">⏱️</div>
-                                    <div class="insight-content">
-                                        <h4>Weekly Application Goal</h4>
-                                        <p>Target: <span id="weekly-app-goal">10</span> applications/week. Current: <span id="current-weekly-rate">7</span>/week.</p>
+                                    <div class="funnel-metric">
+                                        <div class="metric-label">Time to Offer</div>
+                                        <div class="metric-value" id="time-to-offer">0 days</div>
+                                    </div>
+                                    <div class="funnel-metric">
+                                        <div class="metric-label">Average Cycle</div>
+                                        <div class="metric-value" id="avg-cycle-time">0 days</div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        
+                        <!-- Activity & Trends Tab -->
+                        <div class="analytics-tab-content" id="activity-tab">
+                            <div class="card">
+                                <h4>Application Activity Timeline</h4>
+                                <div class="chart-container expanded">
+                                    <canvas id="application-trends-chart"></canvas>
+                                </div>
+                            </div>
+                            <div class="trends-container">
+                                <div class="card" style="flex: 2;">
+                                    <h4>Key Insights</h4>
+                                    <div class="trend-insights" id="trend-insights">
+                                        <div class="insight">
+                                            <div class="insight-icon">📆</div>
+                                            <div class="insight-content">
+                                                <h4>Optimal Application Day</h4>
+                                                <p>Your most successful applications were submitted on <span id="peak-day">Wednesday</span>.</p>
+                                            </div>
+                                        </div>
+                                        <div class="insight">
+                                            <div class="insight-icon">🔍</div>
+                                            <div class="insight-content">
+                                                <h4>Job Board Performance</h4>
+                                                <p><span id="best-job-board">LinkedIn</span> has provided the best response rate at <span id="best-job-board-rate">35%</span>.</p>
+                                            </div>
+                                        </div>
+                                        <div class="insight">
+                                            <div class="insight-icon">🎯</div>
+                                            <div class="insight-content">
+                                                <h4>Weekly Application Goal</h4>
+                                                <p>Target: <span id="weekly-app-goal">10</span> applications/week. Current: <span id="current-weekly-rate">7</span>/week.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Remote Jobs Tab -->
+                        <div class="analytics-tab-content" id="remote-tab">
+                            <div class="remote-insights">
+                                <div class="chart-container">
+                                    <canvas id="remote-vs-onsite-chart"></canvas>
+                                </div>
+                                <div class="insight-card-container">
+                                    <div class="insight-card">
+                                        <h4>Remote Job Success</h4>
+                                        <div class="metric-container">
+                                            <div class="metric">
+                                                <div class="metric-value" id="remote-application-count">0</div>
+                                                <div class="metric-label">Applications</div>
+                                            </div>
+                                            <div class="metric">
+                                                <div class="metric-value" id="remote-response-rate">0%</div>
+                                                <div class="metric-label">Response Rate</div>
+                                            </div>
+                                            <div class="metric">
+                                                <div class="metric-value" id="remote-interview-rate">0%</div>
+                                                <div class="metric-label">Interview Rate</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="insight-card">
+                                        <h4>Top Remote Platforms</h4>
+                                        <ul id="top-remote-platforms">
+                                            <li>We Work Remotely <span class="response-rate">35%</span></li>
+                                            <li>Remote OK <span class="response-rate">28%</span></li>
+                                            <li>LinkedIn Remote <span class="response-rate">22%</span></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Salary Insights Tab -->
+                        <div class="analytics-tab-content" id="salary-tab">
+                            <div class="salary-intelligence">
+                                <div class="salary-stats">
+                                    <div class="salary-stat-group">
+                                        <div class="salary-card">
+                                            <div class="salary-label">Average Expected</div>
+                                            <div class="salary-amount" id="avg-expected">$0</div>
+                                        </div>
+                                        <div class="salary-card">
+                                            <div class="salary-label">Average Offered</div>
+                                            <div class="salary-amount" id="avg-offered">$0</div>
+                                        </div>
+                                        <div class="salary-card">
+                                            <div class="salary-label">Offer vs. Expected</div>
+                                            <div class="salary-amount" id="offer-expected-ratio">0%</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="chart-container expanded">
+                                    <canvas id="salary-comparison-chart"></canvas>
+                                </div>
+                                <div class="salary-insights">
+                                    <div class="insight">
+                                        <div class="insight-icon">💰</div>
+                                        <div class="insight-content">
+                                            <h4>Remote vs. On-site</h4>
+                                            <p>Remote positions offer <span id="remote-salary-diff">3%</span> <span id="remote-salary-direction">lower</span> salaries than on-site roles in your data.</p>
+                                        </div>
+                                    </div>
+                                    <div class="insight">
+                                        <div class="insight-icon">📊</div>
+                                        <div class="insight-content">
+                                            <h4>Salary by Job Title</h4>
+                                            <p><span id="highest-paying-title">Senior Developer</span> roles show the highest average salary at <span id="highest-title-salary">$120K</span>.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Source Analysis Tab -->
+                        <div class="analytics-tab-content" id="sources-tab">
+                            <div class="source-analysis">
+                                <div class="chart-container">
+                                    <canvas id="source-comparison-chart"></canvas>
+                                </div>
+                                <div class="insight-cards">
+                                    <div class="insight-card">
+                                        <h4>Manual vs. Automatic</h4>
+                                        <p>
+                                            <span id="auto-track-count">0</span> applications tracked automatically (<span id="auto-track-percent">0%</span>)<br>
+                                            <span id="manual-track-count">0</span> applications added manually (<span id="manual-track-percent">0%</span>)
+                                        </p>
+                                        <div class="chart-mini-container">
+                                            <canvas id="tracking-method-chart"></canvas>
+                                        </div>
+                                    </div>
+                                    <div class="insight-card">
+                                        <h4>Top Performing Sources</h4>
+                                        <ul id="top-sources">
+                                            <li>LinkedIn <span class="response-time">45% response</span></li>
+                                            <li>We Work Remotely <span class="response-time">38% response</span></li>
+                                            <li>Direct Company <span class="response-time">32% response</span></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Actionable Recommendations -->
+                            <div class="recommendations-panel">
+                                <h3>Actionable Recommendations</h3>
+                                <div class="recommendations">
+                                    <div class="recommendation-card">
+                                        <div class="recommendation-icon">🚀</div>
+                                        <div class="recommendation-content">
+                                            <h4>Application Strategy</h4>
+                                            <p>Increase focus on <span id="rec-job-board">We Work Remotely</span> - it has your highest response rate at <span id="rec-response-rate">38%</span>.</p>
+                                        </div>
+                                    </div>
+                                    <div class="recommendation-card">
+                                        <div class="recommendation-icon">🔄</div>
+                                        <div class="recommendation-content">
+                                            <h4>Follow-up Reminder</h4>
+                                            <p><span id="followup-count">3</span> applications need follow-up (applied >10 days ago). See Reminders section.</p>
+                                        </div>
+                                    </div>
+                                    <div class="recommendation-card">
+                                        <div class="recommendation-icon">📈</div>
+                                        <div class="recommendation-content">
+                                            <h4>Weekly Goal</h4>
+                                            <p>You're <span id="goal-status">below</span> your weekly goal. Try to submit <span id="remaining-apps">3</span> more applications this week.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                </section>
 
-                    <!-- Remote Job Insights -->
-                    <div class="analytics-panel">
-                        <h3>Remote Job Insights</h3>
-                        <div class="remote-insights">
+                <!-- Goals Section -->
+                <section class="card section-content" id="goals-section" style="display: none;">
+                    <div class="card-header">
+                        <h2>Job Search Goals</h2>
+                    </div>
+                    <div class="card-content">
+                        <div class="goal-container">
+                            <h3>Weekly Application Target</h3>
+                            <div class="goal-progress">
+                                <div class="goal-bar" id="weekly-goal-progress"></div>
+                            </div>
+                            <div class="goal-stats">
+                                <span id="weekly-apps-submitted">0 applications</span>
+                                <span id="weekly-goal-target">Goal: 10/week</span>
+                            </div>
+                            <h3 class="mt-4">Application Activity</h3>
                             <div class="chart-container">
-                                <canvas id="remote-vs-onsite-chart"></canvas>
-                            </div>
-                            <div class="insight-card-container">
-                                <div class="insight-card">
-                                    <h4>Remote Job Success</h4>
-                                    <div class="metric-container">
-                                        <div class="metric">
-                                            <div class="metric-value" id="remote-application-count">0</div>
-                                            <div class="metric-label">Applications</div>
-                                        </div>
-                                        <div class="metric">
-                                            <div class="metric-value" id="remote-response-rate">0%</div>
-                                            <div class="metric-label">Response Rate</div>
-                                        </div>
-                                        <div class="metric">
-                                            <div class="metric-value" id="remote-interview-rate">0%</div>
-                                            <div class="metric-label">Interview Rate</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="insight-card">
-                                    <h4>Top Remote Platforms</h4>
-                                    <ul id="top-remote-platforms">
-                                        <li>We Work Remotely <span class="response-rate">35%</span></li>
-                                        <li>Remote OK <span class="response-rate">28%</span></li>
-                                        <li>LinkedIn Remote <span class="response-rate">22%</span></li>
-                                    </ul>
-                                </div>
+                                <canvas id="application-chart"></canvas>
                             </div>
                         </div>
                     </div>
+                </section>
 
-                    <!-- Salary Intelligence -->
-                    <div class="analytics-panel">
-                        <h3>Salary Insights</h3>
-                        <div class="salary-intelligence">
-                            <div class="salary-stats">
-                                <div class="salary-stat-group">
-                                    <div class="salary-card">
-                                        <div class="salary-label">Average Expected</div>
-                                        <div class="salary-amount" id="avg-expected">$0</div>
-                                    </div>
-                                    <div class="salary-card">
-                                        <div class="salary-label">Average Offered</div>
-                                        <div class="salary-amount" id="avg-offered">$0</div>
-                                    </div>
-                                    <div class="salary-card">
-                                        <div class="salary-label">Offer vs. Expected</div>
-                                        <div class="salary-amount" id="offer-expected-ratio">0%</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="chart-container expanded">
-                                <canvas id="salary-comparison-chart"></canvas>
-                            </div>
-                            <div class="salary-insights">
-                                <div class="insight">
-                                    <div class="insight-icon">💰</div>
-                                    <div class="insight-content">
-                                        <h4>Remote vs. On-site</h4>
-                                        <p>Remote positions offer <span id="remote-salary-diff">3%</span> <span id="remote-salary-direction">lower</span> salaries than on-site roles in your data.</p>
-                                    </div>
-                                </div>
-                                <div class="insight">
-                                    <div class="insight-icon">📊</div>
-                                    <div class="insight-content">
-                                        <h4>Salary by Job Title</h4>
-                                        <p><span id="highest-paying-title">Senior Developer</span> roles show the highest average salary at <span id="highest-title-salary">$120K</span>.</p>
-                                    </div>
-                                </div>
-                            </div>
+                <!-- Timeline Section -->
+                <section class="card section-content" id="timeline-section" style="display: none;">
+                    <div class="card-header">
+                        <h2>Application Timeline</h2>
+                    </div>
+                    <div class="card-content">
+                        <div class="timeline" id="app-timeline"></div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Profile Page -->
+            <div id="profile-page" style="display: none;">
+                <section class="card">
+                    <div class="card-header">
+                        <h2>GitHub Profile</h2>
+                    </div>
+                    <div class="card-content" id="profile-info"></div>
+                </section>
+                <section class="card">
+                    <div class="card-header">
+                        <h2>Projects</h2>
+                        <div class="toggle-container">
+                            <label class="toggle-label" for="projects-view-toggle">Kanban View</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="projects-view-toggle" onchange="toggleProjectsView()">
+                                <span class="slider"></span>
+                            </label>
                         </div>
                     </div>
-
-                    <!-- Application Source Analysis -->
-                    <div class="analytics-panel">
-                        <h3>Application Source Analysis</h3>
-                        <div class="source-analysis">
-                            <div class="chart-container">
-                                <canvas id="source-comparison-chart"></canvas>
+                    <div class="card-content">
+                        <div class="table-container" id="projects-table-view">
+                            <div class="filter-inputs">
+                                <input type="text" id="filter-project-name" placeholder="Filter Name">
+                                <input type="text" id="filter-project-description" placeholder="Filter Description">
+                                <input type="text" id="filter-project-language" placeholder="Filter Language">
+                                <input type="number" id="filter-project-stars" placeholder="Min Stars">
+                                <input type="number" id="filter-project-forks" placeholder="Min Forks">
+                                <input type="date" id="filter-project-updated" placeholder="Updated After">
                             </div>
-                            <div class="insight-cards">
-                                <div class="insight-card">
-                                    <h4>Manual vs. Automatic</h4>
-                                    <p>
-                                        <span id="auto-track-count">0</span> applications tracked automatically (<span id="auto-track-percent">0%</span>)<br>
-                                        <span id="manual-track-count">0</span> applications added manually (<span id="manual-track-percent">0%</span>)
-                                    </p>
-                                    <div class="chart-mini-container">
-                                        <canvas id="tracking-method-chart"></canvas>
-                                    </div>
-                                </div>
-                                <div class="insight-card">
-                                    <h4>Top Performing Sources</h4>
-                                    <ul id="top-sources">
-                                        <li>LinkedIn <span class="response-time">45% response</span></li>
-                                        <li>We Work Remotely <span class="response-time">38% response</span></li>
-                                        <li>Direct Company <span class="response-time">32% response</span></li>
-                                    </ul>
-                                </div>
-                            </div>
+                            <table id="projects-table">
+                                <thead>
+                                    <tr>
+                                        <th onclick="sortProjectsTable(0)">Name</th>
+                                        <th onclick="sortProjectsTable(1)">Description</th>
+                                        <th onclick="sortProjectsTable(2)">Language</th>
+                                        <th onclick="sortProjectsTable(3)">Stars</th>
+                                        <th onclick="sortProjectsTable(4)">Forks</th>
+                                        <th onclick="sortProjectsTable(5)">Last Updated</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
                         </div>
+                        <div class="kanban-container" id="projects-kanban-view" style="display: none;"></div>
                     </div>
-
-                    <!-- Actionable Recommendations -->
-                    <div class="analytics-panel recommendations-panel">
-                        <h3>Actionable Recommendations</h3>
-                        <div class="recommendations">
-                            <div class="recommendation-card">
-                                <div class="recommendation-icon">🚀</div>
-                                <div class="recommendation-content">
-                                    <h4>Application Strategy</h4>
-                                    <p>Increase focus on <span id="rec-job-board">We Work Remotely</span> - it has your highest response rate at <span id="rec-response-rate">38%</span>.</p>
-                                </div>
-                            </div>
-                            <div class="recommendation-card">
-                                <div class="recommendation-icon">🔄</div>
-                                <div class="recommendation-content">
-                                    <h4>Follow-up Reminder</h4>
-                                    <p><span id="followup-count">3</span> applications need follow-up (applied >10 days ago). See Reminders section below.</p>
-                                </div>
-                            </div>
-                            <div class="recommendation-card">
-                                <div class="recommendation-icon">📈</div>
-                                <div class="recommendation-content">
-                                    <h4>Weekly Goal</h4>
-                                    <p>You're <span id="goal-status">below</span> your weekly goal. Try to submit <span id="remaining-apps">3</span> more applications this week.</p>
-                                </div>
-                            </div>
-                        </div>
+                </section>
+                <section class="card">
+                    <div class="card-header">
+                        <h2>Analytics</h2>
                     </div>
-                </div>
-            </section>
-
-            <!-- Goals Section -->
-            <section class="card">
-                <div class="card-header">
-                    <h2>Job Search Goals</h2>
-                </div>
-                <div class="card-content">
-                    <div class="goal-container">
-                        <h3>Weekly Application Target</h3>
-                        <div class="goal-progress">
-                            <div class="goal-bar" id="weekly-goal-progress"></div>
-                        </div>
-                        <div class="goal-stats">
-                            <span id="weekly-apps-submitted">0 applications</span>
-                            <span id="weekly-goal-target">Goal: 10/week</span>
-                        </div>
-                        <h3 class="mt-4">Application Activity</h3>
-                        <div class="chart-container">
-                            <canvas id="application-chart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Timeline Section -->
-            <section class="card">
-                <div class="card-header">
-                    <h2>Application Timeline</h2>
-                </div>
-                <div class="card-content">
-                    <div class="timeline" id="app-timeline"></div>
-                </div>
-            </section>
-
-            <!-- Reminders Section -->
-            <section class="card">
-                <div class="card-header">
-                    <h2>Follow-up Reminders</h2>
-                </div>
-                <div class="card-content">
-                    <ul class="reminders-list" id="reminders-list"></ul>
-                </div>
-            </section>
-        </div>
-
-        <!-- Profile Page -->
-        <div id="profile-page" style="display: none;">
-            <section class="card">
-                <div class="card-header">
-                    <h2>GitHub Profile</h2>
-                </div>
-                <div class="card-content" id="profile-info"></div>
-            </section>
-            <section class="card">
-                <div class="card-header">
-                    <h2>Projects</h2>
-                    <div class="toggle-container">
-                        <label class="toggle-label" for="projects-view-toggle">Kanban View</label>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="projects-view-toggle" onchange="toggleProjectsView()">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </div>
-                <div class="card-content">
-                    <div class="table-container" id="projects-table-view">
-                        <div class="filter-inputs">
-                            <input type="text" id="filter-project-name" placeholder="Filter Name">
-                            <input type="text" id="filter-project-description" placeholder="Filter Description">
-                            <input type="text" id="filter-project-language" placeholder="Filter Language">
-                            <input type="number" id="filter-project-stars" placeholder="Min Stars">
-                            <input type="number" id="filter-project-forks" placeholder="Min Forks">
-                            <input type="date" id="filter-project-updated" placeholder="Updated After">
-                        </div>
-                        <table id="projects-table">
-                            <thead>
-                                <tr>
-                                    <th onclick="sortProjectsTable(0)">Name</th>
-                                    <th onclick="sortProjectsTable(1)">Description</th>
-                                    <th onclick="sortProjectsTable(2)">Language</th>
-                                    <th onclick="sortProjectsTable(3)">Stars</th>
-                                    <th onclick="sortProjectsTable(4)">Forks</th>
-                                    <th onclick="sortProjectsTable(5)">Last Updated</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                    <div class="kanban-container" id="projects-kanban-view" style="display: none;"></div>
-                </div>
-            </section>
-            <section class="card">
-                <div class="card-header">
-                    <h2>Analytics</h2>
-                </div>
-                <div class="card-content" id="profile-analytics"></div>
-            </section>
+                    <div class="card-content" id="profile-analytics"></div>
+                </section>
+            </div>
         </div>
     </main>
 
@@ -2540,9 +3141,17 @@
                 }
             }
 
+            // Initialize sidebar navigation
+            initSidebar();
+            
+            // Setup content sections
+            document.getElementById('dashboard-home').style.display = 'block';
+            
+            // Render all sections
             renderTable();
             renderAnalytics();
             renderReminders();
+            renderDashboard();
             renderTimeline();
             updateGoalProgress();
             document.getElementById('date').value = new Date().toISOString().split('T')[0];
@@ -2555,6 +3164,28 @@
                 });
             });
 
+            // Setup analytics tabs
+            document.querySelectorAll('.analytics-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Remove active class from all tabs
+                    document.querySelectorAll('.analytics-tab').forEach(t => {
+                        t.classList.remove('active');
+                    });
+                    
+                    // Add active class to clicked tab
+                    tab.classList.add('active');
+                    
+                    // Hide all tab content
+                    document.querySelectorAll('.analytics-tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    
+                    // Show content for active tab
+                    const tabId = tab.dataset.tab;
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                });
+            });
+
             // Check for existing GitHub token
             const token = localStorage.getItem('githubToken');
             if (token) {
@@ -2564,6 +3195,114 @@
                 fetchGitHubData(token);
             }
         });
+        
+        // Initialize Sidebar Navigation
+        function initSidebar() {
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    if (item.dataset.target) {
+                        switchToSection(item.dataset.target);
+                    }
+                });
+            });
+        }
+        
+        // Switch between sections
+        function switchToSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.section-content').forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Remove active class from all sidebar items
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionId).style.display = 'block';
+            
+            // Highlight active sidebar item
+            document.querySelector(`.sidebar-item[data-target="${sectionId}"]`).classList.add('active');
+        }
+        
+        // Render Dashboard Home
+        function renderDashboard() {
+            // Render Recent Applications
+            const recentAppsContainer = document.getElementById('recent-applications');
+            recentAppsContainer.innerHTML = '';
+            
+            const recentApps = [...applications]
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .slice(0, 3);
+                
+            if (recentApps.length === 0) {
+                recentAppsContainer.innerHTML = '<p style="color: var(--text-tertiary); text-align: center;">No applications yet.</p>';
+            } else {
+                recentApps.forEach(app => {
+                    const appDiv = document.createElement('div');
+                    appDiv.className = 'dashboard-app-card';
+                    appDiv.innerHTML = `
+                        <div class="dashboard-app-title">${app.title}</div>
+                        <div class="dashboard-app-company">${app.company}</div>
+                        <div class="dashboard-app-date">${formatDate(app.date)}</div>
+                        <div class="dashboard-app-status status-${app.status.toLowerCase().replace(/\s+/g, '-')}">${app.status}</div>
+                    `;
+                    recentAppsContainer.appendChild(appDiv);
+                });
+            }
+            
+            // Render Dashboard Reminders
+            const dashboardReminders = document.getElementById('dashboard-reminders');
+            dashboardReminders.innerHTML = '';
+            
+            const reminders = applications
+                .filter(app => app.status === 'Applied' && daysSince(app.date) > 10)
+                .slice(0, 3);
+                
+            if (reminders.length === 0) {
+                dashboardReminders.innerHTML = '<p style="color: var(--text-tertiary); text-align: center;">No follow-up reminders at this time.</p>';
+            } else {
+                reminders.forEach(app => {
+                    const reminderDiv = document.createElement('div');
+                    reminderDiv.className = 'dashboard-reminder';
+                    reminderDiv.innerHTML = `
+                        <div class="dashboard-reminder-title">${app.company} - ${app.title}</div>
+                        <div class="dashboard-reminder-days">Applied ${daysSince(app.date)} days ago</div>
+                        <button onclick="markFollowed(${app.id})" class="reminder-action-btn">Follow Up</button>
+                    `;
+                    dashboardReminders.appendChild(reminderDiv);
+                });
+            }
+            
+            // Update dashboard goal progress
+            const weeklyProgress = calculateWeeklyProgress();
+            document.getElementById('dashboard-weekly-goal-progress').style.width = `${weeklyProgress.progressPercent}%`;
+            document.getElementById('dashboard-weekly-apps-submitted').textContent = `${weeklyProgress.weeklyCount} applications`;
+            document.getElementById('dashboard-weekly-goal-target').textContent = `Goal: ${weeklyProgress.weeklyGoal}/week`;
+        }
+        
+        // Calculate weekly progress for dashboard
+        function calculateWeeklyProgress() {
+            const today = new Date();
+            const weekAgo = new Date(today);
+            weekAgo.setDate(today.getDate() - 7);
+            
+            const weeklyApps = applications.filter(app => {
+                const appDate = new Date(app.date);
+                return appDate >= weekAgo && appDate <= today;
+            });
+            
+            const weeklyCount = weeklyApps.length;
+            const weeklyGoal = 10;
+            const progressPercent = Math.min(100, (weeklyCount / weeklyGoal) * 100);
+            
+            return {
+                weeklyCount,
+                weeklyGoal,
+                progressPercent
+            };
+        }
 
         // Theme Toggle Function
         function toggleTheme() {
@@ -3489,6 +4228,7 @@
             ).length;
             const interviewCount = apps.filter(app => app.status === 'Interview Scheduled' || app.status === 'Offer Received' || app.history?.some(h => h.status === 'Interview Scheduled')).length;
             const offerCount = apps.filter(app => app.status === 'Offer Received').length;
+            const rejectedCount = apps.filter(app => app.status === 'Rejected').length;
             
             // Calculate funnel metrics
             const timeToResponse = calculateAverageTimeToStatus(apps, 'Applied', status => status !== 'Applied');
@@ -3502,68 +4242,325 @@
             document.getElementById('time-to-offer').textContent = timeToOffer.toFixed(1) + ' days';
             document.getElementById('avg-cycle-time').textContent = avgCycleTime.toFixed(1) + ' days';
             
-            // Create funnel chart
-            const funnelChartCtx = document.getElementById('funnel-chart').getContext('2d');
-            if (window.funnelChart) window.funnelChart.destroy();
+            // Render Sankey Diagram
+            renderSankeyDiagram(appliedCount, responseCount, interviewCount, offerCount, rejectedCount);
             
-            const maxCount = Math.max(appliedCount, 1); // Avoid division by zero
-            const gradientColors = [
-                'rgba(33, 150, 243, 0.8)',
-                'rgba(255, 152, 0, 0.8)',
-                'rgba(76, 175, 80, 0.8)',
-                'rgba(76, 175, 80, 0.6)'
+            // Render Cyberpunk Funnel Chart
+            renderCyberpunkFunnel(appliedCount, responseCount, interviewCount, offerCount);
+        }
+        
+        // Render Sankey Diagram for Application Flow
+        function renderSankeyDiagram(appliedCount, responseCount, interviewCount, offerCount, rejectedCount) {
+            // Clear previous diagram
+            d3.select("#sankey-diagram").html("");
+            
+            // Calculate values for the diagram
+            // These values are approximations as Sankey requires specific flow values
+            const noResponseCount = Math.max(0, appliedCount - responseCount);
+            const responseNoInterviewCount = Math.max(0, responseCount - interviewCount);
+            const interviewNoOfferCount = Math.max(0, interviewCount - offerCount);
+            
+            // Define the nodes
+            const nodes = [
+                { name: "Applications" },
+                { name: "Responses" },
+                { name: "Interviews" },
+                { name: "Offers" },
+                { name: "No Response" },
+                { name: "Rejected" }
             ];
             
-            window.funnelChart = new Chart(funnelChartCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['Applied', 'Response', 'Interview', 'Offer'],
-                    datasets: [{
-                        label: 'Applications',
-                        data: [appliedCount, responseCount, interviewCount, offerCount],
-                        backgroundColor: gradientColors,
-                        borderColor: 'rgba(0,0,0,0)',
-                        borderWidth: 0,
-                        barPercentage: 0.6,
-                        categoryPercentage: 0.8
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            ticks: {
-                                color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary')
-                            },
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.05)'
-                            }
-                        },
-                        y: {
-                            ticks: {
-                                color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary')
-                            },
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.05)'
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const value = context.raw;
-                                    const percentage = (value / maxCount * 100).toFixed(1);
-                                    return `${value} applications (${percentage}%)`;
-                                }
-                            }
-                        }
-                    }
+            // Define the links
+            const links = [
+                { source: 0, target: 1, value: responseCount },
+                { source: 0, target: 4, value: noResponseCount },
+                { source: 1, target: 2, value: interviewCount },
+                { source: 1, target: 5, value: responseNoInterviewCount },
+                { source: 2, target: 3, value: offerCount },
+                { source: 2, target: 5, value: interviewNoOfferCount }
+            ];
+            
+            // Set up the dimensions and margins
+            const margin = { top: 10, right: 10, bottom: 10, left: 10 };
+            const width = document.getElementById("sankey-diagram").clientWidth - margin.left - margin.right;
+            const height = 280 - margin.top - margin.bottom;
+            
+            // Create the SVG
+            const svg = d3.select("#sankey-diagram")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+            
+            // Create the Sankey generator
+            const sankey = d3.sankey()
+                .nodeWidth(20)
+                .nodePadding(10)
+                .extent([[1, 1], [width - 1, height - 5]]);
+            
+            // Generate the diagram
+            const graph = sankey({
+                nodes: nodes.map(d => Object.assign({}, d)),
+                links: links.map(d => Object.assign({}, d))
+            });
+            
+            // Define the link gradient colors for cyberpunk aesthetic
+            const linkColors = [
+                { source: "Applications", target: "Responses", color: "#00f0ff" }, // accent-primary
+                { source: "Applications", target: "No Response", color: "#ff2a6d" }, // accent-tertiary
+                { source: "Responses", target: "Interviews", color: "#9d00ff" }, // accent-secondary
+                { source: "Responses", target: "Rejected", color: "#ff2a6d" }, // accent-tertiary
+                { source: "Interviews", target: "Offers", color: "#05ffa1" }, // accent-quaternary
+                { source: "Interviews", target: "Rejected", color: "#ff2a6d" } // accent-tertiary
+            ];
+            
+            // Add gradient definitions
+            const defs = svg.append("defs");
+            
+            graph.links.forEach((link, i) => {
+                const gradientId = "gradient-" + i;
+                const sourceNode = nodes[link.source.index].name;
+                const targetNode = nodes[link.target.index].name;
+                
+                const foundColor = linkColors.find(c => 
+                    c.source === sourceNode && c.target === targetNode
+                );
+                
+                const color = foundColor ? foundColor.color : "#00f0ff";
+                
+                const gradient = defs.append("linearGradient")
+                    .attr("id", gradientId)
+                    .attr("gradientUnits", "userSpaceOnUse")
+                    .attr("x1", link.source.x1)
+                    .attr("y1", link.source.y0)
+                    .attr("x2", link.target.x0)
+                    .attr("y2", link.target.y1);
+                
+                gradient.append("stop")
+                    .attr("offset", "0%")
+                    .attr("stop-color", color)
+                    .attr("stop-opacity", 0.8);
+                
+                gradient.append("stop")
+                    .attr("offset", "100%")
+                    .attr("stop-color", "#000000")
+                    .attr("stop-opacity", 0.3);
+            });
+            
+            // Add the links
+            svg.append("g")
+                .selectAll("path")
+                .data(graph.links)
+                .enter()
+                .append("path")
+                .attr("class", "link")
+                .attr("d", d3.sankeyLinkHorizontal())
+                .attr("stroke", (d, i) => "url(#gradient-" + i + ")")
+                .attr("stroke-width", d => Math.max(1, d.width))
+                .style("stroke-opacity", 0.5)
+                .on("mouseover", function() {
+                    d3.select(this).style("stroke-opacity", 0.8);
+                })
+                .on("mouseout", function() {
+                    d3.select(this).style("stroke-opacity", 0.5);
+                });
+            
+            // Node fill colors
+            const nodeColors = {
+                "Applications": "#00f0ff", // accent-primary
+                "Responses": "#9d00ff",    // accent-secondary
+                "Interviews": "#05ffa1",   // accent-quaternary
+                "Offers": "#05ffa1",       // accent-quaternary
+                "No Response": "#ff2a6d",  // accent-tertiary
+                "Rejected": "#ff2a6d"      // accent-tertiary
+            };
+            
+            // Add the nodes
+            const node = svg.append("g")
+                .selectAll("g")
+                .data(graph.nodes)
+                .enter()
+                .append("g")
+                .attr("class", "node");
+            
+            // Node rectangles
+            node.append("rect")
+                .attr("x", d => d.x0)
+                .attr("y", d => d.y0)
+                .attr("height", d => d.y1 - d.y0)
+                .attr("width", d => d.x1 - d.x0)
+                .attr("fill", d => nodeColors[d.name] || "#00f0ff")
+                .attr("opacity", 0.8)
+                .attr("stroke", "#000")
+                .attr("stroke-width", 1)
+                .append("title")
+                .text(d => d.name + "\n" + d.value);
+            
+            // Add the node labels
+            node.append("text")
+                .attr("x", d => d.x0 < width / 2 ? d.x1 + 6 : d.x0 - 6)
+                .attr("y", d => (d.y1 + d.y0) / 2)
+                .attr("dy", "0.35em")
+                .attr("text-anchor", d => d.x0 < width / 2 ? "start" : "end")
+                .text(d => d.name + " (" + d.value + ")")
+                .attr("font-family", "'Space Mono', monospace")
+                .attr("font-size", "12px")
+                .attr("fill", "white")
+                .attr("stroke", "none")
+                .style("text-shadow", "0 0 3px #00f0ff");
+        }
+        
+        // Render Cyberpunk Funnel Chart
+        function renderCyberpunkFunnel(appliedCount, responseCount, interviewCount, offerCount) {
+            // Clear previous diagram
+            d3.select("#funnel-chart-container").html("");
+            
+            // Set up dimensions
+            const margin = { top: 20, right: 20, bottom: 30, left: 20 };
+            const width = document.getElementById("funnel-chart-container").clientWidth - margin.left - margin.right;
+            const height = 250 - margin.top - margin.bottom;
+            
+            // Create the SVG
+            const svg = d3.select("#funnel-chart-container")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+            
+            // Funnel data
+            const data = [
+                { stage: "Applied", value: appliedCount },
+                { stage: "Responses", value: responseCount },
+                { stage: "Interviews", value: interviewCount },
+                { stage: "Offers", value: offerCount }
+            ];
+            
+            // Calculate funnel properties
+            const stageHeight = height / data.length;
+            const maxValue = d3.max(data, d => d.value);
+            const maxWidth = width * 0.8;
+            const xScale = d3.scaleLinear()
+                .domain([0, maxValue])
+                .range([0, maxWidth]);
+            
+            // Define the gradient
+            const defs = svg.append("defs");
+            
+            const stageColors = [
+                { offset: "0%", color: "#00f0ff" }, // accent-primary
+                { offset: "33%", color: "#9d00ff" }, // accent-secondary
+                { offset: "66%", color: "#ff2a6d" }, // accent-tertiary
+                { offset: "100%", color: "#05ffa1" }  // accent-quaternary
+            ];
+            
+            // Create gradient for each stage
+            data.forEach((d, i) => {
+                const gradientId = "funnel-gradient-" + i;
+                
+                const gradient = defs.append("linearGradient")
+                    .attr("id", gradientId)
+                    .attr("x1", "0%")
+                    .attr("y1", "0%")
+                    .attr("x2", "100%")
+                    .attr("y2", "0%");
+                
+                gradient.append("stop")
+                    .attr("offset", "0%")
+                    .attr("stop-color", stageColors[i % stageColors.length].color)
+                    .attr("stop-opacity", 0.9);
+                
+                gradient.append("stop")
+                    .attr("offset", "100%")
+                    .attr("stop-color", stageColors[(i + 1) % stageColors.length].color)
+                    .attr("stop-opacity", 0.7);
+                
+                // Add a glow filter
+                const filter = defs.append("filter")
+                    .attr("id", "glow" + i)
+                    .attr("x", "-50%")
+                    .attr("y", "-50%")
+                    .attr("width", "200%")
+                    .attr("height", "200%");
+                
+                filter.append("feGaussianBlur")
+                    .attr("stdDeviation", "3")
+                    .attr("result", "coloredBlur");
+                
+                const feMerge = filter.append("feMerge");
+                feMerge.append("feMergeNode")
+                    .attr("in", "coloredBlur");
+                feMerge.append("feMergeNode")
+                    .attr("in", "SourceGraphic");
+            });
+            
+            // Draw the funnel stages
+            data.forEach((d, i) => {
+                const y = i * stageHeight;
+                let topWidth, bottomWidth;
+                
+                // Calculate trapezoid dimensions
+                if (i === 0) {
+                    topWidth = xScale(d.value);
+                    bottomWidth = i < data.length - 1 ? xScale(data[i + 1].value) : topWidth;
+                } else {
+                    topWidth = xScale(data[i - 1].value);
+                    bottomWidth = xScale(d.value);
+                }
+                
+                // Adjust for first stage
+                if (i === 0) bottomWidth = xScale(d.value);
+                
+                // Create the trapezoid path
+                const points = [
+                    [(width - topWidth) / 2, y],
+                    [(width + topWidth) / 2, y],
+                    [(width + bottomWidth) / 2, y + stageHeight],
+                    [(width - bottomWidth) / 2, y + stageHeight]
+                ];
+                
+                // Draw the trapezoid
+                svg.append("polygon")
+                    .attr("class", "funnel-stage")
+                    .attr("points", points.map(p => p.join(",")).join(" "))
+                    .attr("fill", "url(#funnel-gradient-" + i + ")")
+                    .attr("filter", "url(#glow" + i + ")")
+                    .on("mouseover", function() {
+                        d3.select(this).attr("filter", "url(#glow" + i + ")");
+                    })
+                    .on("mouseout", function() {
+                        d3.select(this).attr("filter", "none");
+                    });
+                
+                // Add the stage label
+                svg.append("text")
+                    .attr("class", "funnel-label")
+                    .attr("x", width / 2)
+                    .attr("y", y + stageHeight / 2 - 6)
+                    .text(d.stage);
+                
+                // Add the value
+                svg.append("text")
+                    .attr("class", "funnel-value")
+                    .attr("x", width / 2)
+                    .attr("y", y + stageHeight / 2 + 12)
+                    .text(d.value);
+                
+                // Add conversion rate if not first stage
+                if (i > 0) {
+                    const conversionRate = ((d.value / data[i - 1].value) * 100 || 0).toFixed(1);
+                    
+                    svg.append("text")
+                        .attr("class", "funnel-rate")
+                        .attr("x", width / 2)
+                        .attr("y", y + 5)
+                        .attr("text-anchor", "middle")
+                        .attr("fill", "#ff00ff")
+                        .attr("font-size", "10px")
+                        .attr("font-family", "'Space Mono', monospace")
+                        .style("text-shadow", "0 0 3px #ff00ff")
+                        .text("▼ " + conversionRate + "%");
                 }
             });
         }
@@ -3665,6 +4662,18 @@
             const trendsChartCtx = document.getElementById('application-trends-chart').getContext('2d');
             if (window.trendsChart) window.trendsChart.destroy();
             
+            // Create gradients for cyberpunk styling
+            const createGradient = (ctx, colorStart, colorEnd) => {
+                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                gradient.addColorStop(0, colorStart);
+                gradient.addColorStop(1, colorEnd);
+                return gradient;
+            };
+            
+            const appliedGradient = createGradient(trendsChartCtx, 'rgba(0, 240, 255, 0.7)', 'rgba(0, 240, 255, 0.1)');
+            const responsesGradient = createGradient(trendsChartCtx, 'rgba(157, 0, 255, 0.7)', 'rgba(157, 0, 255, 0.1)');
+            const interviewsGradient = createGradient(trendsChartCtx, 'rgba(5, 255, 161, 0.7)', 'rgba(5, 255, 161, 0.1)');
+            
             window.trendsChart = new Chart(trendsChartCtx, {
                 type: 'line',
                 data: {
@@ -3673,29 +4682,53 @@
                         {
                             label: 'Applied',
                             data: appCounts,
-                            borderColor: 'rgba(33, 150, 243, 1)',
-                            backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                            borderColor: '#00f0ff', // accent-primary
+                            backgroundColor: appliedGradient,
                             borderWidth: 2,
-                            tension: 0.3,
-                            fill: true
+                            tension: 0.4,
+                            fill: true,
+                            pointBackgroundColor: '#00f0ff',
+                            pointBorderColor: '#000000',
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBorderWidth: 1,
+                            pointHoverBorderWidth: 2,
+                            pointHoverBackgroundColor: '#ffffff',
+                            pointHoverBorderColor: '#00f0ff'
                         },
                         {
                             label: 'Responses',
                             data: responseCounts,
-                            borderColor: 'rgba(255, 152, 0, 1)',
-                            backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                            borderColor: '#9d00ff', // accent-secondary
+                            backgroundColor: responsesGradient,
                             borderWidth: 2,
-                            tension: 0.3,
-                            fill: true
+                            tension: 0.4,
+                            fill: true,
+                            pointBackgroundColor: '#9d00ff',
+                            pointBorderColor: '#000000',
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBorderWidth: 1,
+                            pointHoverBorderWidth: 2,
+                            pointHoverBackgroundColor: '#ffffff',
+                            pointHoverBorderColor: '#9d00ff'
                         },
                         {
                             label: 'Interviews',
                             data: interviewCounts,
-                            borderColor: 'rgba(76, 175, 80, 1)',
-                            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                            borderColor: '#05ffa1', // accent-quaternary
+                            backgroundColor: interviewsGradient,
                             borderWidth: 2,
-                            tension: 0.3,
-                            fill: true
+                            tension: 0.4,
+                            fill: true,
+                            pointBackgroundColor: '#05ffa1',
+                            pointBorderColor: '#000000',
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBorderWidth: 1,
+                            pointHoverBorderWidth: 2,
+                            pointHoverBackgroundColor: '#ffffff',
+                            pointHoverBorderColor: '#05ffa1'
                         }
                     ]
                 },
@@ -3707,30 +4740,67 @@
                             beginAtZero: true,
                             ticks: {
                                 stepSize: 1,
-                                color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary')
+                                color: "#00f0ff",
+                                font: {
+                                    family: "'Space Mono', monospace",
+                                    size: 10
+                                }
                             },
                             grid: {
-                                color: 'rgba(255, 255, 255, 0.05)'
+                                color: 'rgba(0, 240, 255, 0.1)',
+                                lineWidth: 0.5,
+                                tickBorderDash: [2, 2]
+                            },
+                            border: {
+                                dash: [4, 4],
+                                color: 'rgba(0, 240, 255, 0.2)'
                             }
                         },
                         x: {
                             ticks: {
-                                color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary'),
+                                color: "#00f0ff",
                                 maxRotation: 45,
-                                minRotation: 45
+                                minRotation: 45,
+                                font: {
+                                    family: "'Space Mono', monospace",
+                                    size: 10
+                                }
                             },
                             grid: {
-                                color: 'rgba(255, 255, 255, 0.05)'
+                                color: 'rgba(0, 240, 255, 0.1)',
+                                lineWidth: 0.5
+                            },
+                            border: {
+                                dash: [4, 4],
+                                color: 'rgba(0, 240, 255, 0.2)'
                             }
                         }
                     },
                     plugins: {
                         legend: {
                             labels: {
-                                color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary')
+                                color: "#00f0ff",
+                                font: {
+                                    family: "'Space Mono', monospace",
+                                    size: 12
+                                },
+                                boxWidth: 15,
+                                padding: 15
                             }
                         },
                         tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            borderColor: '#00f0ff',
+                            borderWidth: 1,
+                            bodyFont: {
+                                family: "'Space Mono', monospace"
+                            },
+                            titleFont: {
+                                family: "'Space Mono', monospace",
+                                weight: 'bold'
+                            },
                             callbacks: {
                                 afterLabel: function(context) {
                                     const datasetIndex = context.datasetIndex;
