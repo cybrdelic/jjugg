@@ -1,0 +1,702 @@
+/* Feature-specific modules */
+
+/* Dashboard Home Styles */
+.quick-actions {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.dashboard-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.dashboard-column {
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.dashboard-column h3 {
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.view-all-btn {
+    width: 100%;
+    padding: 0.5rem;
+    margin-top: 1rem;
+    background: var(--bg-secondary);
+    border: var(--border-thin);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.view-all-btn:hover {
+    background: var(--accent-primary);
+    color: black;
+}
+
+.dashboard-goal-progress {
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.dashboard-app-card {
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    padding: 0.8rem;
+    margin-bottom: 0.8rem;
+    transition: all 0.2s ease;
+}
+
+.dashboard-app-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-app-title {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.dashboard-app-company {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.3rem;
+}
+
+.dashboard-app-date, .dashboard-app-status {
+    font-size: 0.8rem;
+    display: inline-block;
+    margin-right: 1rem;
+}
+
+.dashboard-app-date {
+    color: var(--text-tertiary);
+}
+
+.dashboard-app-status {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    background: rgba(33, 150, 243, 0.1);
+    color: var(--status-applied);
+}
+
+.status-applied {
+    background: rgba(33, 150, 243, 0.1);
+    color: var(--status-applied);
+}
+
+.status-interview-scheduled {
+    background: rgba(255, 152, 0, 0.1);
+    color: var(--status-interview);
+}
+
+.status-offer-received {
+    background: rgba(76, 175, 80, 0.1);
+    color: var(--status-offer);
+}
+
+.status-rejected {
+    background: rgba(244, 67, 54, 0.1);
+    color: var(--status-rejected);
+}
+
+.dashboard-reminder {
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    padding: 0.8rem;
+    margin-bottom: 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.dashboard-reminder-title {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.dashboard-reminder-days {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+}
+
+.reminder-action-btn {
+    align-self: flex-start;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.reminder-action-btn:hover {
+    background: var(--accent-primary);
+    color: black;
+}
+
+/* Kanban Board Styles */
+.kanban-container {
+    display: none;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    padding-bottom: 1rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-primary) var(--bg-tertiary);
+}
+
+.kanban-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.kanban-container::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+}
+
+.kanban-container::-webkit-scrollbar-thumb {
+    background: var(--accent-primary);
+    border-radius: 4px;
+}
+
+.kanban-column {
+    background: var(--glass-bg);
+    border: var(--border-medium);
+    border-radius: 8px;
+    padding: 1rem;
+    min-width: 250px;
+    display: flex;
+    flex-direction: column;
+}
+
+.kanban-column h3 {
+    font-family: 'Space Mono', monospace;
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.kanban-column h3 .count {
+    font-size: 0.75rem;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    padding: 0.2rem 0.5rem;
+    color: var(--text-secondary);
+}
+
+.kanban-cards {
+    min-height: 50px;
+    max-height: 70vh;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-primary) var(--bg-tertiary);
+    flex: 1;
+}
+
+.kanban-cards::-webkit-scrollbar {
+    width: 6px;
+}
+
+.kanban-cards::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+}
+
+.kanban-cards::-webkit-scrollbar-thumb {
+    background: var(--accent-primary);
+    border-radius: 4px;
+}
+
+.kanban-load-more {
+    text-align: center;
+    padding: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    margin-top: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.kanban-load-more:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.kanban-card {
+    background: var(--bg-tertiary);
+    border: var(--border-thin);
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.kanban-card:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.kanban-card.favorite::before {
+    content: "★";
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 25px;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-primary);
+    color: #000;
+    border-radius: 50%;
+    font-size: 0.8rem;
+    transform: rotate(15deg);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.kanban-card .title {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.kanban-card .company {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.kanban-card .actions {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.kanban-card:hover .actions {
+    opacity: 1;
+}
+
+/* Salary Intelligence */
+.salary-intelligence {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.salary-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.salary-stat-group {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.salary-card {
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+[data-theme="light"] .salary-card {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.salary-card:hover {
+    background: rgba(0, 240, 255, 0.1);
+    transform: translateY(-3px);
+}
+
+.salary-amount {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0.5rem 0;
+    text-align: center;
+}
+
+.salary-label {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: 'Space Mono', monospace;
+    text-align: center;
+}
+
+.salary-selector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.mini-select {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    margin-bottom: 0.5rem;
+    width: 100%;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.2);
+    border: var(--border-thin);
+    border-radius: 4px;
+    color: var(--text-secondary);
+}
+
+[data-theme="light"] .mini-select {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* Keywords Analysis */
+.keywords-analysis {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+#skills-cloud {
+    width: 100%;
+    height: 300px;
+    position: relative;
+}
+
+/* Company Insights */
+.company-insights {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.insight-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    height: 100%;
+}
+
+.insight-card {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    flex: 1;
+}
+
+[data-theme="light"] .insight-card {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.insight-card h4 {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    text-align: center;
+}
+
+.insight-card ul {
+    list-style: none;
+}
+
+.insight-card li {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.8rem;
+    border-bottom: var(--border-thin);
+    font-size: 0.9rem;
+}
+
+.insight-card li:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.response-time, .salary-indicator {
+    font-weight: 600;
+    color: var(--accent-primary);
+}
+
+/* Market Health */
+.market-health {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 2rem;
+}
+
+.market-metrics {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2rem;
+}
+
+.market-metric {
+    text-align: center;
+}
+
+.market-value {
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.market-label {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: 'Space Mono', monospace;
+}
+
+.market-trend {
+    text-align: center;
+}
+
+.trend-up {
+    color: #4CAF50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.trend-down {
+    color: #F44336;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.trend-up svg {
+    transform: rotate(-45deg);
+}
+
+.trend-down svg {
+    transform: rotate(45deg);
+}
+
+.trend-label {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    margin-top: 0.5rem;
+}
+
+/* Remote Insights */
+.remote-insights {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.response-rate {
+    font-weight: 600;
+    color: var(--accent-primary);
+}
+
+/* Source Analysis */
+.source-analysis {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+/* Recommendations */
+.recommendations-panel {
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(157, 0, 255, 0.1));
+}
+
+.recommendations {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+.recommendation-card {
+    background: var(--glass-bg);
+    border: var(--border-thin);
+    border-radius: 8px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.recommendation-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.recommendation-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.recommendation-content h4 {
+    font-size: 1rem;
+    margin-bottom: 0.8rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.recommendation-content p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* Timeline Styles */
+.timeline {
+    position: relative;
+    padding: 1rem 0;
+}
+
+.timeline::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 20px;
+    height: 100%;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--accent-primary), var(--accent-secondary));
+    opacity: 0.3;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 45px;
+    padding-bottom: 1.5rem;
+}
+
+.timeline-dot {
+    position: absolute;
+    left: 14px;
+    top: 10px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    border: 3px solid var(--bg-primary);
+}
+
+[data-theme="light"] .timeline-dot {
+    border-color: var(--bg-secondary);
+}
+
+.timeline-date {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.timeline-content {
+    padding: 0.8rem;
+    background: var(--glass-bg);
+    border-radius: 6px;
+    margin-top: 0.5rem;
+}
+
+[data-theme="light"] .timeline-content {
+    background: var(--glass-bg);
+}
+
+/* Goal Progress */
+.goal-progress {
+    width: 100%;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 0.5rem 0 1rem;
+}
+
+[data-theme="light"] .goal-progress {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.goal-bar {
+    height: 100%;
+    background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.goal-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* Reminders Styles */
+.reminders-list {
+    list-style: none;
+}
+
+.reminder-item {
+    padding: 1rem;
+    margin-bottom: 0.8rem;
+    background: rgba(255, 152, 0, 0.05);
+    border-left: 3px solid var(--status-interview);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Export Button */
+.export-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+}
