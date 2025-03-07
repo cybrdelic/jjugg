@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,8 +9,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <!-- Enhanced analytics visualizations -->
-    <script src="enhanced-analytics.js"></script>
     <style>
         /* Root Variables for Theming */
         :root {
@@ -2401,703 +2398,74 @@
         }
     </style>
 </head>
-
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="components/shared/enhanced-visualizations.css">
+</head>
 <body>
-    <!-- Simple application title -->
-    <h1 class="app-title">jjugg - Analytics</h1>
-
-    <!-- Main Content with Sidebar Navigation -->
-    <main>
-        <!-- Sidebar Navigation -->
-        <div class="sidebar">
-            <ul class="sidebar-nav">
-                <li class="sidebar-item">
-                    <a href="jjugg-main.html" style="text-decoration: none; color: inherit;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                        <span>Home</span>
-                    </a>
-                </li>
-                <li class="sidebar-item" data-target="applications-section">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
-                    <span>Applications</span>
-                </li>
-                <li class="sidebar-item" data-target="reminders-section">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-                    <span>Reminders</span>
-                </li>
-                <li class="sidebar-item active" data-target="analytics-section">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-                    <span>Analytics</span>
-                </li>
-                <li class="sidebar-item" data-target="goals-section">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                    <span>Goals</span>
-                </li>
-                <li class="sidebar-item" data-target="timeline-section">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
-                    <span>Timeline</span>
-                </li>
-            </ul>
-            <div class="sidebar-footer">
-                <!-- Theme Toggle -->
-                <div class="theme-toggle" onclick="toggleTheme()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="theme-icon">
-                        <circle cx="12" cy="12" r="5"></circle>
-                        <line x1="12" y1="1" x2="12" y2="3"></line>
-                        <line x1="12" y1="21" x2="12" y2="23"></line>
-                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                        <line x1="1" y1="12" x2="3" y2="12"></line>
-                        <line x1="21" y1="12" x2="23" y2="12"></line>
-                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                    </svg>
-                    <span id="theme-text">Light Mode</span>
-                </div>
-                
-                <!-- Login Section -->
-                <div id="login-section">
-                    <input type="text" id="github-token-input" placeholder="Enter your GitHub PAT" />
-                    <button class="btn-modal" onclick="handleLogin()">Login with GitHub</button>
-                    <button class="btn-modal" onclick="logout()" id="logout-btn" style="display: none;">Logout</button>
-                </div>
-                
-                <button class="btn-primary add-application-btn" onclick="openModal('app-modal')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                    Add Application
-                </button>
-                <button class="btn-modal save-job-btn" onclick="openModal('save-job-modal')">Save Job</button>
-            </div>
-        </div>
+    <div class="component-wrapper">
+        <h1>Component: kpi</h1>
+        <!-- Analytics Component: kpi -->
         
-        <!-- Content Area -->
-        <div class="content-area">
-            <!-- Dashboard -->
-            <div id="dashboard">
-                <!-- Dashboard Home Section -->
-                <section class="card section-content" id="dashboard-home">
-                    <div class="card-header">
-                        <h2>Dashboard</h2>
-                    </div>
-                    <div class="card-content">
-                        <!-- Quick Actions -->
-                        <div class="quick-actions">
-                            <button class="btn-primary" onclick="openModal('app-modal')">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                Add Application
-                            </button>
-                            <button class="btn-modal" onclick="openModal('save-job-modal')">Save Job</button>
-                        </div>
-                        
-                        <!-- KPI Dashboard (Key metrics only) -->
-                        <div class="kpi-dashboard">
-                            <div class="kpi-card" id="kpi-application-count">
-                                <div class="kpi-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
-                                </div>
-                                <div class="kpi-content">
-                                    <div class="kpi-label">Total Applications</div>
-                                    <div class="kpi-value" id="total-applications">0</div>
-                                    <div class="kpi-change" id="application-rate">0/week <span class="arrow">→</span></div>
-                                </div>
-                            </div>
-                            <div class="kpi-card" id="kpi-response-rate">
-                                <div class="kpi-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-                                </div>
-                                <div class="kpi-content">
-                                    <div class="kpi-label">Response Rate</div>
-                                    <div class="kpi-value" id="response-rate-value">0%</div>
-                                    <div class="kpi-change" id="response-rate-change">0% <span class="arrow">→</span></div>
-                                </div>
-                            </div>
-                            <div class="kpi-card" id="kpi-interview-rate">
-                                <div class="kpi-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                                </div>
-                                <div class="kpi-content">
-                                    <div class="kpi-label">Interview Rate</div>
-                                    <div class="kpi-value" id="interview-rate-value">0%</div>
-                                    <div class="kpi-change" id="interview-rate-change">0% <span class="arrow">→</span></div>
-                                </div>
-                            </div>
-                            <div class="kpi-card" id="kpi-active-applications">
-                                <div class="kpi-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                                </div>
-                                <div class="kpi-content">
-                                    <div class="kpi-label">Active Applications</div>
-                                    <div class="kpi-value" id="active-applications">0</div>
-                                    <div class="kpi-change" id="active-applications-change">0 pending <span class="arrow">→</span></div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Recent Applications & Reminders -->
-                        <div class="dashboard-columns">
-                            <div class="dashboard-column">
-                                <h3>Recent Applications</h3>
-                                <div id="recent-applications">
-                                    <!-- Recent applications will be populated here by JavaScript -->
-                                </div>
-                                <button class="view-all-btn" onclick="switchToSection('applications-section')">View All</button>
-                            </div>
-                            <div class="dashboard-column">
-                                <h3>Follow-up Reminders</h3>
-                                <div id="dashboard-reminders">
-                                    <!-- Reminders will be populated here by JavaScript -->
-                                </div>
-                                <button class="view-all-btn" onclick="switchToSection('reminders-section')">View All</button>
-                            </div>
-                        </div>
-                        
-                        <!-- Weekly Goal Progress -->
-                        <div class="dashboard-goal-progress">
-                            <h3>Weekly Application Target</h3>
-                            <div class="goal-progress">
-                                <div class="goal-bar" id="dashboard-weekly-goal-progress"></div>
-                            </div>
-                            <div class="goal-stats">
-                                <span id="dashboard-weekly-apps-submitted">0 applications</span>
-                                <span id="dashboard-weekly-goal-target">Goal: 10/week</span>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Applications Section -->
-                <section class="card section-content" id="applications-section" style="display: none;">
-                    <div class="card-header">
-                        <h2>Applications</h2>
-                        <div class="toggle-container">
-                            <label class="toggle-label" for="view-toggle">Kanban View</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="view-toggle" onchange="toggleView()">
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="card-content">
-                        <div class="controls">
-                            <div class="filter-control">
-                                <select id="filter" title="Filter applications by status or favorites">
-                                    <option value="All">All Applications</option>
-                                    <option value="Applied">Applied</option>
-                                    <option value="Interview Scheduled">Interview Scheduled</option>
-                                    <option value="Offer Received">Offer Received</option>
-                                    <option value="Rejected">Rejected</option>
-                                    <option value="Favorites">Favorites</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="filter-inputs">
-                            <input type="text" id="filter-title" placeholder="Filter Title" title="Filter by job title">
-                            <input type="text" id="filter-company" placeholder="Filter Company"
-                                title="Filter by company name">
-                            <input type="date" id="filter-date" title="Filter by application date">
-                            <select id="filter-status" title="Filter by status">
-                                <option value="">All Statuses</option>
-                                <option value="Applied">Applied</option>
-                                <option value="Interview Scheduled">Interview Scheduled</option>
-                                <option value="Offer Received">Offer Received</option>
-                                <option value="Rejected">Rejected</option>
-                            </select>
-                            <input type="number" id="filter-expected" placeholder="Min Expected $"
-                                title="Filter by minimum expected salary">
-                            <input type="number" id="filter-offered" placeholder="Min Offered $"
-                                title="Filter by minimum offered salary">
-                            <input type="text" id="filter-notes" placeholder="Filter Notes" title="Filter by notes">
-                            <input type="text" id="filter-url" placeholder="Filter URL" title="Filter by URL">
-                        </div>
-                        <div class="table-container" id="table-view">
-                            <table id="applications-table">
-                                <thead>
-                                    <tr>
-                                        <th onclick="sortTable(0)">Job Title</th>
-                                        <th onclick="sortTable(1)">Company</th>
-                                        <th onclick="sortTable(2)">Date</th>
-                                        <th onclick="sortTable(3)">Status</th>
-                                        <th onclick="sortTable(4)">Expected Salary</th>
-                                        <th onclick="sortTable(5)">Offered Salary</th>
-                                        <th onclick="sortTable(6)">Notes</th>
-                                        <th onclick="sortTable(7)">URL</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                        <div class="kanban-container" id="kanban-view">
-                            <div class="kanban-column" data-status="Applied">
-                                <h3>Applied</h3>
-                                <div class="kanban-cards" id="kanban-applied"></div>
-                            </div>
-                            <div class="kanban-column" data-status="Interview Scheduled">
-                                <h3>Interview Scheduled</h3>
-                                <div class="kanban-cards" id="kanban-interview"></div>
-                            </div>
-                            <div class="kanban-column" data-status="Offer Received">
-                                <h3>Offer Received</h3>
-                                <div class="kanban-cards" id="kanban-offer"></div>
-                            </div>
-                            <div class="kanban-column" data-status="Rejected">
-                                <h3>Rejected</h3>
-                                <div class="kanban-cards" id="kanban-rejected"></div>
-                            </div>
-                        </div>
-                        <div class="export-container">
-                            <button onclick="exportData()" title="Export application data to CSV">Export Data</button>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Reminders Section -->
-                <section class="card section-content" id="reminders-section" style="display: none;">
-                    <div class="card-header">
-                        <h2>Follow-up Reminders</h2>
-                    </div>
-                    <div class="card-content">
-                        <ul class="reminders-list" id="reminders-list"></ul>
-                    </div>
-                </section>
-
-                <!-- Analytics Section -->
-                <section class="card section-content" id="analytics-section" style="display: block;">
-                    <div class="card-header">
-                        <h2>Job Search Analytics</h2>
-                        <select id="analytics-time-range" class="analytics-filter" title="Filter analytics by time range">
-                            <option value="all">All Time</option>
-                            <option value="year">Past Year</option>
-                            <option value="quarter">Past Quarter</option>
-                            <option value="month" selected>Past Month</option>
-                            <option value="week">Past Week</option>
-                        </select>
-                    </div>
-                    <div class="card-content">
-                        <!-- Analytics Tabs -->
-                        <div class="analytics-tabs">
-                            <button class="analytics-tab active" data-tab="pipeline">Application Pipeline</button>
-                            <button class="analytics-tab" data-tab="activity">Activity & Trends</button>
-                            <button class="analytics-tab" data-tab="remote">Remote Jobs</button>
-                            <button class="analytics-tab" data-tab="salary">Salary Insights</button>
-                            <button class="analytics-tab" data-tab="sources">Source Analysis</button>
-                        </div>
-                        
-                        <!-- Application Pipeline Tab -->
-                        <div class="analytics-tab-content active" id="pipeline-tab">
-                            <div class="card">
-                                <h4>Application Journey</h4>
-                                <div id="sankey-diagram" class="sankey-container"></div>
-                            </div>
-                            
-                            <div class="funnel-container">
-                                <div class="card">
-                                    <h4>Conversion Funnel</h4>
-                                    <div id="funnel-chart-container" class="funnel-chart"></div>
-                                </div>
-                                <div class="funnel-metrics">
-                                    <div class="funnel-metric">
-                                        <div class="metric-label">Time to First Response</div>
-                                        <div class="metric-value" id="time-to-response">0 days</div>
-                                    </div>
-                                    <div class="funnel-metric">
-                                        <div class="metric-label">Time to Interview</div>
-                                        <div class="metric-value" id="time-to-interview">0 days</div>
-                                    </div>
-                                    <div class="funnel-metric">
-                                        <div class="metric-label">Time to Offer</div>
-                                        <div class="metric-value" id="time-to-offer">0 days</div>
-                                    </div>
-                                    <div class="funnel-metric">
-                                        <div class="metric-label">Average Cycle</div>
-                                        <div class="metric-value" id="avg-cycle-time">0 days</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Activity & Trends Tab -->
-                        <div class="analytics-tab-content" id="activity-tab">
-                            <div class="card">
-                                <h4>Application Activity Timeline</h4>
-                                <div class="chart-container expanded">
-                                    <canvas id="application-trends-chart"></canvas>
-                                </div>
-                            </div>
-                            <div class="trends-container">
-                                <div class="card" style="flex: 2;">
-                                    <h4>Key Insights</h4>
-                                    <div class="trend-insights" id="trend-insights">
-                                        <div class="insight">
-                                            <div class="insight-icon">📆</div>
-                                            <div class="insight-content">
-                                                <h4>Optimal Application Day</h4>
-                                                <p>Your most successful applications were submitted on <span id="peak-day">Wednesday</span>.</p>
-                                            </div>
-                                        </div>
-                                        <div class="insight">
-                                            <div class="insight-icon">🔍</div>
-                                            <div class="insight-content">
-                                                <h4>Job Board Performance</h4>
-                                                <p><span id="best-job-board">LinkedIn</span> has provided the best response rate at <span id="best-job-board-rate">35%</span>.</p>
-                                            </div>
-                                        </div>
-                                        <div class="insight">
-                                            <div class="insight-icon">🎯</div>
-                                            <div class="insight-content">
-                                                <h4>Weekly Application Goal</h4>
-                                                <p>Target: <span id="weekly-app-goal">10</span> applications/week. Current: <span id="current-weekly-rate">7</span>/week.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Remote Jobs Tab -->
-                        <div class="analytics-tab-content" id="remote-tab">
-                            <div class="remote-insights">
-                                <div class="chart-container">
-                                    <canvas id="remote-vs-onsite-chart"></canvas>
-                                </div>
-                                <div class="insight-card-container">
-                                    <div class="insight-card">
-                                        <h4>Remote Job Success</h4>
-                                        <div class="metric-container">
-                                            <div class="metric">
-                                                <div class="metric-value" id="remote-application-count">0</div>
-                                                <div class="metric-label">Applications</div>
-                                            </div>
-                                            <div class="metric">
-                                                <div class="metric-value" id="remote-response-rate">0%</div>
-                                                <div class="metric-label">Response Rate</div>
-                                            </div>
-                                            <div class="metric">
-                                                <div class="metric-value" id="remote-interview-rate">0%</div>
-                                                <div class="metric-label">Interview Rate</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="insight-card">
-                                        <h4>Top Remote Platforms</h4>
-                                        <ul id="top-remote-platforms">
-                                            <li>We Work Remotely <span class="response-rate">35%</span></li>
-                                            <li>Remote OK <span class="response-rate">28%</span></li>
-                                            <li>LinkedIn Remote <span class="response-rate">22%</span></li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Salary Insights Tab -->
-                        <div class="analytics-tab-content" id="salary-tab">
-                            <div class="salary-intelligence">
-                                <div class="salary-stats">
-                                    <div class="salary-stat-group">
-                                        <div class="salary-card">
-                                            <div class="salary-label">Average Expected</div>
-                                            <div class="salary-amount" id="avg-expected">$0</div>
-                                        </div>
-                                        <div class="salary-card">
-                                            <div class="salary-label">Average Offered</div>
-                                            <div class="salary-amount" id="avg-offered">$0</div>
-                                        </div>
-                                        <div class="salary-card">
-                                            <div class="salary-label">Offer vs. Expected</div>
-                                            <div class="salary-amount" id="offer-expected-ratio">0%</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="chart-container expanded">
-                                    <canvas id="salary-comparison-chart"></canvas>
-                                </div>
-                                <div class="salary-insights">
-                                    <div class="insight">
-                                        <div class="insight-icon">💰</div>
-                                        <div class="insight-content">
-                                            <h4>Remote vs. On-site</h4>
-                                            <p>Remote positions offer <span id="remote-salary-diff">3%</span> <span id="remote-salary-direction">lower</span> salaries than on-site roles in your data.</p>
-                                        </div>
-                                    </div>
-                                    <div class="insight">
-                                        <div class="insight-icon">📊</div>
-                                        <div class="insight-content">
-                                            <h4>Salary by Job Title</h4>
-                                            <p><span id="highest-paying-title">Senior Developer</span> roles show the highest average salary at <span id="highest-title-salary">$120K</span>.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Source Analysis Tab -->
-                        <div class="analytics-tab-content" id="sources-tab">
-                            <div class="source-analysis">
-                                <div class="chart-container">
-                                    <canvas id="source-comparison-chart"></canvas>
-                                </div>
-                                <div class="insight-cards">
-                                    <div class="insight-card">
-                                        <h4>Manual vs. Automatic</h4>
-                                        <p>
-                                            <span id="auto-track-count">0</span> applications tracked automatically (<span id="auto-track-percent">0%</span>)<br>
-                                            <span id="manual-track-count">0</span> applications added manually (<span id="manual-track-percent">0%</span>)
-                                        </p>
-                                        <div class="chart-mini-container">
-                                            <canvas id="tracking-method-chart"></canvas>
-                                        </div>
-                                    </div>
-                                    <div class="insight-card">
-                                        <h4>Top Performing Sources</h4>
-                                        <ul id="top-sources">
-                                            <li>LinkedIn <span class="response-time">45% response</span></li>
-                                            <li>We Work Remotely <span class="response-time">38% response</span></li>
-                                            <li>Direct Company <span class="response-time">32% response</span></li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Actionable Recommendations -->
-                            <div class="recommendations-panel">
-                                <h3>Actionable Recommendations</h3>
-                                <div class="recommendations">
-                                    <div class="recommendation-card">
-                                        <div class="recommendation-icon">🚀</div>
-                                        <div class="recommendation-content">
-                                            <h4>Application Strategy</h4>
-                                            <p>Increase focus on <span id="rec-job-board">We Work Remotely</span> - it has your highest response rate at <span id="rec-response-rate">38%</span>.</p>
-                                        </div>
-                                    </div>
-                                    <div class="recommendation-card">
-                                        <div class="recommendation-icon">🔄</div>
-                                        <div class="recommendation-content">
-                                            <h4>Follow-up Reminder</h4>
-                                            <p><span id="followup-count">3</span> applications need follow-up (applied >10 days ago). See Reminders section.</p>
-                                        </div>
-                                    </div>
-                                    <div class="recommendation-card">
-                                        <div class="recommendation-icon">📈</div>
-                                        <div class="recommendation-content">
-                                            <h4>Weekly Goal</h4>
-                                            <p>You're <span id="goal-status">below</span> your weekly goal. Try to submit <span id="remaining-apps">3</span> more applications this week.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Goals Section -->
-                <section class="card section-content" id="goals-section" style="display: none;">
-                    <div class="card-header">
-                        <h2>Job Search Goals</h2>
-                    </div>
-                    <div class="card-content">
-                        <div class="goal-container">
-                            <h3>Weekly Application Target</h3>
-                            <div class="goal-progress">
-                                <div class="goal-bar" id="weekly-goal-progress"></div>
-                            </div>
-                            <div class="goal-stats">
-                                <span id="weekly-apps-submitted">0 applications</span>
-                                <span id="weekly-goal-target">Goal: 10/week</span>
-                            </div>
-                            <h3 class="mt-4">Application Activity</h3>
-                            <div class="chart-container">
-                                <canvas id="application-chart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Timeline Section -->
-                <section class="card section-content" id="timeline-section" style="display: none;">
-                    <div class="card-header">
-                        <h2>Application Timeline</h2>
-                    </div>
-                    <div class="card-content">
-                        <div class="timeline" id="app-timeline"></div>
-                    </div>
-                </section>
-            </div>
-
-            <!-- Profile Page -->
-            <div id="profile-page" style="display: none;">
-                <section class="card">
-                    <div class="card-header">
-                        <h2>GitHub Profile</h2>
-                    </div>
-                    <div class="card-content" id="profile-info"></div>
-                </section>
-                <section class="card">
-                    <div class="card-header">
-                        <h2>Projects</h2>
-                        <div class="toggle-container">
-                            <label class="toggle-label" for="projects-view-toggle">Kanban View</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="projects-view-toggle" onchange="toggleProjectsView()">
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="card-content">
-                        <div class="table-container" id="projects-table-view">
-                            <div class="filter-inputs">
-                                <input type="text" id="filter-project-name" placeholder="Filter Name">
-                                <input type="text" id="filter-project-description" placeholder="Filter Description">
-                                <input type="text" id="filter-project-language" placeholder="Filter Language">
-                                <input type="number" id="filter-project-stars" placeholder="Min Stars">
-                                <input type="number" id="filter-project-forks" placeholder="Min Forks">
-                                <input type="date" id="filter-project-updated" placeholder="Updated After">
-                            </div>
-                            <table id="projects-table">
-                                <thead>
-                                    <tr>
-                                        <th onclick="sortProjectsTable(0)">Name</th>
-                                        <th onclick="sortProjectsTable(1)">Description</th>
-                                        <th onclick="sortProjectsTable(2)">Language</th>
-                                        <th onclick="sortProjectsTable(3)">Stars</th>
-                                        <th onclick="sortProjectsTable(4)">Forks</th>
-                                        <th onclick="sortProjectsTable(5)">Last Updated</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                        <div class="kanban-container" id="projects-kanban-view" style="display: none;"></div>
-                    </div>
-                </section>
-                <section class="card">
-                    <div class="card-header">
-                        <h2>Analytics</h2>
-                    </div>
-                    <div class="card-content" id="profile-analytics"></div>
-                </section>
-            </div>
-        </div>
-    </main>
-
-    <!-- Add Application Modal -->
-    <div class="modal" id="app-modal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeModal('app-modal')">×</button>
-            <h2>Add Application</h2>
-            <form id="app-form">
-                <div class="form-group">
-                    <label for="title">Job Title</label>
-                    <input type="text" id="title" required>
-                </div>
-                <div class="form-group">
-                    <label for="company">Company</label>
-                    <input type="text" id="company" required>
-                </div>
-                <div class="form-group">
-                    <label for="date">Date</label>
-                    <input type="date" id="date" required>
-                </div>
-                <div class="form-group">
-                    <label for="status">Status</label>
-                    <select id="status">
-                        <option value="Applied">Applied</option>
-                        <option value="Interview Scheduled">Interview Scheduled</option>
-                        <option value="Offer Received">Offer Received</option>
-                        <option value="Rejected">Rejected</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="expected-salary">Expected Salary</label>
-                    <input type="number" id="expected-salary" placeholder="$">
-                </div>
-                <div class="form-group">
-                    <label for="offered-salary">Offered Salary</label>
-                    <input type="number" id="offered-salary" placeholder="$">
-                </div>
-                <div class="form-group">
-                    <label for="notes">Notes</label>
-                    <textarea id="notes"></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="url">URL</label>
-                    <input type="url" id="url">
-                </div>
-                <button type="submit" class="btn-primary">Add Application</button>
-            </form>
-        </div>
     </div>
 
-    <!-- Save Job Modal -->
-    <div class="modal" id="save-job-modal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeModal('save-job-modal')">×</button>
-            <h2>Save Job</h2>
-            <form id="save-job-form">
-                <div class="form-group">
-                    <label for="save-title">Job Title</label>
-                    <input type="text" id="save-title" required>
-                </div>
-                <div class="form-group">
-                    <label for="save-company">Company</label>
-                    <input type="text" id="save-company" required>
-                </div>
-                <div class="form-group">
-                    <label for="save-url">URL</label>
-                    <input type="url" id="save-url">
-                </div>
-                <div class="form-group">
-                    <label for="save-notes">Notes</label>
-                    <textarea id="save-notes"></textarea>
-                </div>
-                <button type="submit" class="btn-primary">Save Job</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Application Details Modal -->
-    <div class="modal" id="details-modal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeModal('details-modal')">×</button>
-            <h2>Application Details</h2>
-            <div id="details-content">
-                <p><strong>Title:</strong> <span id="detail-title"></span></p>
-                <p><strong>Company:</strong> <span id="detail-company"></span></p>
-                <p><strong>Date:</strong> <span id="detail-date"></span></p>
-                <p><strong>Status:</strong> <span id="detail-status"></span></p>
-                <p><strong>Expected Salary:</strong> <span id="detail-expected"></span></p>
-                <p><strong>Offered Salary:</strong> <span id="detail-offered"></span></p>
-                <p><strong>Notes:</strong> <span id="detail-notes"></span></p>
-                <p><strong>URL:</strong> <span id="detail-url-container"></span></p>
-                <h3>History</h3>
-                <div class="timeline" id="detail-timeline"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Project Details Modal -->
-    <div class="modal" id="project-details-modal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeModal('project-details-modal')">×</button>
-            <h2>Project Details</h2>
-            <div id="project-details-content"></div>
-        </div>
-    </div>
-
-    <!-- Project Analytics Modal -->
-    <div class="modal" id="project-analytics-modal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeModal('project-analytics-modal')">×</button>
-            <h2>Project Analytics</h2>
-            <div id="project-analytics-content"></div>
-        </div>
-    </div>
-
-    <!-- JavaScript -->
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="components/scripts/enhanced-visualizations.js"></script>
     <script>
-        // Initial Data with Favorite Property
+    // Component-specific initialization for kpi
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('kpi component loaded');
+        // Initialize visualization enhancements
+        initEnhancedVisualizations();
+        
+        // Force-load component test data
+        const testData = {
+            kpi: [500, 300, 150, 50, 100],
+            applications: [
+                { date: '2023-01-01', status: 'Applied' },
+                { date: '2023-01-05', status: 'Interview Scheduled' },
+                { date: '2023-01-10', status: 'Offer Received' }
+                // Add more as needed
+            ]
+        };
+        
+        // Try to initialize the component
+        try {
+            switch('kpi') {
+                case 'kpi':
+                    updateKPIValues(testData.applications);
+                    break;
+                case 'funnel':
+                    renderApplicationPipeline(testData.applications);
+                    break;
+                case 'trends':
+                    renderApplicationTrends(testData.applications);
+                    break;
+                case 'remote':
+                    renderRemoteJobInsights(testData.applications);
+                    break;
+                case 'salary':
+                    renderSalaryInsights(testData.applications);
+                    break;
+                case 'source':
+                    renderSourceInsights(testData.applications);
+                    break;
+            }
+        } catch(e) {
+            console.error('Error initializing component:', e);
+        }
+    });
+    
+    // Include stripped-down version of analytics code
+            // Initial Data with Favorite Property
         const fakeData = [
             { id: 1, title: "Software Engineer", company: "TechCorp", date: "2025-02-20", status: "Applied", notes: "Submitted via company site", url: "https://techcorp.com/jobs", history: [{ date: "2025-02-20", status: "Applied", notes: "Submitted application" }], salary: { expected: 120000, offered: null, benefits: "Healthcare, 401k" }, favorite: false },
             { id: 2, title: "Data Analyst", company: "DataWorks", date: "2025-02-15", status: "Interview Scheduled", notes: "Phone screen next week", url: "https://dataworks.com/careers", history: [{ date: "2025-02-15", status: "Applied", notes: "Submitted application" }, { date: "2025-02-18", status: "Interview Scheduled", notes: "Got email for phone screen" }], salary: { expected: 95000, offered: null, benefits: "" }, favorite: false },
@@ -6534,5 +5902,4 @@
         });
     </script>
 </body>
-
 </html>

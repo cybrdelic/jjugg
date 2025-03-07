@@ -1,0 +1,295 @@
+/* Enhanced visualization styles */
+
+/* Chart container */
+.chart-container {
+    position: relative;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: white;
+}
+
+.chart-container:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .chart-container {
+    background: var(--bg-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .chart-container:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* Chart tooltip */
+.chart-tooltip {
+    background-color: white !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+    transition: opacity 0.2s ease, transform 0.2s ease !important;
+    font-family: 'Inter', sans-serif !important;
+    z-index: 1000 !important;
+}
+
+[data-theme="dark"] .chart-tooltip {
+    background-color: var(--bg-secondary) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+.chart-tooltip-title {
+    font-weight: 600 !important;
+    margin-bottom: 4px !important;
+    color: #333 !important;
+    font-size: 14px !important;
+}
+
+.chart-tooltip-value {
+    font-weight: 600 !important;
+    color: #333 !important;
+}
+
+.chart-tooltip-label {
+    color: #666 !important;
+    font-size: 13px !important;
+}
+
+[data-theme="dark"] .chart-tooltip-title {
+    color: #fff !important;
+}
+
+[data-theme="dark"] .chart-tooltip-value {
+    color: #fff !important;
+}
+
+[data-theme="dark"] .chart-tooltip-label {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Zoom controls */
+.chart-zoom-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 5px;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.chart-container:hover .chart-zoom-controls {
+    opacity: 1;
+}
+
+.chart-zoom-btn {
+    width: 28px;
+    height: 28px;
+    background-color: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: #555;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 16px;
+}
+
+.chart-zoom-btn:hover {
+    background-color: #f5f5f5;
+}
+
+[data-theme="dark"] .chart-zoom-btn {
+    background-color: var(--bg-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ccc;
+}
+
+[data-theme="dark"] .chart-zoom-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Scroll animations */
+.scroll-animate {
+    transition: transform 0.5s ease, opacity 0.5s ease;
+}
+
+.scroll-hide {
+    opacity: 0;
+    transform: translateY(30px);
+}
+
+.scroll-show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Chart annotation */
+.chart-annotation {
+    position: absolute;
+    padding: 6px 10px;
+    background-color: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    font-size: 12px;
+    border-radius: 4px;
+    pointer-events: none;
+    z-index: 10;
+    transition: opacity 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .chart-annotation {
+    background-color: var(--bg-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.chart-annotation::after {
+    content: '';
+    position: absolute;
+    width: 40px;
+    height: 1px;
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .chart-annotation::after {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Chart highlights - clean version */
+.chart-highlight {
+    position: absolute;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.3;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+}
+
+[data-theme="dark"] .chart-highlight {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Advanced tooltip */
+.advanced-tooltip {
+    position: absolute;
+    padding: 15px;
+    background-color: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    max-width: 300px;
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform: translateY(10px);
+}
+
+.advanced-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+[data-theme="dark"] .advanced-tooltip {
+    background-color: var(--bg-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+
+.advanced-tooltip-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+[data-theme="dark"] .advanced-tooltip-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.advanced-tooltip-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.advanced-tooltip-stat {
+    display: flex;
+    flex-direction: column;
+}
+
+.advanced-tooltip-label {
+    font-size: 12px;
+    color: #666;
+}
+
+[data-theme="dark"] .advanced-tooltip-label {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.advanced-tooltip-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+[data-theme="dark"] .advanced-tooltip-value {
+    color: white;
+}
+
+/* Data point animations - simplified */
+.data-flow {
+    stroke-dasharray: 1000;
+    animation: dataFlow 1.5s ease-in-out forwards;
+}
+
+.bar-grow {
+    animation: barGrow 0.6s ease-out forwards;
+}
+
+.pie-grow {
+    transform-origin: center;
+    animation: pieGrow 0.6s ease-out forwards;
+}
+
+@keyframes dataFlow {
+    0% {
+        stroke-dashoffset: 1000;
+        opacity: 0.3;
+    }
+    100% {
+        stroke-dashoffset: 0;
+        opacity: 1;
+    }
+}
+
+@keyframes barGrow {
+    from {
+        height: 0;
+        y: 100%;
+    }
+    to {
+        height: attr(height px);
+        y: attr(y px);
+    }
+}
+
+@keyframes pieGrow {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
