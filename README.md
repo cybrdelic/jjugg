@@ -2,6 +2,8 @@
 
 jjugg is a tool to help job seekers, especially remote developers, track their applications automatically or manually. It uses a userscript to capture details from job boards and a local HTML dashboard for management. Fake data is pre-loaded for testing.
 
+![applications_grid](https://github.com/user-attachments/assets/fb03434a-7c71-4243-a066-c539dc70054e)
+
 ## Installation
 
 1. Install a userscript manager:
