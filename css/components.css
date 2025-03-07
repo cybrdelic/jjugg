@@ -1,0 +1,463 @@
+/* Dashboard Components */
+.dashboard-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.dashboard-kpi-section {
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+.kpi-card {
+    background: var(--glass-bg);
+    border: var(--border-thin);
+    border-radius: 10px;
+    padding: 1.5rem;
+    flex: 1;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    min-width: 120px;
+}
+
+.kpi-value {
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.kpi-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+    z-index: 1;
+}
+
+.applications-total .kpi-value {
+    color: var(--accent-primary);
+}
+
+.applications-active .kpi-value {
+    color: var(--status-applied);
+}
+
+.applications-interviews .kpi-value {
+    color: var(--status-interview);
+}
+
+.applications-offers .kpi-value {
+    color: var(--status-offer);
+}
+
+.applications-rejected .kpi-value {
+    color: var(--status-rejected);
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+.dashboard-card {
+    background: var(--glass-bg);
+    border: var(--border-thin);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.dashboard-card h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.dashboard-card .card-header {
+    padding: 1rem 1.2rem;
+    border-bottom: var(--border-thin);
+}
+
+.dashboard-card .card-content {
+    padding: 1rem 1.2rem;
+}
+
+/* Applications Components */
+.applications-header {
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.view-toggles {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.view-toggle {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+}
+
+.search-filter {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.search-filter input,
+.search-filter select {
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: var(--border-thin);
+    background: var(--glass-bg);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+}
+
+.applications-view {
+    display: none;
+}
+
+.applications-view.active {
+    display: block;
+}
+
+.applications-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--glass-bg);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.applications-table th,
+.applications-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: var(--border-thin);
+}
+
+.applications-table th {
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.actions-cell {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Kanban View */
+.kanban-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    overflow-x: auto;
+    padding-bottom: 1rem;
+}
+
+.kanban-column {
+    background: var(--glass-bg);
+    border: var(--border-thin);
+    border-radius: 10px;
+    overflow: hidden;
+    min-width: 250px;
+}
+
+.kanban-column-header {
+    padding: 1rem;
+    border-bottom: var(--border-thin);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.kanban-column-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.kanban-count {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.2rem 0.5rem;
+    border-radius: 30px;
+    font-size: 0.8rem;
+}
+
+.kanban-cards {
+    padding: 1rem;
+    min-height: 200px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.kanban-card {
+    background: var(--bg-secondary);
+    border: var(--border-thin);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.kanban-card:hover {
+    border-color: var(--accent-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.kanban-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.kanban-card-header h4 {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.kanban-card-actions {
+    display: flex;
+    gap: 0.2rem;
+}
+
+.kanban-card-position {
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+}
+
+.kanban-card-date {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+}
+
+/* Recent Applications List */
+#recent-applications-list {
+    list-style: none;
+}
+
+#recent-applications-list li {
+    padding: 0.8rem 0;
+    border-bottom: var(--border-thin);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#recent-applications-list li:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="light"] #recent-applications-list li:hover {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+#recent-applications-list li:last-child {
+    border-bottom: none;
+}
+
+.recent-app-company {
+    font-weight: 500;
+    margin-bottom: 0.2rem;
+}
+
+.recent-app-position {
+    font-size: 0.9rem;
+    margin-bottom: 0.2rem;
+}
+
+.recent-app-date {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.2rem;
+}
+
+/* Reminders List */
+#upcoming-reminders-list {
+    list-style: none;
+}
+
+#upcoming-reminders-list li {
+    padding: 0.8rem 0;
+    border-bottom: var(--border-thin);
+}
+
+#upcoming-reminders-list li:last-child {
+    border-bottom: none;
+}
+
+.upcoming-reminder-title {
+    font-weight: 500;
+    margin-bottom: 0.2rem;
+}
+
+.upcoming-reminder-date {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* Goal Progress */
+.goal-progress-item {
+    margin-bottom: 1rem;
+}
+
+.goal-label {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.goal-progress-bar {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+[data-theme="light"] .goal-progress-bar {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.goal-progress-fill {
+    height: 100%;
+    background: linear-gradient(45deg, var(--accent-primary), var(--accent-secondary));
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.goal-stats {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-align: right;
+}
+
+/* Reminders Section */
+.reminders-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.reminders-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
+}
+
+.reminder-card {
+    background: var(--glass-bg);
+    border: var(--border-thin);
+    border-radius: 10px;
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+    transition: all 0.2s ease;
+}
+
+.reminder-card.completed {
+    opacity: 0.6;
+}
+
+.reminder-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.8rem;
+}
+
+.reminder-card-header h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.reminder-card-actions {
+    display: flex;
+    gap: 0.3rem;
+}
+
+.reminder-date-time {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.reminder-application {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.reminder-notes {
+    font-size: 0.9rem;
+    padding-top: 0.5rem;
+    border-top: var(--border-thin);
+}
+
+/* Goals Section */
+.goals-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.goals-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
+}
+
+.goals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.goal-card {
+    background: var(--glass-bg);
+    border: var(--border-thin);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.goal-card-header {
+    padding: 1rem 1.2rem;
+    border-bottom: var(--border-thin);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.goal-card-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.goal-card-content {
+    padding: 1.2rem;
+}
+
+.goal-target {
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.goal-status {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    text-align: right;
+}
