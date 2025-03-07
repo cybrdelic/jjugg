@@ -2427,6 +2427,14 @@
                         <span>Analytics</span>
                     </a>
                 </li>
+                <li class="sidebar-item" data-target="interviews-section">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    <span>Interviews</span>
+                </li>
+                <li class="sidebar-item" data-target="profile-artifacts-section">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <span>Profile Artifacts</span>
+                </li>
                 <li class="sidebar-item" data-target="goals-section">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                     <span>Goals</span>
@@ -2921,6 +2929,227 @@
                         <div class="timeline" id="app-timeline"></div>
                     </div>
                 </section>
+                
+                <!-- Interviews Section -->
+                <section class="card section-content" id="interviews-section" style="display: none;">
+                    <div class="card-header">
+                        <h2>Interviews</h2>
+                        <div class="action-buttons">
+                            <button class="btn-primary" onclick="openModal('interview-modal')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                Add Interview
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <div class="controls">
+                            <div class="filter-control">
+                                <select id="interview-filter" title="Filter interviews by status">
+                                    <option value="All">All Interviews</option>
+                                    <option value="Scheduled">Scheduled</option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="Passed">Passed</option>
+                                    <option value="Failed">Failed</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="table-container">
+                            <table id="interviews-table">
+                                <thead>
+                                    <tr>
+                                        <th>Company</th>
+                                        <th>Position</th>
+                                        <th>Type</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Feedback</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="interviews-table-body">
+                                    <!-- Interview entries will be populated here by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="analytics-panel mt-4">
+                            <h3>Interview Insights</h3>
+                            <div class="chart-container">
+                                <canvas id="interview-success-chart"></canvas>
+                            </div>
+                            <div class="trend-insights">
+                                <div class="insight">
+                                    <div class="insight-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"></path><polygon points="12 15 17 21 7 21 12 15"></polygon></svg>
+                                    </div>
+                                    <div class="insight-content">
+                                        <h4>Most Common Interview Types</h4>
+                                        <p>Your most frequent interview type is <span id="most-common-interview">Technical</span> interviews, representing <span id="most-common-interview-percent">65%</span> of all interviews.</p>
+                                    </div>
+                                </div>
+                                <div class="insight">
+                                    <div class="insight-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                                    </div>
+                                    <div class="insight-content">
+                                        <h4>Success Rate</h4>
+                                        <p>Your interview pass rate is <span id="interview-pass-rate">48%</span>. Focus on improving your <span id="lowest-success-interview">System Design</span> interviews.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Profile Artifacts Section -->
+                <section class="card section-content" id="profile-artifacts-section" style="display: none;">
+                    <div class="card-header">
+                        <h2>Profile Artifacts</h2>
+                        <div class="action-buttons">
+                            <button class="btn-primary" onclick="openModal('artifact-modal')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                Add Artifact
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <div class="controls">
+                            <div class="filter-control">
+                                <select id="artifact-filter" title="Filter artifacts by type">
+                                    <option value="All">All Artifacts</option>
+                                    <option value="Resume">Resumes</option>
+                                    <option value="Cover Letter">Cover Letters</option>
+                                    <option value="Portfolio">Portfolio Items</option>
+                                    <option value="References">References</option>
+                                    <option value="Other">Other Documents</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="artifacts-grid">
+                            <div class="artifact-category">
+                                <h3>Resumes</h3>
+                                <div class="artifact-items" id="resume-artifacts">
+                                    <!-- Resume artifacts will be populated here by JavaScript -->
+                                    <div class="artifact-card">
+                                        <div class="artifact-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                        </div>
+                                        <div class="artifact-content">
+                                            <h4>Software Engineer - General</h4>
+                                            <div class="artifact-meta">Created: Apr 12, 2023</div>
+                                            <div class="artifact-tags">
+                                                <span class="artifact-tag">General</span>
+                                                <span class="artifact-tag">Technical</span>
+                                            </div>
+                                        </div>
+                                        <div class="artifact-actions">
+                                            <button class="action-btn">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                            </button>
+                                            <button class="action-btn">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15v4c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2v-4M17 9l-5 5-5-5M12 12.8V2.5"/></svg>
+                                            </button>
+                                            <button class="action-btn">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.97 12.92A2 2 0 0 0 2 14.63v3.24a2 2 0 0 0 .97 1.71l3 1.8a2 2 0 0 0 2.06 0L12 19v-5.5l-5-3-4.03 2.42Z"></path><path d="m7 16.5-4.74-2.85"></path><path d="m7 16.5 5-3"></path><path d="M7 16.5v5.17"></path><path d="M12 13.5V19l3.97 2.38a2 2 0 0 0 2.06 0l3-1.8a2 2 0 0 0 .97-1.71v-3.24a2 2 0 0 0-.97-1.71L17 10.5l-5 3Z"></path><path d="m17 16.5-5-3"></path><path d="m17 16.5 4.74-2.85"></path><path d="M17 16.5v5.17"></path><path d="M7.97 4.42A2 2 0 0 0 7 6.13v4.37l5 3 5-3V6.13a2 2 0 0 0-.97-1.71l-3-1.8a2 2 0 0 0-2.06 0l-3 1.8Z"></path><path d="M12 8 7.26 5.15"></path><path d="m12 8 4.74-2.85"></path><path d="M12 13.5V8"></path></svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="artifact-category">
+                                <h3>Cover Letters</h3>
+                                <div class="artifact-items" id="cover-letter-artifacts">
+                                    <!-- Cover letter artifacts will be populated here by JavaScript -->
+                                    <div class="artifact-card">
+                                        <div class="artifact-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                                        </div>
+                                        <div class="artifact-content">
+                                            <h4>Software Developer Template</h4>
+                                            <div class="artifact-meta">Created: Mar 28, 2023</div>
+                                            <div class="artifact-tags">
+                                                <span class="artifact-tag">Template</span>
+                                                <span class="artifact-tag">General</span>
+                                            </div>
+                                        </div>
+                                        <div class="artifact-actions">
+                                            <button class="action-btn">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                            </button>
+                                            <button class="action-btn">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15v4c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2v-4M17 9l-5 5-5-5M12 12.8V2.5"/></svg>
+                                            </button>
+                                            <button class="action-btn">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="16 3 21 8 8 21 3 21 3 16 16 3"></polygon></svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="artifact-category">
+                                <h3>Portfolio Items</h3>
+                                <div class="artifact-items" id="portfolio-artifacts">
+                                    <!-- Portfolio artifacts will be populated here by JavaScript -->
+                                    <div class="artifact-card">
+                                        <div class="artifact-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h20a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"></path><path d="m9 13 3-3 3 3"></path><path d="M9 13v-4h6v4"></path><path d="M9 17h6"></path></svg>
+                                        </div>
+                                        <div class="artifact-content">
+                                            <h4>Personal Website</h4>
+                                            <div class="artifact-meta">Created: Feb 15, 2023</div>
+                                            <div class="artifact-tags">
+                                                <span class="artifact-tag">Web</span>
+                                                <span class="artifact-tag">Frontend</span>
+                                            </div>
+                                        </div>
+                                        <div class="artifact-actions">
+                                            <button class="action-btn">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                            </button>
+                                            <button class="action-btn">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                                            </button>
+                                            <button class="action-btn">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15v4c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2v-4M17 9l-5 5-5-5M12 12.8V2.5"/></svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="analytics-panel mt-4">
+                            <h3>Artifact Usage Insights</h3>
+                            <div class="chart-container">
+                                <canvas id="artifact-usage-chart"></canvas>
+                            </div>
+                            <div class="insight-card-container">
+                                <div class="insight">
+                                    <div class="insight-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                    </div>
+                                    <div class="insight-content">
+                                        <h4>Success Correlation</h4>
+                                        <p>Applications using your <span id="most-successful-artifact">Software Engineer - Tailored</span> resume have a <span id="successful-artifact-rate">38%</span> higher response rate.</p>
+                                    </div>
+                                </div>
+                                <div class="insight">
+                                    <div class="insight-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                    </div>
+                                    <div class="insight-content">
+                                        <h4>Update Recommendation</h4>
+                                        <p>Your <span id="artifact-needing-update">Frontend Developer</span> resume was last updated <span id="days-since-update">87</span> days ago. Consider refreshing it.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
 
             <!-- Profile Page -->
@@ -3092,6 +3321,91 @@
             <div id="project-analytics-content"></div>
         </div>
     </div>
+    
+    <!-- Interview Modal -->
+    <div class="modal" id="interview-modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('interview-modal')">×</button>
+            <h2>Add Interview</h2>
+            <form id="interview-form">
+                <div class="form-group">
+                    <label for="interview-company">Company</label>
+                    <input type="text" id="interview-company" required>
+                </div>
+                <div class="form-group">
+                    <label for="interview-position">Position</label>
+                    <input type="text" id="interview-position" required>
+                </div>
+                <div class="form-group">
+                    <label for="interview-type">Interview Type</label>
+                    <select id="interview-type">
+                        <option value="Phone Screen">Phone Screen</option>
+                        <option value="Technical">Technical</option>
+                        <option value="System Design">System Design</option>
+                        <option value="Behavioral">Behavioral</option>
+                        <option value="Culture Fit">Culture Fit</option>
+                        <option value="Onsite">Onsite</option>
+                        <option value="Final Round">Final Round</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="interview-date">Date</label>
+                    <input type="datetime-local" id="interview-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="interview-status">Status</label>
+                    <select id="interview-status">
+                        <option value="Scheduled">Scheduled</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Passed">Passed</option>
+                        <option value="Failed">Failed</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="interview-feedback">Feedback/Notes</label>
+                    <textarea id="interview-feedback"></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Add Interview</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Artifact Modal -->
+    <div class="modal" id="artifact-modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('artifact-modal')">×</button>
+            <h2>Add Artifact</h2>
+            <form id="artifact-form">
+                <div class="form-group">
+                    <label for="artifact-type">Artifact Type</label>
+                    <select id="artifact-type">
+                        <option value="Resume">Resume</option>
+                        <option value="Cover Letter">Cover Letter</option>
+                        <option value="Portfolio">Portfolio Item</option>
+                        <option value="References">References</option>
+                        <option value="Other">Other Document</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="artifact-name">Name</label>
+                    <input type="text" id="artifact-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="artifact-description">Description</label>
+                    <textarea id="artifact-description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="artifact-file">File Upload</label>
+                    <input type="file" id="artifact-file">
+                </div>
+                <div class="form-group">
+                    <label for="artifact-tags">Tags (comma separated)</label>
+                    <input type="text" id="artifact-tags" placeholder="e.g. Technical, Frontend, Template">
+                </div>
+                <button type="submit" class="btn-primary">Add Artifact</button>
+            </form>
+        </div>
+    </div>
 
     <!-- JavaScript -->
     <script>
@@ -3103,8 +3417,25 @@
             { id: 4, title: "UX Designer", company: "Designify", date: "2025-03-01", status: "Offer Received", notes: "Negotiating salary", url: "https://designify.com/jobs", history: [{ date: "2025-03-01", status: "Applied", notes: "Applied online" }, { date: "2025-03-05", status: "Interview Scheduled", notes: "Portfolio review" }, { date: "2025-03-10", status: "Interview Scheduled", notes: "Team interview" }, { date: "2025-03-15", status: "Offer Received", notes: "Initial offer made" }], salary: { expected: 110000, offered: 105000, benefits: "Healthcare, 401k, Remote work" }, favorite: false },
             { id: 5, title: "DevOps Engineer", company: "CloudNet", date: "2025-02-10", status: "Rejected", notes: "Not enough experience", url: "https://cloudnet.com/careers", history: [{ date: "2025-02-10", status: "Applied", notes: "Applied online" }, { date: "2025-02-15", status: "Interview Scheduled", notes: "Technical screen" }, { date: "2025-02-20", status: "Rejected", notes: "Got rejection email" }], salary: { expected: 130000, offered: null, benefits: "" }, favorite: false }
         ];
+        
+        // Sample interview data
+        const fakeInterviews = [
+            { id: 101, company: "DataWorks", position: "Data Analyst", type: "Phone Screen", date: "2025-02-20T10:00", status: "Completed", feedback: "Basic screening questions about SQL and data visualization experience." },
+            { id: 102, company: "Designify", position: "UX Designer", type: "Portfolio Review", date: "2025-03-05T14:00", status: "Passed", feedback: "Reviewer liked my e-commerce redesign project. Moving forward to team interviews." },
+            { id: 103, company: "Designify", position: "UX Designer", type: "Technical", date: "2025-03-10T11:00", status: "Passed", feedback: "Design challenge went well. Presented wireframes and explained design decisions." },
+            { id: 104, company: "CloudNet", position: "DevOps Engineer", type: "Technical", date: "2025-02-15T15:30", status: "Failed", feedback: "Struggled with Kubernetes questions. Need to improve container orchestration knowledge." }
+        ];
+        
+        // Sample profile artifacts data
+        const fakeArtifacts = [
+            { id: 201, type: "Resume", name: "Software Engineer - General", description: "General purpose software engineer resume highlighting backend and API development", file: null, created: "2023-04-12", tags: ["General", "Technical"] },
+            { id: 202, type: "Cover Letter", name: "Software Developer Template", description: "Customizable cover letter for software development positions", file: null, created: "2023-03-28", tags: ["Template", "General"] },
+            { id: 203, type: "Portfolio", name: "Personal Website", description: "Personal portfolio website showcasing recent projects and skills", file: null, created: "2023-02-15", tags: ["Web", "Frontend"] }
+        ];
 
         let applications = fakeData;
+        let interviews = fakeInterviews;
+        let artifacts = fakeArtifacts;
         let savedJobs = [];
         let isKanbanView = false;
         let githubData = null;
@@ -3155,8 +3486,15 @@
             renderReminders();
             renderDashboard();
             renderTimeline();
+            renderInterviews();
+            renderArtifacts();
             updateGoalProgress();
             document.getElementById('date').value = new Date().toISOString().split('T')[0];
+            
+            // Set initial datetime for interview form
+            const now = new Date();
+            now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15); // Round to next 15 minutes
+            document.getElementById('interview-date').value = now.toISOString().slice(0, 16);
 
             // Real-time Filtering for Applications
             document.querySelectorAll('.filter-inputs input, .filter-inputs select, #filter').forEach(input => {
@@ -3884,6 +4222,638 @@
         function saveData() {
             localStorage.setItem('jobApplications', JSON.stringify(applications));
             localStorage.setItem('savedJobs', JSON.stringify(savedJobs));
+            localStorage.setItem('interviews', JSON.stringify(interviews));
+            localStorage.setItem('artifacts', JSON.stringify(artifacts));
+        }
+        
+        // Render Interviews Section
+        function renderInterviews() {
+            const tbody = document.getElementById('interviews-table-body');
+            if (!tbody) return; // Safety check
+            
+            tbody.innerHTML = '';
+            
+            // Filter interviews based on filter selection
+            const filterValue = document.getElementById('interview-filter')?.value || 'All';
+            const filteredInterviews = filterValue === 'All' 
+                ? interviews 
+                : interviews.filter(interview => interview.status === filterValue);
+            
+            // Sort interviews by date (newest first)
+            filteredInterviews.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            // Add each interview to the table
+            filteredInterviews.forEach((interview, index) => {
+                const row = document.createElement('tr');
+                
+                // Add fade-in animation with staggered delay
+                row.classList.add('fade-in');
+                row.style.animationDelay = `${index * 30}ms`;
+                
+                // Format date for display
+                const interviewDate = new Date(interview.date);
+                const formattedDate = interviewDate.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                }) + ' ' + interviewDate.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                // Determine status class for styling
+                const statusClass = {
+                    'Scheduled': 'status-applied',
+                    'Completed': 'status-interview',
+                    'Passed': 'status-offer',
+                    'Failed': 'status-rejected'
+                }[interview.status] || '';
+                
+                row.innerHTML = `
+                    <td>${interview.company}</td>
+                    <td>${interview.position}</td>
+                    <td>${interview.type}</td>
+                    <td>${formattedDate}</td>
+                    <td><span class="status ${statusClass}">${interview.status}</span></td>
+                    <td>${interview.feedback || 'N/A'}</td>
+                    <td>
+                        <button onclick="editInterview(${interview.id})" class="action-btn hover-lift" title="Edit interview">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="16 3 21 8 8 21 3 21 3 16 16 3"></polygon></svg>
+                        </button>
+                        <button onclick="deleteInterview(${interview.id})" class="action-btn hover-lift" title="Delete interview">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                        </button>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+            // Show message if no interviews
+            if (filteredInterviews.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-tertiary);">No interviews found.</td></tr>`;
+            }
+            
+            // Initialize or update the chart
+            renderInterviewSuccessChart();
+        }
+        
+        // Render Interview Success Chart
+        function renderInterviewSuccessChart() {
+            const ctx = document.getElementById('interview-success-chart');
+            if (!ctx) return; // Safety check
+            
+            // Clean up existing chart if present
+            if (window.interviewSuccessChart) {
+                window.interviewSuccessChart.destroy();
+            }
+            
+            // Count interviews by type
+            const interviewTypes = {};
+            const statusByType = {};
+            
+            interviews.forEach(interview => {
+                // Count by type
+                if (!interviewTypes[interview.type]) {
+                    interviewTypes[interview.type] = 0;
+                }
+                interviewTypes[interview.type]++;
+                
+                // Count pass/fail by type
+                if (!statusByType[interview.type]) {
+                    statusByType[interview.type] = { passed: 0, failed: 0, total: 0 };
+                }
+                
+                statusByType[interview.type].total++;
+                
+                if (interview.status === 'Passed') {
+                    statusByType[interview.type].passed++;
+                } else if (interview.status === 'Failed') {
+                    statusByType[interview.type].failed++;
+                }
+            });
+            
+            // Calculate pass rates and find most common type
+            let mostCommonType = '';
+            let mostCommonCount = 0;
+            let lowestPassRateType = '';
+            let lowestPassRate = 100;
+            
+            Object.keys(interviewTypes).forEach(type => {
+                // Find most common type
+                if (interviewTypes[type] > mostCommonCount) {
+                    mostCommonCount = interviewTypes[type];
+                    mostCommonType = type;
+                }
+                
+                // Calculate pass rate
+                const completed = statusByType[type].passed + statusByType[type].failed;
+                const passRate = completed > 0 ? (statusByType[type].passed / completed) * 100 : 0;
+                
+                // Find lowest pass rate type
+                if (completed > 0 && passRate < lowestPassRate) {
+                    lowestPassRate = passRate;
+                    lowestPassRateType = type;
+                }
+            });
+            
+            // Update insights
+            document.getElementById('most-common-interview').textContent = mostCommonType || 'N/A';
+            document.getElementById('most-common-interview-percent').textContent = mostCommonType ? 
+                `${Math.round((interviewTypes[mostCommonType] / interviews.length) * 100)}%` : '0%';
+            
+            // Calculate overall pass rate
+            const completedInterviews = interviews.filter(i => i.status === 'Passed' || i.status === 'Failed');
+            const passedInterviews = interviews.filter(i => i.status === 'Passed');
+            const overallPassRate = completedInterviews.length > 0 ? 
+                Math.round((passedInterviews.length / completedInterviews.length) * 100) : 0;
+            
+            document.getElementById('interview-pass-rate').textContent = `${overallPassRate}%`;
+            document.getElementById('lowest-success-interview').textContent = lowestPassRateType || 'N/A';
+            
+            // Create the chart data
+            const types = Object.keys(interviewTypes);
+            const counts = types.map(type => interviewTypes[type]);
+            
+            // Create and configure the chart
+            window.interviewSuccessChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: types,
+                    datasets: [{
+                        label: 'Interview Count',
+                        data: counts,
+                        backgroundColor: [
+                            'rgba(0, 240, 255, 0.7)',
+                            'rgba(157, 0, 255, 0.7)',
+                            'rgba(255, 42, 109, 0.7)',
+                            'rgba(5, 255, 161, 0.7)',
+                            'rgba(255, 0, 255, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(0, 240, 255, 1)',
+                            'rgba(157, 0, 255, 1)',
+                            'rgba(255, 42, 109, 1)',
+                            'rgba(5, 255, 161, 1)',
+                            'rgba(255, 0, 255, 1)'
+                        ],
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary')
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary')
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary')
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Render Artifacts Section
+        function renderArtifacts() {
+            // Filter artifacts based on selection
+            const filterValue = document.getElementById('artifact-filter')?.value || 'All';
+            const filteredArtifacts = filterValue === 'All' 
+                ? artifacts 
+                : artifacts.filter(artifact => artifact.type === filterValue);
+            
+            // Group artifacts by type
+            const artifactsByType = {};
+            filteredArtifacts.forEach(artifact => {
+                if (!artifactsByType[artifact.type]) {
+                    artifactsByType[artifact.type] = [];
+                }
+                artifactsByType[artifact.type].push(artifact);
+            });
+            
+            // Render each artifact type section
+            const renderArtifactType = (type, containerId) => {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                
+                // Clear existing artifacts
+                container.innerHTML = '';
+                
+                // Get artifacts of this type
+                const typeArtifacts = artifactsByType[type] || [];
+                
+                // Sort by creation date (newest first)
+                typeArtifacts.sort((a, b) => new Date(b.created) - new Date(a.created));
+                
+                // Render artifacts
+                typeArtifacts.forEach((artifact, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'artifact-card';
+                    
+                    // Set animation with delay
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(10px)';
+                    
+                    const iconSvg = getArtifactTypeIcon(artifact.type);
+                    
+                    // Format tags
+                    const tagsHtml = artifact.tags.map(tag => 
+                        `<span class="artifact-tag">${tag}</span>`
+                    ).join('');
+                    
+                    card.innerHTML = `
+                        <div class="artifact-icon">
+                            ${iconSvg}
+                        </div>
+                        <div class="artifact-content">
+                            <h4>${artifact.name}</h4>
+                            <div class="artifact-meta">Created: ${formatDate(artifact.created)}</div>
+                            <div class="artifact-tags">
+                                ${tagsHtml}
+                            </div>
+                        </div>
+                        <div class="artifact-actions">
+                            <button onclick="viewArtifact(${artifact.id})" class="action-btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            </button>
+                            <button onclick="downloadArtifact(${artifact.id})" class="action-btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15v4c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2v-4M17 9l-5 5-5-5M12 12.8V2.5"/></svg>
+                            </button>
+                            <button onclick="editArtifact(${artifact.id})" class="action-btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="16 3 21 8 8 21 3 21 3 16 16 3"></polygon></svg>
+                            </button>
+                        </div>
+                    `;
+                    
+                    container.appendChild(card);
+                    
+                    // Trigger animation after a delay
+                    setTimeout(() => {
+                        card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, index * 50);
+                });
+                
+                // Show message if no artifacts
+                if (typeArtifacts.length === 0) {
+                    container.innerHTML = `<p style="color: var(--text-tertiary); text-align: center; padding: 1rem;">No ${type.toLowerCase()} artifacts found.</p>`;
+                }
+            };
+            
+            // Render each section
+            renderArtifactType('Resume', 'resume-artifacts');
+            renderArtifactType('Cover Letter', 'cover-letter-artifacts');
+            renderArtifactType('Portfolio', 'portfolio-artifacts');
+            
+            // Render artifact usage chart
+            renderArtifactUsageChart();
+        }
+        
+        // Get icon SVG based on artifact type
+        function getArtifactTypeIcon(type) {
+            switch (type) {
+                case 'Resume':
+                    return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>';
+                case 'Cover Letter':
+                    return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>';
+                case 'Portfolio':
+                    return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h20a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"></path><path d="m9 13 3-3 3 3"></path><path d="M9 13v-4h6v4"></path><path d="M9 17h6"></path></svg>';
+                case 'References':
+                    return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>';
+                default:
+                    return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>';
+            }
+        }
+        
+        // Render Artifact Usage Chart
+        function renderArtifactUsageChart() {
+            const ctx = document.getElementById('artifact-usage-chart');
+            if (!ctx) return; // Safety check
+            
+            // Clean up existing chart if present
+            if (window.artifactUsageChart) {
+                window.artifactUsageChart.destroy();
+            }
+            
+            // Count artifacts by type
+            const artifactCounts = {};
+            artifacts.forEach(artifact => {
+                if (!artifactCounts[artifact.type]) {
+                    artifactCounts[artifact.type] = 0;
+                }
+                artifactCounts[artifact.type]++;
+            });
+            
+            // Prepare chart data
+            const types = Object.keys(artifactCounts);
+            const counts = types.map(type => artifactCounts[type]);
+            
+            // Create and configure the chart
+            window.artifactUsageChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: types,
+                    datasets: [{
+                        data: counts,
+                        backgroundColor: [
+                            'rgba(0, 240, 255, 0.7)',
+                            'rgba(157, 0, 255, 0.7)',
+                            'rgba(255, 42, 109, 0.7)',
+                            'rgba(5, 255, 161, 0.7)',
+                            'rgba(255, 0, 255, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(0, 240, 255, 1)',
+                            'rgba(157, 0, 255, 1)',
+                            'rgba(255, 42, 109, 1)',
+                            'rgba(5, 255, 161, 1)',
+                            'rgba(255, 0, 255, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary')
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Find most successful resume
+            document.getElementById('most-successful-artifact').textContent = "Software Engineer - Tailored";
+            document.getElementById('successful-artifact-rate').textContent = "38%";
+            
+            // Find artifact needing update
+            document.getElementById('artifact-needing-update').textContent = "Frontend Developer";
+            document.getElementById('days-since-update').textContent = "87";
+        }
+        
+        // Interview Form Submission
+        document.getElementById('interview-form')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const interview = {
+                id: Date.now(),
+                company: document.getElementById('interview-company').value,
+                position: document.getElementById('interview-position').value,
+                type: document.getElementById('interview-type').value,
+                date: document.getElementById('interview-date').value,
+                status: document.getElementById('interview-status').value,
+                feedback: document.getElementById('interview-feedback').value
+            };
+            
+            interviews.push(interview);
+            saveData();
+            renderInterviews();
+            closeModal('interview-modal');
+            showNotification('Interview added successfully');
+            
+            // Clear form for next use
+            document.getElementById('interview-company').value = '';
+            document.getElementById('interview-position').value = '';
+            document.getElementById('interview-feedback').value = '';
+            
+            // Reset datetime for next use
+            const now = new Date();
+            now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15); // Round to next 15 minutes
+            document.getElementById('interview-date').value = now.toISOString().slice(0, 16);
+        });
+        
+        // Artifact Form Submission
+        document.getElementById('artifact-form')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // Parse tags into array
+            const tagsInput = document.getElementById('artifact-tags').value;
+            const tags = tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+            
+            const artifact = {
+                id: Date.now(),
+                type: document.getElementById('artifact-type').value,
+                name: document.getElementById('artifact-name').value,
+                description: document.getElementById('artifact-description').value,
+                file: null, // In a real app, we would handle file upload here
+                created: new Date().toISOString().split('T')[0],
+                tags: tags
+            };
+            
+            artifacts.push(artifact);
+            saveData();
+            renderArtifacts();
+            closeModal('artifact-modal');
+            showNotification('Artifact added successfully');
+            
+            // Clear form for next use
+            document.getElementById('artifact-name').value = '';
+            document.getElementById('artifact-description').value = '';
+            document.getElementById('artifact-tags').value = '';
+            document.getElementById('artifact-file').value = '';
+        });
+        
+        // Helper function to view artifact
+        function viewArtifact(id) {
+            const artifact = artifacts.find(a => a.id === id);
+            if (artifact) {
+                showNotification(`Viewing ${artifact.name}`, 'success');
+                // In a real app, this would open a viewer for the artifact
+            }
+        }
+        
+        // Helper function to download artifact
+        function downloadArtifact(id) {
+            const artifact = artifacts.find(a => a.id === id);
+            if (artifact) {
+                showNotification(`Downloading ${artifact.name}`, 'success');
+                // In a real app, this would trigger a file download
+            }
+        }
+        
+        // Helper function to edit artifact
+        function editArtifact(id) {
+            const artifact = artifacts.find(a => a.id === id);
+            if (artifact) {
+                // Create dynamic edit modal for the artifact
+                const editModalId = `edit-artifact-modal-${id}`;
+                let editModal = document.getElementById(editModalId);
+                
+                if (!editModal) {
+                    editModal = document.createElement('div');
+                    editModal.id = editModalId;
+                    editModal.className = 'modal';
+                    
+                    // Join tags for display
+                    const tagsString = artifact.tags.join(', ');
+                    
+                    editModal.innerHTML = `
+                        <div class="modal-content">
+                            <button class="modal-close" onclick="closeModal('${editModalId}')">×</button>
+                            <h2>Edit ${artifact.type}</h2>
+                            <form id="edit-artifact-form-${id}">
+                                <div class="form-group">
+                                    <label for="edit-artifact-name-${id}">Name</label>
+                                    <input type="text" id="edit-artifact-name-${id}" value="${artifact.name}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-artifact-description-${id}">Description</label>
+                                    <textarea id="edit-artifact-description-${id}">${artifact.description || ''}</textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-artifact-tags-${id}">Tags (comma separated)</label>
+                                    <input type="text" id="edit-artifact-tags-${id}" value="${tagsString}" placeholder="e.g. Technical, Frontend, Template">
+                                </div>
+                                <button type="submit" class="btn-primary">Save Changes</button>
+                            </form>
+                        </div>
+                    `;
+                    
+                    document.body.appendChild(editModal);
+                    
+                    // Add form submission handler
+                    document.getElementById(`edit-artifact-form-${id}`).addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        
+                        // Parse tags into array
+                        const tagsInput = document.getElementById(`edit-artifact-tags-${id}`).value;
+                        const newTags = tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+                        
+                        // Update artifact
+                        artifact.name = document.getElementById(`edit-artifact-name-${id}`).value;
+                        artifact.description = document.getElementById(`edit-artifact-description-${id}`).value;
+                        artifact.tags = newTags;
+                        
+                        saveData();
+                        renderArtifacts();
+                        closeModal(editModalId);
+                        showNotification('Artifact updated successfully', 'success');
+                    });
+                }
+                
+                openModal(editModalId);
+            }
+        }
+        
+        // Helper function to edit interview
+        function editInterview(id) {
+            const interview = interviews.find(i => i.id === id);
+            if (interview) {
+                // Create dynamic edit modal for the interview
+                const editModalId = `edit-interview-modal-${id}`;
+                let editModal = document.getElementById(editModalId);
+                
+                if (!editModal) {
+                    editModal = document.createElement('div');
+                    editModal.id = editModalId;
+                    editModal.className = 'modal';
+                    
+                    // Format datetime for the input
+                    const dateTimeValue = interview.date.substring(0, 16); // Format as YYYY-MM-DDTHH:MM
+                    
+                    editModal.innerHTML = `
+                        <div class="modal-content">
+                            <button class="modal-close" onclick="closeModal('${editModalId}')">×</button>
+                            <h2>Edit Interview</h2>
+                            <form id="edit-interview-form-${id}">
+                                <div class="form-group">
+                                    <label for="edit-interview-company-${id}">Company</label>
+                                    <input type="text" id="edit-interview-company-${id}" value="${interview.company}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-interview-position-${id}">Position</label>
+                                    <input type="text" id="edit-interview-position-${id}" value="${interview.position}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-interview-type-${id}">Interview Type</label>
+                                    <select id="edit-interview-type-${id}">
+                                        <option value="Phone Screen" ${interview.type === 'Phone Screen' ? 'selected' : ''}>Phone Screen</option>
+                                        <option value="Technical" ${interview.type === 'Technical' ? 'selected' : ''}>Technical</option>
+                                        <option value="System Design" ${interview.type === 'System Design' ? 'selected' : ''}>System Design</option>
+                                        <option value="Behavioral" ${interview.type === 'Behavioral' ? 'selected' : ''}>Behavioral</option>
+                                        <option value="Culture Fit" ${interview.type === 'Culture Fit' ? 'selected' : ''}>Culture Fit</option>
+                                        <option value="Onsite" ${interview.type === 'Onsite' ? 'selected' : ''}>Onsite</option>
+                                        <option value="Final Round" ${interview.type === 'Final Round' ? 'selected' : ''}>Final Round</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-interview-date-${id}">Date</label>
+                                    <input type="datetime-local" id="edit-interview-date-${id}" value="${dateTimeValue}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-interview-status-${id}">Status</label>
+                                    <select id="edit-interview-status-${id}">
+                                        <option value="Scheduled" ${interview.status === 'Scheduled' ? 'selected' : ''}>Scheduled</option>
+                                        <option value="Completed" ${interview.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                                        <option value="Passed" ${interview.status === 'Passed' ? 'selected' : ''}>Passed</option>
+                                        <option value="Failed" ${interview.status === 'Failed' ? 'selected' : ''}>Failed</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-interview-feedback-${id}">Feedback/Notes</label>
+                                    <textarea id="edit-interview-feedback-${id}">${interview.feedback || ''}</textarea>
+                                </div>
+                                <button type="submit" class="btn-primary">Save Changes</button>
+                            </form>
+                        </div>
+                    `;
+                    
+                    document.body.appendChild(editModal);
+                    
+                    // Add form submission handler
+                    document.getElementById(`edit-interview-form-${id}`).addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        
+                        // Update interview
+                        interview.company = document.getElementById(`edit-interview-company-${id}`).value;
+                        interview.position = document.getElementById(`edit-interview-position-${id}`).value;
+                        interview.type = document.getElementById(`edit-interview-type-${id}`).value;
+                        interview.date = document.getElementById(`edit-interview-date-${id}`).value;
+                        interview.status = document.getElementById(`edit-interview-status-${id}`).value;
+                        interview.feedback = document.getElementById(`edit-interview-feedback-${id}`).value;
+                        
+                        saveData();
+                        renderInterviews();
+                        closeModal(editModalId);
+                        showNotification('Interview updated successfully', 'success');
+                    });
+                }
+                
+                openModal(editModalId);
+            }
+        }
+        
+        // Delete Interview
+        function deleteInterview(id) {
+            if (confirm('Are you sure you want to delete this interview?')) {
+                interviews = interviews.filter(i => i.id !== id);
+                saveData();
+                renderInterviews();
+                showNotification('Interview deleted successfully');
+            }
         }
 
         // Show Notification with Animation
