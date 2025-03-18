@@ -1,9 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# JJUGG Job Application Tracker
+
+A sleek, modern job application dashboard built with Next.js and Tailwind CSS, featuring a customizable glass-style UI with animated components and a comprehensive theming system.
+
+![JJUGG Dashboard](https://i.imgur.com/TfzrxZW.png)
+
+## Project Overview
+
+JJUGG is a sophisticated job application tracking system designed to help job seekers organize and monitor their job search process. The application features:
+
+- Beautiful glass-style UI with customizable themes
+- Interactive dashboard with application statistics
+- Application management system
+- Reminders for upcoming interviews and tasks
+- Visual timeline of application activities
+- Goal tracking for job search objectives
+- Responsive design that works on mobile and desktop devices
+
+## Tech Stack
+
+- **Framework**: [Next.js](https://nextjs.org) (v15.2.2)
+- **UI**: [React](https://reactjs.org) (v19.0.0)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com) (v3.2.7)
+- **Icons**: 
+  - [Hero Icons](https://heroicons.com/) 
+  - [Lucide React](https://lucide.dev/)
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 16+ 
+- npm, yarn, or pnpm
+
+### Installation
+
+1. Clone the repository
+```bash
+git clone [your-repository-url]
+cd jjugg-test
+```
+
+2. Install dependencies
+```bash
+npm install
+# or
+yarn
+# or
+pnpm install
+```
+
+3. Run the development server
 ```bash
 npm run dev
 # or
@@ -14,27 +60,241 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+## Key Features
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+### Interactive Dashboard
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+The dashboard provides a quick overview of your job search:
+- Application statistics (total applications, interviews scheduled, success rate)
+- Recent activity feed
+- Upcoming events calendar
+- Monthly goals progress
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Glass UI Components
 
-## Learn More
+The app utilizes a modern "glassmorphism" design approach with:
+- Frosted glass effect sidebar with intuitive navigation
+- Glass-style cards with hover effects
+- Subtle animations and transitions
 
-To learn more about Next.js, take a look at the following resources:
+### Comprehensive Theming System
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
+The app includes a flexible theming system with:
+- Light and dark mode support
+- 9 predefined themes (Default, Minimalist, Cyberpunk, Premium, etc.)
+- Customizable accent colors
+- Font family options
+- Animation intensity settings
+- Border radius adjustments
+- Glass effect intensity controls
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Responsive Design
 
-## Deploy on Vercel
+The UI adapts intelligently to different screen sizes:
+- Desktop: Multi-column layout with expanded sidebar
+- Tablet: Optimized card layout with collapsible sidebar
+- Mobile: Single column layout with hidden sidebar (accessible via menu button)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Architecture
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+### Directory Structure
+
+```
+jjugg-test/
+├── components/
+│   ├── CardHeader.tsx
+│   ├── GlassSidebar.tsx
+│   ├── NavItem.tsx
+│   ├── NavItemComponent.tsx
+│   ├── ResizeHandle.tsx
+│   ├── SidebarSection.tsx
+│   ├── ThemeSwitcher.tsx
+│   ├── sections/
+│   │   ├── Applications.tsx
+│   │   ├── DashboardHome.tsx
+│   │   ├── Goals.tsx
+│   │   ├── Interviews.tsx
+│   │   ├── ProfileArtifacts.tsx
+│   │   ├── Reminders.tsx
+│   │   └── Timeline.tsx
+│   └── types.ts
+├── contexts/
+│   └── ThemeContext.tsx
+├── pages/
+│   ├── _app.tsx
+│   ├── _document.tsx
+│   ├── api/
+│   │   └── hello.ts
+│   └── index.tsx
+├── public/
+│   ├── favicon.ico
+│   ├── file.svg
+│   ├── globe.svg
+│   ├── next.svg
+│   ├── vercel.svg
+│   └── window.svg
+└── styles/
+    └── globals.css
+```
+
+### Key Components
+
+#### GlassSidebar
+
+A responsive sidebar with glass effect that displays navigation items and handles responsive states.
+
+```tsx
+<GlassSidebar
+  items={sidebarItems}
+  currentSection={currentSection}
+  setCurrentSection={setCurrentSection}
+  width={width}
+  isCollapsed={isCollapsed}
+  onResize={handleResize}
+  userName={userProfile.name}
+  userAvatar={userProfile.avatar}
+/>
+```
+
+#### NavItem
+
+Represents a single navigation item in the sidebar with advanced hover effects, active state, and badge display.
+
+```tsx
+<NavItem
+  item={item}
+  isCollapsed={isCollapsed}
+  isActive={currentSection === item.id}
+  onClick={() => setCurrentSection(item.id)}
+  onContextMenu={(e) => handleContextMenu(e, item)}
+/>
+```
+
+#### ThemeSwitcher
+
+A component that provides theme customization controls via dropdown menu.
+
+```tsx
+<ThemeSwitcher />
+```
+
+#### Section Components
+
+Multiple section components that render different views based on the selected navigation item:
+- `DashboardHome`: Main dashboard view with stats and activity
+- `ApplicationsSection`: List of job applications
+- `RemindersSection`: Upcoming events and tasks
+- `InterviewsSection`: Interview details
+- `ProfileArtifactsSection`: User profile and documents
+- `GoalsSection`: Job search goals
+- `TimelineSection`: Activity timeline
+
+### Context System
+
+#### ThemeContext
+
+Manages theme state throughout the application, providing various theme options and customization capabilities.
+
+```tsx
+<ThemeProvider>
+  <Component {...pageProps} />
+</ThemeProvider>
+```
+
+## Customization
+
+### Theme System
+
+The app supports extensive theme customization:
+
+```tsx
+// Available theme options
+const themeOptions = [
+  'default',       // Default theme
+  'minimal',       // Minimalist theme
+  'neon',          // Cyberpunk theme
+  'elegant',       // Premium theme
+  'playful',       // Playful theme
+  'corporate',     // Enterprise theme
+  'sunset',        // Warm theme
+  'oceanic',       // Deep Sea theme
+  'monochrome',    // Monochrome theme
+  'custom'         // Custom theme with user preferences
+];
+
+// Properties that can be customized
+interface ThemeSettings {
+  colorTheme: 'light' | 'dark';
+  accentColor: 'blue' | 'purple' | 'pink' | 'orange' | 'green' | 'yellow' | 'red';
+  fontFamily: 'inter' | 'lexend' | 'roboto' | 'poppins' | 'montserrat';
+  borderRadius: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  animation: 'minimal' | 'subtle' | 'moderate' | 'playful' | 'intense';
+  glassEffect: 'none' | 'subtle' | 'medium' | 'heavy';
+}
+```
+
+## Data Structure
+
+The application uses several data types to represent job applications and related information:
+
+```typescript
+// Application stages
+type ApplicationStage = 'applied' | 'screening' | 'interview' | 'offer' | 'rejected';
+
+// Application data structure
+interface Application {
+  id: string;
+  position: string;
+  company: Company;
+  dateApplied: Date;
+  stage: ApplicationStage;
+  jobDescription: string;
+  salary: string;
+  location: string;
+  remote: boolean;
+  notes: string;
+  contacts: { name: string; role: string; email: string }[];
+}
+
+// Activity data structure
+interface Activity {
+  id: string;
+  type: ActivityType;
+  title: string;
+  application: Application;
+  company: Company;
+  timestamp: Date;
+  details: string;
+}
+
+// Event data structure
+interface UpcomingEvent {
+  id: string;
+  title: string;
+  company: Company;
+  date: Date;
+  time: string;
+  type: EventType;
+  application: Application;
+  details: string;
+  deadline?: Date;
+  location?: string;
+  duration?: number;
+}
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+- [React Documentation](https://react.dev/)

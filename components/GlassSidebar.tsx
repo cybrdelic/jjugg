@@ -1,575 +1,793 @@
 'use client';
-import { useState, useRef, useEffect, Dispatch, SetStateAction, JSX } from 'react';
-import Link from 'next/link';
-import {
-  HomeIcon,
-  DocumentIcon,
-  BellIcon,
-  ChartBarIcon,
-  ChatBubbleLeftRightIcon,
-  DocumentTextIcon,
-  ClockIcon,
-  ArrowDownTrayIcon,
-} from '@heroicons/react/24/solid';
+import { useState, useRef, useEffect } from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
+import { SectionKey, NavItemType } from './types';
+import NavItem from './NavItem';
+import SidebarSection from './SidebarSection';
+import ResizeHandle from './ResizeHandle';
+import ThemeSwitcher from './ThemeSwitcher';
+import { Menu, ChevronLeft } from 'lucide-react';
 
-// Define SectionKey type (same as in Home.tsx)
-type SectionKey =
-  | 'dashboard-home'
-  | 'applications-section'
-  | 'reminders-section'
-  | 'interviews-section'
-  | 'profile-artifacts-section'
-  | 'goals-section'
-  | 'timeline-section';
-
-// Define props interface for GlassSidebar
 interface GlassSidebarProps {
+  items: NavItemType[];
   currentSection: SectionKey;
-  setCurrentSection: Dispatch<SetStateAction<SectionKey>>;
+  setCurrentSection: (section: SectionKey) => void;
+  isCollapsed: boolean;
+  width: number;
+  onResize: (width: number) => void;
+  userName: string;
+  userAvatar: string;
 }
 
-export default function GlassSidebar({ currentSection, setCurrentSection }: GlassSidebarProps) {
-  // State
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isDarkTheme, setIsDarkTheme] = useState(true);
-  const [isDragging, setIsDragging] = useState(false);
-  const [contextMenu, setContextMenu] = useState({
-    visible: false,
-    x: 0,
-    y: 0,
-    itemId: '',
-    itemLabel: '',
-    itemIcon: null as JSX.Element | null,
-    itemColor: '',
-  });
-  const [collapsedSections, setCollapsedSections] = useState({
-    main: false,
-    settings: false,
-  });
-
-  // Refs
+export default function GlassSidebar({ 
+  items, 
+  currentSection, 
+  setCurrentSection, 
+  isCollapsed, 
+  width, 
+  onResize,
+  userName,
+  userAvatar
+}: GlassSidebarProps) {
+  const { currentTheme, toggleColorTheme } = useTheme();
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const initialX = useRef(0);
-  const initialWidth = useRef(280);
-  const contentAreaRef = useRef<HTMLElement | null>(null);
+  const [expandedWidth, setExpandedWidth] = useState(width);
+  const [sections, setSections] = useState<Record<string, NavItemType[]>>({
+    main: items
+  });
 
-  // Effect to adjust content area margin
-  useEffect(() => {
-    contentAreaRef.current = document.getElementById('content-area') as HTMLElement;
-    if (contentAreaRef.current) {
-      contentAreaRef.current.style.marginLeft = isCollapsed
-        ? '80px'
-        : `${sidebarRef.current?.offsetWidth || 280}px`;
-    }
-  }, [isCollapsed]);
-
-  // Toggle sidebar collapse
+  // Handle sidebar collapse/expand
   const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
-  };
-
-  // Toggle theme
-  const toggleTheme = () => {
-    setIsDarkTheme(!isDarkTheme);
-  };
-
-  // Toggle section collapse
-  const toggleSection = (sectionId: 'main' | 'settings') => {
-    setCollapsedSections((prev) => ({
-      ...prev,
-      [sectionId]: !prev[sectionId],
-    }));
-  };
-
-  // Handle navigation item clicks
-  const handleNavItemClick = (e: React.MouseEvent<HTMLDivElement>, itemColor: string, itemRgb: string) => {
-    const element = e.currentTarget;
-    const ripple = document.createElement('span');
-    ripple.className = 'ripple';
-    const rect = element.getBoundingClientRect();
-    const size = Math.max(rect.width, rect.height) * 2;
-    const x = e.clientX - rect.left - size / 2;
-    const y = e.clientY - rect.top - size / 2;
-    ripple.style.width = ripple.style.height = `${size}px`;
-    ripple.style.left = `${x}px`;
-    ripple.style.top = `${y}px`;
-    element.appendChild(ripple);
-    setTimeout(() => ripple.remove(), 600);
-
-    if (itemColor && itemRgb) {
-      document.documentElement.style.setProperty('--primary-color', itemColor);
-      document.documentElement.style.setProperty('--primary-rgb', itemRgb);
+    if (isCollapsed) {
+      onResize(expandedWidth); // Expand to previous width
+    } else {
+      onResize(70); // Collapse to 70px
     }
   };
 
-  // Handle resize start
-  const handleResizeStart = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(true);
-    initialX.current = e.clientX;
-    initialWidth.current = sidebarRef.current?.offsetWidth || 280;
-  };
-
-  // Handle resize movement and end
+  // Update the width when expandedWidth changes and sidebar is not collapsed
   useEffect(() => {
-    const handleResizeMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-      const delta = e.clientX - initialX.current;
-      const newWidth = Math.max(180, Math.min(400, initialWidth.current + delta));
-      if (sidebarRef.current) {
-        sidebarRef.current.style.width = `${newWidth}px`;
-      }
-      if (contentAreaRef.current) {
-        contentAreaRef.current.style.marginLeft = `${newWidth}px`;
-      }
-    };
-
-    const handleResizeEnd = () => {
-      setIsDragging(false);
-    };
-
-    if (isDragging) {
-      document.addEventListener('mousemove', handleResizeMove);
-      document.addEventListener('mouseup', handleResizeEnd);
+    if (!isCollapsed) {
+      onResize(expandedWidth);
     }
+  }, [expandedWidth, isCollapsed, onResize]);
 
-    return () => {
-      document.removeEventListener('mousemove', handleResizeMove);
-      document.removeEventListener('mouseup', handleResizeEnd);
+  // Group items into sections for the sidebar
+  useEffect(() => {
+    const categorizedItems: Record<string, NavItemType[]> = {
+      main: []
     };
-  }, [isDragging]);
 
-  // Handle context menu
-  const handleContextMenu = (
-    e: React.MouseEvent<HTMLDivElement>,
-    itemId: string,
-    itemLabel: string,
-    itemIcon: JSX.Element,
-    itemColor: string
-  ) => {
-    e.preventDefault();
-    setContextMenu({
-      visible: true,
-      x: e.pageX,
-      y: e.pageY,
-      itemId,
-      itemLabel,
-      itemIcon,
-      itemColor,
+    items.forEach(item => {
+      // Logic to categorize items could be extended here
+      categorizedItems.main.push(item);
     });
+
+    setSections(categorizedItems);
+  }, [items]);
+
+  // Contextual menu for nav items
+  const handleContextMenu = (e: React.MouseEvent, item: NavItemType) => {
+    e.preventDefault();
+    // Implement context menu functionality
   };
 
-  // Close context menu on click outside
-  useEffect(() => {
-    const handleClickOutside = () => {
-      setContextMenu((prev) => ({ ...prev, visible: false }));
-    };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
-
-  // Define NavItem type
-  interface NavItem {
-    id: string; // Will be SectionKey for sections, string for links
-    label: string;
-    icon: JSX.Element;
-    color: string;
-    rgb: string;
-    type: 'section' | 'link';
-    path?: string;
-  }
-
-  // Navigation items
-  const navItems: NavItem[] = [
-    {
-      id: 'dashboard-home',
-      label: 'Home',
-      icon: <HomeIcon className="w-5 h-5" />,
-      color: 'blue',
-      rgb: '59,130,246',
-      type: 'section',
-    },
-    {
-      id: 'applications-section',
-      label: 'Applications',
-      icon: <DocumentIcon className="w-5 h-5" />,
-      color: 'purple',
-      rgb: '139,92,246',
-      type: 'section',
-    },
-    {
-      id: 'reminders-section',
-      label: 'Reminders',
-      icon: <BellIcon className="w-5 h-5" />,
-      color: 'pink',
-      rgb: '236,72,153',
-      type: 'section',
-    },
-    {
-      id: 'analytics',
-      label: 'Analytics',
-      icon: <ChartBarIcon className="w-5 h-5" />,
-      color: 'green',
-      rgb: '16,185,129',
-      type: 'link',
-      path: '/analytics',
-    },
-    {
-      id: 'interviews-section',
-      label: 'Interviews',
-      icon: <ChatBubbleLeftRightIcon className="w-5 h-5" />,
-      color: 'orange',
-      rgb: '249,115,22',
-      type: 'section',
-    },
-    {
-      id: 'profile-artifacts-section',
-      label: 'Profile Artifacts',
-      icon: <DocumentTextIcon className="w-5 h-5" />,
-      color: 'teal',
-      rgb: '45,212,191',
-      type: 'section',
-    },
-    {
-      id: 'goals-section',
-      label: 'Goals',
-      icon: <ClockIcon className="w-5 h-5" />,
-      color: 'yellow',
-      rgb: '234,179,8',
-      type: 'section',
-    },
-    {
-      id: 'timeline-section',
-      label: 'Timeline',
-      icon: <ArrowDownTrayIcon className="w-5 h-5" />,
-      color: 'red',
-      rgb: '239,68,68',
-      type: 'section',
-    },
-  ];
-
-  // Render context menu
-  const renderContextMenu = () => {
-    if (!contextMenu.visible) return null;
+  const [hoveredHeaderButton, setHoveredHeaderButton] = useState(false);
+  const [hoveredAvatar, setHoveredAvatar] = useState(false);
+  
+  // Animated background particles for visual polish
+  const renderBackgroundParticles = () => {
     return (
-      <div className="context-menu" style={{ top: contextMenu.y, left: contextMenu.x }
-      }>
-        <div className="context-item" > Pin {contextMenu.itemLabel} </div>
-        < div className="context-item" > Edit {contextMenu.itemLabel} </div>
-        < div className="context-item" > Remove {contextMenu.itemLabel} </div>
+      <div className="sidebar-bg-particles">
+        <div className="particle p1"></div>
+        <div className="particle p2"></div>
+        <div className="particle p3"></div>
+        <div className="particle p4"></div>
+        <div className="particle p5"></div>
       </div>
     );
   };
 
-  // CSS classes
-  const sidebarClasses = `glass-sidebar ${isCollapsed ? 'collapsed' : ''} ${isDarkTheme ? 'dark-theme' : 'light-theme'
-    }`;
-
   return (
-    <>
-      <div ref={sidebarRef} className={sidebarClasses} >
-        {/* Header */}
-        < div className="sidebar-header" >
-          <div className="logo-container" >
-            <div className="logo" > J </div>
-            {!isCollapsed && <div className="logo-text" > jjugg </div>}
-          </div>
-          < button className="toggle-btn" onClick={toggleSidebar} >
-            <svg viewBox="0 0 24 24" width="24" height="24" >
-              <path d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+    <div 
+      ref={sidebarRef} 
+      className={`glass-sidebar ${isCollapsed ? 'collapsed' : ''}`}
+      style={{ width: isCollapsed ? '70px' : `${width}px` }}
+    >
+      {/* Animated background effects */}
+      {currentTheme.animation !== 'minimal' && renderBackgroundParticles()}
+      
+      {/* Glass effect overlay */}
+      <div className="glass-overlay"></div>
+      
+      {/* Top accent line */}
+      <div className="top-accent-line"></div>
+      
+      {/* ResizeHandle component for adjusting sidebar width */}
+      {!isCollapsed && (
+        <ResizeHandle 
+          setExpandedWidth={setExpandedWidth} 
+          width={width} 
+          variant="accent"
+          showActiveIndicator={true}
+        />
+      )}
+      
+      {/* Header with enhanced animations */}
+      <div className="sidebar-header">
+        <div className="logo">
+          <span className="logo-text">{isCollapsed ? 'J' : 'jjugg'}</span>
+          <div className="logo-glow"></div>
         </div>
-
-        {/* Navigation */}
-        <div className="nav-container" >
-          {/* Main Navigation Section */}
-          < div className={`section ${collapsedSections.main ? 'section-collapsed' : ''}`}>
-            <div className="section-header" onClick={() => toggleSection('main')}>
-              <span>Main Navigation </span>
-              < div className="section-toggle" >
-                <svg viewBox="0 0 24 24" width="16" height="16" >
-                  <path d="M19 9l-7 7-7-7" />
-                </svg>
+        <button 
+          onClick={toggleSidebar} 
+          className={`toggle-btn ${hoveredHeaderButton ? 'hovered' : ''}`}
+          onMouseEnter={() => setHoveredHeaderButton(true)}
+          onMouseLeave={() => setHoveredHeaderButton(false)}
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {isCollapsed ? (
+            <ChevronLeft size={20} className="toggle-icon open" />
+          ) : (
+            <Menu size={20} className="toggle-icon" />
+          )}
+          <div className="btn-background"></div>
+        </button>
+      </div>
+      
+      {/* User Profile with enhanced interactions */}
+      <div 
+        className={`user-profile ${hoveredAvatar ? 'hovered' : ''}`}
+        onMouseEnter={() => setHoveredAvatar(true)}
+        onMouseLeave={() => setHoveredAvatar(false)}
+      >
+        <div className="avatar">
+          {userAvatar ? (
+            <img 
+              src={userAvatar} 
+              alt={`${userName}'s avatar`} 
+              className="avatar-img" 
+            />
+          ) : (
+            <div className="avatar-placeholder">
+              {userName.charAt(0)}
+            </div>
+          )}
+          {hoveredAvatar && <div className="avatar-highlight"></div>}
+        </div>
+        {!isCollapsed && (
+          <div className="user-info">
+            <div className="user-name">
+              {userName}
+              <div className="name-underline"></div>
+            </div>
+            <div className="user-status">
+              <span className="status-dot online">
+                <span className="status-pulse"></span>
+              </span>
+              <span className="status-text">Online</span>
+            </div>
+          </div>
+        )}
+        {isCollapsed && hoveredAvatar && (
+          <div className="avatar-tooltip">
+            <div className="tooltip-content">
+              <div className="tooltip-name">{userName}</div>
+              <div className="tooltip-status">
+                <span className="tooltip-dot"></span>
+                <span>Online</span>
               </div>
             </div>
-            < div className="section-items" >
-              {
-                navItems.map((item) =>
-                  item.type === 'section' ? (
-                    <div
-                      key={item.id}
-                      className={`nav-item ${currentSection === item.id ? 'active' : ''}`}
-                      onClick={(e) => {
-                        setCurrentSection(item.id as SectionKey); // Safe cast since section IDs match SectionKey
-                        handleNavItemClick(e, item.color, item.rgb);
-                      }}
-                      onContextMenu={(e) => handleContextMenu(e, item.id, item.label, item.icon, item.color)}
-                    >
-                      <div className="hover-indicator" />
-                      <div className="nav-icon" > {item.icon} </div>
-                      {!isCollapsed && <div className="nav-label" > {item.label} </div>}
-                      {isCollapsed && <div className="tooltip" > {item.label} </div>}
-                    </div>
-                  ) : (
-                    <Link href={item.path!} key={item.id} >
-                      <div
-                        className={`nav-item ${currentSection === item.id ? 'active' : ''}`}
-                        onClick={(e) => handleNavItemClick(e, item.color, item.rgb)}
-                        onContextMenu={(e) => handleContextMenu(e, item.id, item.label, item.icon, item.color)}
-                      >
-                        <div className="hover-indicator" />
-                        <div className="nav-icon" > {item.icon} </div>
-                        {!isCollapsed && <div className="nav-label" > {item.label} </div>}
-                        {isCollapsed && <div className="tooltip" > {item.label} </div>}
-                      </div>
-                    </Link>
-                  )
-                )}
-            </div>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="sidebar-footer" >
-          <div className="nav-item" onClick={toggleTheme} >
-            <div className="hover-indicator" />
-            <div className="nav-icon" >
-              {
-                isDarkTheme ? (
-                  <svg viewBox="0 0 24 24" width="20" height="20" >
-                    <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" width="20" height="20" >
-                    <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                  </svg>
-                )}
-            </div>
-            {!isCollapsed && <div className="nav-label" > {isDarkTheme ? 'Light Theme' : 'Dark Theme'} </div>}
-            {isCollapsed && <div className="tooltip" > {isDarkTheme ? 'Light Theme' : 'Dark Theme'} </div>}
-          </div>
-        </div>
-
-        {/* Resize Handle */}
-        <div className="resize-handle" onMouseDown={handleResizeStart} />
+        )}
       </div>
-      {renderContextMenu()}
-      {/* CSS Styles */}
-      <style jsx global > {`
+
+      {/* Navigation with enhanced scrollbar */}
+      <div className="nav-scroll scrollbar-thin">
+        {Object.entries(sections).map(([sectionId, sectionItems]) => (
+          <SidebarSection
+            key={sectionId}
+            section={{
+              id: sectionId,
+              title: sectionId === 'main' ? 'Navigation' : sectionId,
+              items: sectionItems,
+              isExpandable: true,
+            }}
+            isCollapsed={isCollapsed}
+            currentSection={currentSection}
+            setCurrentSection={setCurrentSection}
+            onContextMenu={handleContextMenu}
+          />
+        ))}
+      </div>
+
+      {/* Footer with shadow effect */}
+      <div className="sidebar-footer">
+        <div className="footer-content">
+          <ThemeSwitcher />
+        </div>
+        <div className="footer-shadow"></div>
+      </div>
+
+      <style jsx>{`
         .glass-sidebar {
-          width: 280px;
           height: 100vh;
-          background: rgba(255, 255, 255, 0.1);
-          backdrop-filter: blur(10px);
-          border-right: 1px solid rgba(255, 255, 255, 0.2);
+          background: var(--glass-sidebar-bg);
+          backdrop-filter: blur(var(--blur-amount));
+          -webkit-backdrop-filter: blur(var(--blur-amount));
+          border-right: 1px solid var(--border-thin);
+          box-shadow: var(--shadow);
           display: flex;
           flex-direction: column;
-          transition: width 0.3s ease;
           position: fixed;
-          top: 0;
-          left: 0;
-          z-index: 1000;
-        }
-        .glass-sidebar.collapsed {
-          width: 80px;
-        }
-        .sidebar-header {
-          padding: 16px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .logo-container {
-          display: flex;
-          align-items: center;
-        }
-        .logo {
-          width: 40px;
-          height: 40px;
-          background: var(--primary-color, #3b82f6);
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 24px;
-          font-weight: bold;
-          color: white;
-        }
-        .logo-text {
-          margin-left: 12px;
-          font-size: 18px;
-          font-weight: 600;
-          color: #fff;
-        }
-        .toggle-btn {
-          background: none;
-          border: none;
-          cursor: pointer;
-          padding: 4px;
-        }
-        .toggle-btn svg {
-          stroke: #fff;
-          stroke-width: 2;
-        }
-        .nav-container {
-          flex: 1;
-          overflow-y: auto;
-          padding: 16px 0;
-        }
-        .section-header {
-          padding: 8px 16px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          cursor: pointer;
-          color: #fff;
-          font-size: 14px;
-          text-transform: uppercase;
-        }
-        .section-toggle svg {
-          stroke: #fff;
-          stroke-width: 2;
-          transition: transform 0.3s ease;
-        }
-        .section-collapsed .section-toggle svg {
-          transform: rotate(180deg);
-        }
-        .section-items {
-          display: flex;
-          flex-direction: column;
-        }
-        .section-collapsed .section-items {
-          display: none;
-        }
-        .nav-item {
-          padding: 10px 16px;
-          display: flex;
-          align-items: center;
-          position: relative;
-          cursor: pointer;
-          color: #fff;
+          z-index: var(--z-sidebar);
+          transition: all var(--transition-normal) var(--easing-decelerate);
           overflow: hidden;
         }
-        .nav-item:hover .hover-indicator,
-        .nav-item.active .hover-indicator {
-          opacity: 1;
-          transform: translateX(0);
-        }
-        .hover-indicator {
+        
+        /* Glass overlay for enhanced depth */
+        .glass-overlay {
           position: absolute;
-          left: 0;
           top: 0;
+          left: 0;
+          width: 100%;
           height: 100%;
-          width: 4px;
-          background: var(--primary-color, #3b82f6);
-          opacity: 0;
-          transform: translateX(-100%);
-          transition: opacity 0.2s ease, transform 0.2s ease;
+          background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.03),
+            transparent 40%,
+            rgba(255, 255, 255, 0.02) 80%
+          );
+          pointer-events: none;
+          z-index: -1;
         }
-        .nav-icon {
-          width: 24px;
-          height: 24px;
+        
+        .dark .glass-overlay {
+          background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.04),
+            transparent 30%,
+            rgba(255, 255, 255, 0.01) 70%
+          );
+        }
+        
+        /* Accent line at the top of sidebar */
+        .top-accent-line {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: linear-gradient(
+            to right,
+            var(--accent-primary),
+            var(--accent-secondary),
+            transparent
+          );
+          opacity: 0.6;
+          z-index: 1;
+        }
+        
+        /* Animated background particles */
+        .sidebar-bg-particles {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          pointer-events: none;
+          z-index: -1;
+        }
+        
+        .particle {
+          position: absolute;
+          border-radius: 50%;
+          background: var(--accent-primary);
+          opacity: 0;
+          z-index: -1;
+        }
+        
+        .p1 {
+          width: 20px;
+          height: 20px;
+          top: 20%;
+          left: 30%;
+          filter: blur(10px);
+          animation: float-around 25s ease-in-out infinite;
+          animation-delay: 0s;
+          background: var(--accent-primary);
+        }
+        
+        .p2 {
+          width: 30px;
+          height: 30px;
+          bottom: 30%;
+          right: 20%;
+          filter: blur(15px);
+          animation: float-around 30s ease-in-out infinite;
+          animation-delay: 5s;
+          background: var(--accent-secondary);
+        }
+        
+        .p3 {
+          width: 10px;
+          height: 10px;
+          top: 70%;
+          left: 15%;
+          filter: blur(8px);
+          animation: float-around 20s ease-in-out infinite;
+          animation-delay: 2s;
+          background: var(--accent-primary);
+        }
+        
+        .p4 {
+          width: 15px;
+          height: 15px;
+          top: 10%;
+          right: 10%;
+          filter: blur(10px);
+          animation: float-around 28s ease-in-out infinite;
+          animation-delay: 8s;
+          background: var(--accent-secondary);
+        }
+        
+        .p5 {
+          width: 25px;
+          height: 25px;
+          bottom: 10%;
+          left: 40%;
+          filter: blur(12px);
+          animation: float-around 32s ease-in-out infinite;
+          animation-delay: 12s;
+          background: var(--accent-primary);
+        }
+        
+        /* Sidebar header with enhanced styling */
+        .sidebar-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 18px;
+          border-bottom: 1px solid var(--border-divider);
+          position: relative;
+          z-index: 2;
+        }
+        
+        /* Logo with glow effect */
+        .logo {
+          position: relative;
+          background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+          padding: ${isCollapsed ? '10px' : '8px 16px'};
+          border-radius: var(--border-radius);
+          font-weight: 700;
+          font-size: ${isCollapsed ? '20px' : '24px'};
+          color: white;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+          transition: all var(--transition-normal) var(--easing-standard);
+          overflow: hidden;
+        }
+        
+        .logo:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .logo-text {
+          position: relative;
+          z-index: 1;
+        }
+        
+        .logo-glow {
+          position: absolute;
+          top: 0;
+          left: -50%;
+          width: 150%;
+          height: 100%;
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.4),
+            transparent
+          );
+          transform: skewX(-20deg);
+          animation: logo-shine 6s infinite;
+          opacity: 0;
+        }
+        
+        /* Toggle button with hover effects */
+        .toggle-btn {
+          position: relative;
+          background: none;
+          border: none;
+          color: var(--text-primary);
+          cursor: pointer;
+          padding: 8px;
+          border-radius: var(--border-radius-sm);
+          transition: all var(--transition-fast) var(--easing-standard);
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #fff;
+          overflow: hidden;
+          z-index: 1;
         }
-        .nav-label {
-          margin-left: 12px;
-          font-size: 14px;
-        }
-        .nav-item.active {
-          background: rgba(255, 255, 255, 0.1);
-        }
-        .tooltip {
+        
+        .btn-background {
           position: absolute;
-          left: 100%;
-          top: 50%;
-          transform: translateY(-50%);
-          background: rgba(0, 0, 0, 0.8);
-          color: #fff;
-          padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 12px;
-          white-space: nowrap;
-          pointer-events: none;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: var(--hover-bg);
           opacity: 0;
-          transition: opacity 0.2s ease;
-          margin-left: 8px;
+          transition: opacity var(--transition-fast) var(--easing-standard);
+          border-radius: var(--border-radius-sm);
+          z-index: -1;
         }
-        .nav-item:hover .tooltip {
+        
+        .toggle-btn.hovered .btn-background {
           opacity: 1;
         }
-        .sidebar-footer {
-          padding: 16px;
-          border-top: 1px solid rgba(255, 255, 255, 0.2);
+        
+        .toggle-btn:hover {
+          transform: scale(1.1);
+          color: var(--accent-primary);
         }
-        .resize-handle {
-          position: absolute;
-          right: 0;
-          top: 0;
-          width: 4px;
-          height: 100%;
-          background: rgba(255, 255, 255, 0.2);
-          cursor: ew-resize;
+        
+        .dark .toggle-btn:hover {
+          text-shadow: 0 0 8px rgba(var(--accent-primary-rgb), 0.5);
         }
-        .context-menu {
-          position: absolute;
-          background: rgba(255, 255, 255, 0.9);
-          backdrop-filter: blur(10px);
-          border-radius: 8px;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          z-index: 1001;
-          min-width: 150px;
+        
+        .toggle-icon {
+          transition: transform var(--transition-normal) var(--easing-standard);
         }
-        .context-item {
-          padding: 8px 16px;
-          color: #333;
-          font-size: 14px;
+        
+        .toggle-icon.open {
+          transform: rotate(180deg);
+        }
+
+        /* Enhanced user profile section */
+        .user-profile {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 16px 18px;
+          border-bottom: 1px solid var(--border-divider);
+          position: relative;
+          transition: background-color var(--transition-normal) var(--easing-standard);
           cursor: pointer;
         }
-        .context-item:hover {
-          background: rgba(0, 0, 0, 0.05);
+        
+        .user-profile.hovered {
+          background-color: var(--hover-bg);
         }
-        .ripple {
-          position: absolute;
+        
+        /* Avatar with glow/highlight effects */
+        .avatar {
+          position: relative;
+          width: 40px;
+          height: 40px;
           border-radius: 50%;
-          background: rgba(255, 255, 255, 0.3);
-          transform: scale(0);
-          animation: ripple 0.6s linear;
+          overflow: hidden;
+          flex-shrink: 0;
+          background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary));
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-weight: 600;
+          font-size: 18px;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+          border: 2px solid var(--glass-bg);
+          transition: all var(--transition-normal) var(--easing-standard);
+          z-index: 1;
+        }
+        
+        .user-profile.hovered .avatar {
+          transform: scale(1.05);
+          box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+          border-color: var(--accent-primary);
+        }
+        
+        .avatar-highlight {
+          position: absolute;
+          top: -2px;
+          left: -2px;
+          right: -2px;
+          bottom: -2px;
+          border-radius: 50%;
+          background: conic-gradient(
+            from 0deg,
+            var(--accent-primary),
+            var(--accent-secondary),
+            var(--accent-primary)
+          );
+          z-index: -1;
+          animation: rotate 3s linear infinite;
+        }
+        
+        .avatar-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .avatar-placeholder {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          height: 100%;
+          text-transform: uppercase;
+        }
+
+        /* User info with animations */
+        .user-info {
+          overflow: hidden;
+          flex: 1;
+          min-width: 0;
+        }
+
+        .user-name {
+          position: relative;
+          font-weight: 600;
+          color: var(--text-primary);
+          margin-bottom: 4px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          padding-bottom: 2px;
+        }
+        
+        .name-underline {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 0;
+          height: 1px;
+          background-color: var(--accent-primary);
+          transition: width var(--transition-normal) var(--easing-standard);
+        }
+        
+        .user-profile.hovered .name-underline {
+          width: 100%;
+        }
+
+        /* Status indicator with pulse animation */
+        .user-status {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 12px;
+          color: var(--text-tertiary);
+        }
+
+        .status-dot {
+          position: relative;
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .status-dot.online {
+          background-color: var(--accent-success);
+        }
+        
+        .status-pulse {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          background-color: var(--accent-success);
+          opacity: 0.6;
+          animation: status-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        /* User tooltip in collapsed mode */
+        .avatar-tooltip {
+          position: absolute;
+          left: 60px;
+          top: 50%;
+          transform: translateY(-50%);
+          background-color: var(--tooltip-bg);
+          border-radius: var(--border-radius);
+          box-shadow: var(--shadow);
+          padding: 10px 14px;
+          z-index: 100;
+          pointer-events: none;
+          animation: fade-in 0.2s var(--easing-standard);
+          backdrop-filter: blur(var(--blur-amount));
+          -webkit-backdrop-filter: blur(var(--blur-amount));
+          border: 1px solid var(--border-thin);
+        }
+        
+        .avatar-tooltip::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: -6px;
+          transform: translateY(-50%) rotate(45deg);
+          width: 12px;
+          height: 12px;
+          background-color: var(--tooltip-bg);
+          border-left: 1px solid var(--border-thin);
+          border-bottom: 1px solid var(--border-thin);
+        }
+        
+        .tooltip-name {
+          font-weight: 600;
+          color: var(--text-primary);
+          margin-bottom: 4px;
+          white-space: nowrap;
+        }
+        
+        .tooltip-status {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 12px;
+          color: var(--text-tertiary);
+        }
+        
+        .tooltip-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background-color: var(--accent-success);
+        }
+
+        /* Navigation scrollable area */
+        .nav-scroll {
+          flex-grow: 1;
+          overflow-y: auto;
+          padding: 16px;
+          margin-right: -8px;
+          padding-right: 8px;
+          position: relative;
+          z-index: 1;
+        }
+        
+        /* Shimmering scrollbar track effect */
+        .nav-scroll::-webkit-scrollbar-track {
+          background: linear-gradient(
+            to bottom,
+            transparent,
+            rgba(var(--accent-primary-rgb), 0.05),
+            transparent
+          );
+          border-radius: 4px;
+        }
+        
+        .dark .nav-scroll::-webkit-scrollbar-thumb {
+          background: rgba(156, 163, 175, 0.4);
+          box-shadow: 0 0 6px rgba(var(--accent-primary-rgb), 0.2);
+        }
+        
+        .dark .nav-scroll::-webkit-scrollbar-thumb:hover {
+          background: rgba(156, 163, 175, 0.6);
+          box-shadow: 0 0 8px rgba(var(--accent-primary-rgb), 0.4);
+        }
+
+        /* Footer with enhanced styling */
+        .sidebar-footer {
+          position: relative;
+          padding: 16px 18px;
+          border-top: 1px solid var(--border-divider);
+          display: flex;
+          align-items: center;
+          justify-content: ${isCollapsed ? 'center' : 'space-between'};
+          z-index: 2;
+        }
+        
+        .footer-content {
+          position: relative;
+          z-index: 1;
+          width: 100%;
+        }
+        
+        .footer-shadow {
+          position: absolute;
+          bottom: calc(100% - 1px);
+          left: 0;
+          right: 0;
+          height: 30px;
+          background: linear-gradient(to top, var(--glass-sidebar-bg), transparent);
           pointer-events: none;
         }
-        @keyframes ripple {
-          to {
-            transform: scale(4);
+
+        /* Animation keyframes */
+        @keyframes float-around {
+          0%, 100% {
+            opacity: 0.5;
+            transform: translate(0, 0);
+          }
+          25% {
+            opacity: 0.7;
+            transform: translate(10px, -20px);
+          }
+          50% {
+            opacity: 0.5;
+            transform: translate(20px, 0);
+          }
+          75% {
+            opacity: 0.7;
+            transform: translate(0, -10px);
+          }
+        }
+        
+        @keyframes logo-shine {
+          0%, 100% {
+            opacity: 0;
+            left: -50%;
+          }
+          50% {
+            opacity: 0.5;
+          }
+          60% {
+            opacity: 0.5;
+            left: 100%;
+          }
+          61% {
             opacity: 0;
           }
         }
-        .dark-theme {
-          background: rgba(31, 41, 55, 0.9);
-          border-right: 1px solid rgba(255, 255, 255, 0.1);
+        
+        @keyframes status-pulse {
+          0%, 100% {
+            transform: scale(1);
+            opacity: 0.6;
+          }
+          50% {
+            transform: scale(1.8);
+            opacity: 0;
+          }
         }
-        .dark-theme .sidebar-header,
-        .dark-theme .sidebar-footer {
-          border-color: rgba(255, 255, 255, 0.1);
+        
+        @keyframes rotate {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
-        .dark-theme .context-menu {
-          background: rgba(55, 65, 81, 0.9);
-          color: #fff;
+        
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(-50%) translateX(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(-50%) translateX(0);
+          }
         }
-        .dark-theme .context-item {
-          color: #fff;
+
+        /* Media queries for responsive design */
+        @media (max-width: 1024px) {
+          .glass-sidebar {
+            transform: ${isCollapsed ? 'translateX(-100%)' : 'translateX(0)'};
+            transition: transform var(--transition-normal) var(--easing-standard), width var(--transition-normal) var(--easing-decelerate);
+          }
         }
-        .dark-theme .context-item:hover {
-          background: rgba(255, 255, 255, 0.1);
-        }
-        .glass-sidebar.collapsed .logo-text,
-        .glass-sidebar.collapsed .nav-label {
-          display: none;
+        
+        @media (max-width: 768px) {
+          .sidebar-header {
+            padding: 14px;
+          }
+          
+          .user-profile {
+            padding: 14px;
+          }
+          
+          .nav-scroll {
+            padding: 14px 12px;
+          }
+          
+          .sidebar-footer {
+            padding: 14px;
+          }
         }
       `}</style>
-    </>
+    </div>
   );
 }
