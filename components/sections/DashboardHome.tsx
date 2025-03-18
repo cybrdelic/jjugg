@@ -1,11 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FileText, Bell, Calendar, Search, CheckCircle, Activity, TrendingUp, ArrowUpRight,
-  BarChart2, MoreHorizontal, ChevronRight, ChevronDown, Clock, Target, Users
+  BarChart2, MoreHorizontal, ChevronRight, ChevronDown, Clock, Target, Users, Plus,
+  X, SlidersHorizontal
 } from 'lucide-react';
 import CardHeader from '../CardHeader';
+import StatCard from '../dashboard/StatCard';
+import ActivityItem from '../dashboard/ActivityItem';
+import UpcomingEvent from '../dashboard/UpcomingEvent';
+import GoalCard from '../dashboard/GoalCard';
+import StageCard from '../dashboard/StageCard';
+import ActionButton from '../dashboard/ActionButton';
 
 // Types
 interface Company {
@@ -274,6 +281,8 @@ const generateGoals = (): MonthlyGoal[] => {
 
 export default function DashboardHome() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [mounted, setMounted] = useState(false);
   
   // Initialize data
   const activities = generateActivities();
@@ -281,167 +290,119 @@ export default function DashboardHome() {
   const appStats = generateStats();
   const monthlyGoals = generateGoals();
   
-  // Format date
-  const formatDate = (date: Date) => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const dateToCheck = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    
-    if (dateToCheck.getTime() === today.getTime()) {
-      return 'Today';
-    }
-    
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-    if (dateToCheck.getTime() === tomorrow.getTime()) {
-      return 'Tomorrow';
-    }
-    
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  // Animation effect on mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  const stageDescriptions = {
+    applied: 'Initial applications submitted but no response yet',
+    screening: 'Initial reviews, assessments, and phone interviews',
+    interview: 'Technical and team interviews in progress',
+    offer: 'Job offers received or being negotiated',
+    rejected: 'Applications that were not successful'
   };
   
-  // Get activity icon based on type
-  const getActivityIcon = (type: 'application' | 'interview' | 'offer' | 'rejected' | 'assessment' | 'screening' | 'task' | 'email') => {
-    switch (type) {
-      case 'application':
-        return <FileText size={18} className="activity-icon application" />;
-      case 'interview':
-        return <Users size={18} className="activity-icon interview" />;
-      case 'offer':
-        return <CheckCircle size={18} className="activity-icon offer" />;
-      case 'assessment':
-        return <Target size={18} className="activity-icon assessment" />;
-      case 'rejected':
-        return <TrendingUp size={18} className="activity-icon rejected" />;
-      case 'task':
-        return <CheckCircle size={18} className="activity-icon task" />;
-      case 'email':
-        return <Bell size={18} className="activity-icon email" />;
-      case 'screening':
-        return <Activity size={18} className="activity-icon screening" />;
-      default:
-        return <Activity size={18} className="activity-icon" />;
-    }
+  // Handle search input change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   };
   
-  // Get event icon based on type
-  const getEventIcon = (type: 'Interview' | 'Task' | 'Deadline') => {
-    switch (type) {
-      case 'Interview':
-        return <Users size={18} className="event-icon interview" />;
-      case 'Task':
-        return <CheckCircle size={18} className="event-icon task" />;
-      case 'Deadline':
-        return <Clock size={18} className="event-icon deadline" />;
-      default:
-        return <Calendar size={18} className="event-icon" />;
-    }
-  };
-  
-  // Get goal progress color
-  const getGoalProgressColor = (progress: number) => {
-    if (progress >= 100) return 'var(--accent-success)';
-    if (progress >= 60) return 'var(--accent-blue)';
-    if (progress >= 30) return 'var(--accent-yellow)';
-    return 'var(--accent-red)';
+  // Handle view all buttons
+  const handleViewAll = (section: string) => {
+    console.log(`View all clicked for ${section}`);
+    // Navigate to full view of the section or open modal
   };
   
   return (
-    <section className="dashboard-home reveal-element">
+    <section className={`dashboard-home ${mounted ? 'mounted' : ''}`}>
       <CardHeader
         title="Dashboard Overview"
         subtitle="Track your job search progress and upcoming tasks"
         accentColor="var(--accent-blue)"
         variant="default"
       >
-        <div className="dashboard-search">
+        <div className={`dashboard-search ${isSearchFocused ? 'focused' : ''}`}>
           <Search size={18} className="search-icon" />
           <input
             type="text"
             placeholder="Search applications, companies..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchChange}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
             className="search-input"
           />
+          {searchTerm && (
+            <button className="clear-search" onClick={() => setSearchTerm("")}>
+              <X size={14} />
+            </button>
+          )}
         </div>
       </CardHeader>
       
-      <div className="stats-summary reveal-element">
-        <div className="stat-card">
-          <div className="stat-icon" style={{ backgroundColor: 'rgba(var(--accent-blue-rgb), 0.1)' }}>
-            <FileText size={24} color="var(--accent-blue)" />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{appStats.totalApplications}</div>
-            <div className="stat-label">Applications</div>
-          </div>
-        </div>
+      <div className="stats-summary">
+        <StatCard
+          value={appStats.totalApplications}
+          label="Applications"
+          icon={FileText}
+          color="var(--accent-blue)"
+          trend={{ value: 20, isPositive: true }}
+          onClick={() => console.log('Applications stat clicked')}
+        />
         
-        <div className="stat-card">
-          <div className="stat-icon" style={{ backgroundColor: 'rgba(var(--accent-green-rgb), 0.1)' }}>
-            <Calendar size={24} color="var(--accent-green)" />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{appStats.interviewsScheduled}</div>
-            <div className="stat-label">Interviews</div>
-          </div>
-        </div>
+        <StatCard
+          value={appStats.interviewsScheduled}
+          label="Interviews"
+          icon={Calendar}
+          color="var(--accent-green)"
+          onClick={() => console.log('Interviews stat clicked')}
+        />
         
-        <div className="stat-card">
-          <div className="stat-icon" style={{ backgroundColor: 'rgba(var(--accent-orange-rgb), 0.1)' }}>
-            <Activity size={24} color="var(--accent-orange)" />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{appStats.successRate}%</div>
-            <div className="stat-label">Success Rate</div>
-          </div>
-        </div>
+        <StatCard
+          value={`${appStats.successRate}%`}
+          label="Success Rate"
+          icon={Activity}
+          color="var(--accent-orange)"
+          onClick={() => console.log('Success rate stat clicked')}
+        />
         
-        <div className="stat-card">
-          <div className="stat-icon" style={{ backgroundColor: 'rgba(var(--accent-purple-rgb), 0.1)' }}>
-            <Bell size={24} color="var(--accent-purple)" />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{appStats.tasksdue}</div>
-            <div className="stat-label">Tasks Due</div>
-          </div>
-        </div>
+        <StatCard
+          value={appStats.tasksdue}
+          label="Tasks Due"
+          icon={Bell}
+          color="var(--accent-purple)"
+          onClick={() => console.log('Tasks due stat clicked')}
+        />
       </div>
       
-      <div className="dashboard-grid reveal-element">
+      <div className="dashboard-grid">
         <div className="dashboard-card activity-card">
           <div className="card-header">
             <h3 className="card-title">Recent Activity</h3>
-            <button className="view-all-btn">
-              <span>View All</span>
-              <ChevronRight size={16} />
-            </button>
+            <ActionButton 
+              label="View All"
+              icon={ChevronRight}
+              variant="ghost"
+              size="small"
+              onClick={() => handleViewAll('activities')}
+            />
           </div>
           
           <div className="activity-timeline">
-            {activities.slice(0, 4).map(activity => (
-              <div key={activity.id} className="timeline-item">
-                <div className="timeline-icon">
-                  {getActivityIcon(activity.type)}
-                </div>
-                
-                <div className="timeline-content">
-                  <div className="timeline-header">
-                    <h4 className="timeline-title">{activity.title}</h4>
-                    <span className="timeline-time">
-                      {formatDate(activity.timestamp)}
-                    </span>
-                  </div>
-                  
-                  <div className="timeline-details">
-                    <div className="company-info">
-                      <span className="company-logo">{activity.company.name.charAt(0)}</span>
-                      <span className="company-name">{activity.company.name}</span>
-                    </div>
-                    <p className="timeline-description">{activity.details}</p>
-                  </div>
-                </div>
-              </div>
+            {activities.slice(0, 4).map((activity, index) => (
+              <ActivityItem
+                key={activity.id}
+                id={activity.id}
+                type={activity.type}
+                title={activity.title}
+                companyName={activity.company.name}
+                companyLogo={activity.company.logo}
+                timestamp={activity.timestamp}
+                details={activity.details}
+                isLast={index === activities.slice(0, 4).length - 1}
+                onClick={() => console.log(`Activity ${activity.id} clicked`)}
+              />
             ))}
             
             <div className="timeline-end">
@@ -456,47 +417,37 @@ export default function DashboardHome() {
         <div className="dashboard-card upcoming-card">
           <div className="card-header">
             <h3 className="card-title">Upcoming</h3>
-            <button className="view-all-btn">
-              <span>Calendar</span>
-              <ChevronRight size={16} />
-            </button>
+            <ActionButton 
+              label="Calendar"
+              icon={Calendar}
+              variant="ghost"
+              size="small"
+              onClick={() => handleViewAll('calendar')}
+            />
           </div>
           
           <div className="upcoming-events">
             {upcomingEvents.map(event => (
-              <div key={event.id} className="event-item">
-                <div className="event-date">
-                  <div className="date-label">{formatDate(event.date)}</div>
-                  <div className="time-label">{event.time}</div>
-                </div>
-                
-                <div className="event-details">
-                  <div className="event-header">
-                    <h4 className="event-title">{event.title}</h4>
-                    <span className={`event-type ${event.type.toLowerCase()}`}>
-                      {getEventIcon(event.type)}
-                      <span>{event.type}</span>
-                    </span>
-                  </div>
-                  
-                  <div className="event-company">
-                    <span className="company-logo">{event.company.name.charAt(0)}</span>
-                    <span className="company-name">{event.company.name}</span>
-                  </div>
-                  
-                  {event.location && (
-                    <div className="event-location">
-                      <span className="location-label">Location:</span>
-                      <span className="location-value">{event.location}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <UpcomingEvent
+                key={event.id}
+                id={event.id}
+                title={event.title}
+                companyName={event.company.name}
+                companyLogo={event.company.logo}
+                date={event.date}
+                time={event.time}
+                type={event.type}
+                details={event.details}
+                location={event.location}
+                duration={event.duration}
+                onClick={() => console.log(`Event ${event.id} clicked`)}
+              />
             ))}
             
             <button className="add-event-btn">
               <Calendar size={16} />
               <span>Add Event</span>
+              <div className="btn-bg"></div>
             </button>
           </div>
         </div>
@@ -504,121 +455,120 @@ export default function DashboardHome() {
         <div className="dashboard-card goals-card">
           <div className="card-header">
             <h3 className="card-title">Monthly Goals</h3>
-            <button className="view-all-btn">
-              <span>View All</span>
-              <ChevronRight size={16} />
-            </button>
+            <ActionButton 
+              label="View All"
+              icon={ChevronRight}
+              variant="ghost"
+              size="small"
+              onClick={() => handleViewAll('goals')}
+            />
           </div>
           
           <div className="goals-list">
             {monthlyGoals.map(goal => (
-              <div key={goal.id} className="goal-item">
-                <div className="goal-header">
-                  <h4 className="goal-title">{goal.goal}</h4>
-                  <div className="goal-progress-text">
-                    <span className="current-value">{goal.current}</span>
-                    <span className="separator">/</span>
-                    <span className="target-value">{goal.target}</span>
-                  </div>
-                </div>
-                
-                <div className="goal-progress-bar-container">
-                  <div 
-                    className="goal-progress-bar"
-                    style={{ 
-                      width: `${goal.progress}%`,
-                      backgroundColor: getGoalProgressColor(goal.progress)
-                    }}
-                  >
-                    {goal.progress >= 100 && (
-                      <CheckCircle size={14} className="complete-icon" />
-                    )}
-                  </div>
-                </div>
-              </div>
+              <GoalCard
+                key={goal.id}
+                id={goal.id}
+                goal={goal.goal}
+                current={goal.current}
+                target={goal.target}
+                onClick={() => console.log(`Goal ${goal.id} clicked`)}
+              />
             ))}
             
             <button className="add-goal-btn">
               <Target size={16} />
               <span>Set New Goal</span>
+              <div className="btn-bg"></div>
             </button>
           </div>
         </div>
       </div>
       
-      <div className="application-stages reveal-element">
+      <div className="application-stages">
         <div className="stages-header">
           <h3 className="stages-title">Application Stages</h3>
+          <ActionButton 
+            label="Manage Stages"
+            icon={SlidersHorizontal}
+            variant="secondary"
+            size="small"
+            onClick={() => console.log('Manage stages clicked')}
+          />
         </div>
         
         <div className="stages-grid">
-          <div className="stage-card">
-            <div className="stage-header" style={{ backgroundColor: 'rgba(var(--accent-blue-rgb), 0.1)' }}>
-              <span className="stage-indicator" style={{ backgroundColor: 'var(--accent-blue)' }}></span>
-              <span className="stage-name">Applied</span>
-              <span className="stage-count">{appStats.stageCount.applied}</span>
-            </div>
-            <div className="stage-description">
-              Initial applications submitted but no response yet
-            </div>
-          </div>
+          <StageCard
+            stageName="applied"
+            count={appStats.stageCount.applied}
+            description={stageDescriptions.applied}
+            color="var(--accent-blue)"
+            onClick={() => console.log('Applied stage clicked')}
+          />
           
-          <div className="stage-card">
-            <div className="stage-header" style={{ backgroundColor: 'rgba(var(--accent-purple-rgb), 0.1)' }}>
-              <span className="stage-indicator" style={{ backgroundColor: 'var(--accent-purple)' }}></span>
-              <span className="stage-name">Screening</span>
-              <span className="stage-count">{appStats.stageCount.screening}</span>
-            </div>
-            <div className="stage-description">
-              Initial reviews, assessments, and phone interviews
-            </div>
-          </div>
+          <StageCard
+            stageName="screening"
+            count={appStats.stageCount.screening}
+            description={stageDescriptions.screening}
+            color="var(--accent-purple)"
+            onClick={() => console.log('Screening stage clicked')}
+          />
           
-          <div className="stage-card">
-            <div className="stage-header" style={{ backgroundColor: 'rgba(var(--accent-green-rgb), 0.1)' }}>
-              <span className="stage-indicator" style={{ backgroundColor: 'var(--accent-green)' }}></span>
-              <span className="stage-name">Interview</span>
-              <span className="stage-count">{appStats.stageCount.interview}</span>
-            </div>
-            <div className="stage-description">
-              Technical and team interviews in progress
-            </div>
-          </div>
+          <StageCard
+            stageName="interview"
+            count={appStats.stageCount.interview}
+            description={stageDescriptions.interview}
+            color="var(--accent-green)"
+            onClick={() => console.log('Interview stage clicked')}
+          />
           
-          <div className="stage-card">
-            <div className="stage-header" style={{ backgroundColor: 'rgba(var(--accent-success-rgb), 0.1)' }}>
-              <span className="stage-indicator" style={{ backgroundColor: 'var(--accent-success)' }}></span>
-              <span className="stage-name">Offer</span>
-              <span className="stage-count">{appStats.stageCount.offer}</span>
-            </div>
-            <div className="stage-description">
-              Job offers received or being negotiated
-            </div>
-          </div>
+          <StageCard
+            stageName="offer"
+            count={appStats.stageCount.offer}
+            description={stageDescriptions.offer}
+            color="var(--accent-success)"
+            onClick={() => console.log('Offer stage clicked')}
+          />
           
-          <div className="stage-card">
-            <div className="stage-header" style={{ backgroundColor: 'rgba(var(--accent-red-rgb), 0.1)' }}>
-              <span className="stage-indicator" style={{ backgroundColor: 'var(--accent-red)' }}></span>
-              <span className="stage-name">Rejected</span>
-              <span className="stage-count">{appStats.stageCount.rejected}</span>
-            </div>
-            <div className="stage-description">
-              Applications that were not successful
-            </div>
-          </div>
+          <StageCard
+            stageName="rejected"
+            count={appStats.stageCount.rejected}
+            description={stageDescriptions.rejected}
+            color="var(--accent-red)"
+            onClick={() => console.log('Rejected stage clicked')}
+          />
         </div>
       </div>
+      
+      {/* Quick Actions Floating Button */}
+      <button className="quick-actions-button">
+        <Plus size={20} className="plus-icon" />
+        <span className="button-tooltip">Quick Actions</span>
+      </button>
       
       <style jsx>{`
         .dashboard-home {
           display: flex;
           flex-direction: column;
           gap: 28px;
+          opacity: 0;
+          transform: translateY(10px);
+          transition: all 0.6s var(--easing-standard);
+        }
+        
+        .dashboard-home.mounted {
+          opacity: 1;
+          transform: translateY(0);
         }
         
         .dashboard-search {
           position: relative;
           width: 250px;
+          transition: all 0.3s var(--easing-standard);
+        }
+        
+        .dashboard-search.focused {
+          width: 280px;
         }
         
         .search-icon {
@@ -627,6 +577,11 @@ export default function DashboardHome() {
           top: 50%;
           transform: translateY(-50%);
           color: var(--text-tertiary);
+          transition: color 0.3s var(--easing-standard);
+        }
+        
+        .dashboard-search.focused .search-icon {
+          color: var(--accent-blue);
         }
         
         .search-input {
@@ -637,12 +592,35 @@ export default function DashboardHome() {
           background: var(--glass-bg);
           color: var(--text-primary);
           outline: none;
-          transition: all 0.2s ease;
+          transition: all 0.3s var(--easing-standard);
         }
         
         .search-input:focus {
           border-color: var(--accent-blue);
-          box-shadow: 0 0 0 2px rgba(var(--accent-blue-rgb), 0.1);
+          box-shadow: 0 0 0 3px rgba(var(--accent-blue-rgb), 0.1);
+        }
+        
+        .clear-search {
+          position: absolute;
+          right: 8px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: var(--hover-bg);
+          border: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--text-tertiary);
+          cursor: pointer;
+          transition: all 0.2s var(--easing-standard);
+        }
+        
+        .clear-search:hover {
+          background: var(--active-bg);
+          color: var(--text-primary);
         }
         
         /* Stats Summary */
@@ -650,48 +628,8 @@ export default function DashboardHome() {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
           gap: 20px;
-        }
-        
-        .stat-card {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          padding: 20px;
-          background: var(--glass-card-bg);
-          border-radius: var(--border-radius);
-          border: 1px solid var(--border-thin);
-          box-shadow: var(--shadow);
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        
-        .stat-card:hover {
-          transform: translateY(-3px);
-          box-shadow: var(--shadow-lg);
-        }
-        
-        .stat-icon {
-          width: 48px;
-          height: 48px;
-          border-radius: var(--border-radius);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        
-        .stat-content {
-          display: flex;
-          flex-direction: column;
-        }
-        
-        .stat-value {
-          font-size: 28px;
-          font-weight: 700;
-          color: var(--text-primary);
-        }
-        
-        .stat-label {
-          font-size: 14px;
-          color: var(--text-tertiary);
+          animation: slideUp 0.5s var(--easing-standard) both;
+          animation-delay: 0.1s;
         }
         
         /* Dashboard Grid */
@@ -699,19 +637,21 @@ export default function DashboardHome() {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
           gap: 24px;
+          animation: slideUp 0.5s var(--easing-standard) both;
+          animation-delay: 0.2s;
         }
         
         .dashboard-card {
           background: var(--glass-card-bg);
           border-radius: var(--border-radius);
           border: 1px solid var(--border-thin);
-          padding: 20px;
           display: flex;
           flex-direction: column;
           gap: 20px;
           box-shadow: var(--shadow);
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
           height: 100%;
+          overflow: hidden;
+          transition: transform 0.3s var(--easing-standard), box-shadow 0.3s var(--easing-standard);
         }
         
         .dashboard-card:hover {
@@ -723,7 +663,7 @@ export default function DashboardHome() {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding-bottom: 12px;
+          padding: 16px 20px;
           border-bottom: 1px solid var(--border-divider);
         }
         
@@ -734,175 +674,31 @@ export default function DashboardHome() {
           margin: 0;
         }
         
-        .view-all-btn {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          background: transparent;
-          border: none;
-          color: var(--accent-primary);
-          font-size: 14px;
-          cursor: pointer;
-          padding: 6px 10px;
-          border-radius: var(--border-radius);
-          transition: background 0.2s ease;
-        }
-        
-        .view-all-btn:hover {
-          background: var(--hover-bg);
-        }
-        
         /* Activity Timeline */
         .activity-timeline {
           display: flex;
           flex-direction: column;
-          gap: 20px;
-        }
-        
-        .timeline-item {
-          display: flex;
-          gap: 12px;
-        }
-        
-        .timeline-icon {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-          position: relative;
-        }
-        
-        .timeline-icon::after {
-          content: '';
-          position: absolute;
-          top: 100%;
-          left: 50%;
-          height: calc(100% + 8px);
-          width: 1px;
-          background-color: var(--border-divider);
-        }
-        
-        .timeline-item:last-child .timeline-icon::after {
-          display: none;
-        }
-        
-        .activity-icon {
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
-          padding: 7px;
-          background: var(--hover-bg);
-          z-index: 1;
-        }
-        
-        .activity-icon.application {
-          color: var(--accent-blue);
-          background: rgba(var(--accent-blue-rgb), 0.1);
-        }
-        
-        .activity-icon.interview {
-          color: var(--accent-green);
-          background: rgba(var(--accent-green-rgb), 0.1);
-        }
-        
-        .activity-icon.offer {
-          color: var(--accent-success);
-          background: rgba(var(--accent-success-rgb), 0.1);
-        }
-        
-        .activity-icon.assessment {
-          color: var(--accent-orange);
-          background: rgba(var(--accent-orange-rgb), 0.1);
-        }
-        
-        .activity-icon.rejected {
-          color: var(--accent-red);
-          background: rgba(var(--accent-red-rgb), 0.1);
-        }
-        
-        .activity-icon.task {
-          color: var(--accent-purple);
-          background: rgba(var(--accent-purple-rgb), 0.1);
-        }
-        
-        .activity-icon.email {
-          color: var(--accent-yellow);
-          background: rgba(var(--accent-yellow-rgb), 0.1);
-        }
-        
-        .timeline-content {
-          flex: 1;
-          min-width: 0;
-        }
-        
-        .timeline-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 8px;
-          margin-bottom: 8px;
-        }
-        
-        .timeline-title {
-          margin: 0;
-          font-size: 16px;
-          font-weight: 600;
-          color: var(--text-primary);
-        }
-        
-        .timeline-time {
-          font-size: 12px;
-          color: var(--text-tertiary);
-          white-space: nowrap;
-        }
-        
-        .timeline-details {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-        
-        .company-info {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        
-        .company-logo {
-          width: 24px;
-          height: 24px;
-          border-radius: 6px;
-          background: linear-gradient(135deg, var(--accent-primary), var(--accent-purple));
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-size: 12px;
-          font-weight: 600;
-        }
-        
-        .company-name {
-          font-size: 14px;
-          color: var(--text-secondary);
-          font-weight: 500;
-        }
-        
-        .timeline-description {
-          margin: 0;
-          font-size: 14px;
-          color: var(--text-tertiary);
-          line-height: 1.4;
+          padding: 0 20px 20px;
         }
         
         .timeline-end {
           display: flex;
           align-items: center;
           gap: 8px;
+          margin-top: 16px;
+          cursor: pointer;
+          transition: all 0.2s var(--easing-standard);
+          padding: 10px;
+          border-radius: var(--border-radius);
+        }
+        
+        .timeline-end:hover {
+          background: var(--hover-bg);
         }
         
         .timeline-end-icon {
-          width: 32px;
-          height: 32px;
+          width: 28px;
+          height: 28px;
           border-radius: 50%;
           display: flex;
           align-items: center;
@@ -921,131 +717,47 @@ export default function DashboardHome() {
           display: flex;
           flex-direction: column;
           gap: 16px;
+          padding: 0 20px 20px;
         }
         
-        .event-item {
-          display: flex;
-          gap: 16px;
-          padding: 16px;
-          background: var(--glass-bg);
-          border-radius: var(--border-radius);
-          border: 1px solid var(--border-thin);
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        
-        .event-item:hover {
-          transform: translateY(-2px);
-          box-shadow: var(--shadow);
-        }
-        
-        .event-date {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          min-width: 60px;
-          padding: 10px;
-          background: var(--hover-bg);
-          border-radius: var(--border-radius);
-        }
-        
-        .date-label {
-          font-size: 14px;
-          font-weight: 600;
-          color: var(--text-primary);
-        }
-        
-        .time-label {
-          font-size: 12px;
-          color: var(--text-tertiary);
-          margin-top: 4px;
-        }
-        
-        .event-details {
-          flex: 1;
-          min-width: 0;
-        }
-        
-        .event-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 8px;
-          margin-bottom: 8px;
-        }
-        
-        .event-title {
-          margin: 0;
-          font-size: 16px;
-          font-weight: 600;
-          color: var(--text-primary);
-        }
-        
-        .event-type {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 4px 8px;
-          border-radius: 20px;
-          font-size: 12px;
-          white-space: nowrap;
-        }
-        
-        .event-type.interview {
-          background: rgba(var(--accent-green-rgb), 0.1);
-          color: var(--accent-green);
-        }
-        
-        .event-type.task {
-          background: rgba(var(--accent-purple-rgb), 0.1);
-          color: var(--accent-purple);
-        }
-        
-        .event-type.deadline {
-          background: rgba(var(--accent-red-rgb), 0.1);
-          color: var(--accent-red);
-        }
-        
-        .event-icon {
-          width: 16px;
-          height: 16px;
-        }
-        
-        .event-company {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          margin-bottom: 8px;
-        }
-        
-        .event-location {
-          font-size: 14px;
-          color: var(--text-tertiary);
-        }
-        
-        .location-label {
-          margin-right: 4px;
-          font-weight: 500;
-        }
-        
-        .add-event-btn {
+        .add-event-btn, .add-goal-btn {
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 8px;
           padding: 12px;
-          background: var(--hover-bg);
+          background: transparent;
           border: 1px dashed var(--border-divider);
           border-radius: var(--border-radius);
           color: var(--text-secondary);
           font-size: 14px;
           cursor: pointer;
-          transition: all 0.2s ease;
+          position: relative;
+          overflow: hidden;
+          transition: all 0.3s var(--easing-standard);
+          margin-top: 10px;
         }
         
-        .add-event-btn:hover {
-          background: var(--active-bg);
+        .btn-bg {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: var(--hover-bg);
+          opacity: 0;
+          transition: opacity 0.3s var(--easing-standard);
+          z-index: -1;
+        }
+        
+        .add-event-btn:hover, .add-goal-btn:hover {
           color: var(--text-primary);
           border-color: var(--border-hover);
+          transform: translateY(-2px);
+        }
+        
+        .add-event-btn:hover .btn-bg, .add-goal-btn:hover .btn-bg {
+          opacity: 1;
         }
         
         /* Goals List */
@@ -1053,88 +765,7 @@ export default function DashboardHome() {
           display: flex;
           flex-direction: column;
           gap: 16px;
-        }
-        
-        .goal-item {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-        
-        .goal-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        
-        .goal-title {
-          margin: 0;
-          font-size: 16px;
-          font-weight: 500;
-          color: var(--text-primary);
-        }
-        
-        .goal-progress-text {
-          font-size: 14px;
-          font-weight: 600;
-        }
-        
-        .current-value {
-          color: var(--accent-primary);
-        }
-        
-        .separator {
-          margin: 0 2px;
-          color: var(--text-tertiary);
-        }
-        
-        .target-value {
-          color: var(--text-secondary);
-        }
-        
-        .goal-progress-bar-container {
-          height: 8px;
-          background: var(--hover-bg);
-          border-radius: 4px;
-          overflow: hidden;
-          position: relative;
-        }
-        
-        .goal-progress-bar {
-          height: 100%;
-          border-radius: 4px;
-          position: relative;
-          transition: width 0.6s ease-out;
-        }
-        
-        .complete-icon {
-          position: absolute;
-          right: 4px;
-          top: 50%;
-          transform: translateY(-50%);
-          color: white;
-        }
-        
-        .add-goal-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          padding: 12px;
-          background: var(--hover-bg);
-          border: 1px dashed var(--border-divider);
-          border-radius: var(--border-radius);
-          color: var(--text-secondary);
-          font-size: 14px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          margin-top: 8px;
-        }
-        
-        .add-goal-btn:hover {
-          background: var(--active-bg);
-          color: var(--text-primary);
-          border-color: var(--border-hover);
+          padding: 0 20px 20px;
         }
         
         /* Application Stages */
@@ -1142,6 +773,8 @@ export default function DashboardHome() {
           display: flex;
           flex-direction: column;
           gap: 20px;
+          animation: slideUp 0.5s var(--easing-standard) both;
+          animation-delay: 0.3s;
         }
         
         .stages-header {
@@ -1163,56 +796,87 @@ export default function DashboardHome() {
           gap: 20px;
         }
         
-        .stage-card {
-          background: var(--glass-card-bg);
-          border-radius: var(--border-radius);
-          border: 1px solid var(--border-thin);
-          overflow: hidden;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-          box-shadow: var(--shadow);
-        }
-        
-        .stage-card:hover {
-          transform: translateY(-3px);
-          box-shadow: var(--shadow-lg);
-        }
-        
-        .stage-header {
+        /* Quick Actions Button */
+        .quick-actions-button {
+          position: fixed;
+          bottom: 30px;
+          right: 30px;
+          width: 56px;
+          height: 56px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+          border: none;
+          color: white;
           display: flex;
           align-items: center;
-          gap: 8px;
-          padding: 16px;
+          justify-content: center;
+          box-shadow: 0 4px 15px rgba(var(--accent-primary-rgb), 0.4);
+          cursor: pointer;
+          transition: all 0.3s var(--easing-standard);
+          z-index: 100;
         }
         
-        .stage-indicator {
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
+        .quick-actions-button:hover {
+          transform: translateY(-3px) scale(1.05);
+          box-shadow: 0 6px 20px rgba(var(--accent-primary-rgb), 0.5);
         }
         
-        .stage-name {
-          font-size: 16px;
-          font-weight: 600;
+        .quick-actions-button:active {
+          transform: scale(0.95);
+        }
+        
+        .plus-icon {
+          transition: transform 0.3s var(--easing-standard);
+        }
+        
+        .quick-actions-button:hover .plus-icon {
+          transform: rotate(90deg);
+        }
+        
+        .button-tooltip {
+          position: absolute;
+          bottom: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          margin-bottom: 10px;
+          padding: 5px 10px;
+          background: var(--glass-card-bg);
+          border-radius: 5px;
+          font-size: 12px;
           color: var(--text-primary);
-          flex: 1;
+          white-space: nowrap;
+          opacity: 0;
+          visibility: hidden;
+          transition: all 0.2s var(--easing-standard);
         }
         
-        .stage-count {
-          font-size: 18px;
-          font-weight: 700;
-          color: var(--text-primary);
-          background: var(--glass-bg);
-          border-radius: var(--border-radius);
-          padding: 2px 10px;
-          min-width: 36px;
-          text-align: center;
+        .button-tooltip::after {
+          content: '';
+          position: absolute;
+          top: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          border-width: 5px;
+          border-style: solid;
+          border-color: var(--glass-card-bg) transparent transparent transparent;
         }
         
-        .stage-description {
-          padding: 0 16px 16px;
-          font-size: 14px;
-          color: var(--text-tertiary);
-          line-height: 1.4;
+        .quick-actions-button:hover .button-tooltip {
+          opacity: 1;
+          visibility: visible;
+          transform: translateX(-50%) translateY(-5px);
+        }
+        
+        /* Animations */
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
         
         /* Responsive */
@@ -1251,17 +915,9 @@ export default function DashboardHome() {
             grid-template-columns: 1fr;
           }
           
-          .event-item {
-            flex-direction: column;
-          }
-          
-          .event-date {
-            align-self: flex-start;
-          }
-          
-          .event-header {
-            flex-direction: column;
-            align-items: flex-start;
+          .quick-actions-button {
+            bottom: 20px;
+            right: 20px;
           }
         }
       `}</style>

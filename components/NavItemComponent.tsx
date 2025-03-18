@@ -1,88 +1,510 @@
 'use client';
 
+import { useState, useEffect, useRef } from 'react';
 import { LucideIcon } from 'lucide-react';
 import { NavItem, SectionKey } from './types';
 
 interface NavItemComponentProps {
-    item: NavItem;
-    currentSection: SectionKey;
+    icon: React.ReactNode;
+    label: string;
+    isActive: boolean;
+    onClick: () => void;
     isCollapsed: boolean;
-    onSectionChange: (key: SectionKey) => void;
+    onContextMenu: (e: React.MouseEvent) => void;
+    badge?: { count: number } | { text: string };
+    isAnimating?: boolean;
+    animationLevel?: 'minimal' | 'subtle' | 'moderate' | 'playful';
 }
 
 const NavItemComponent: React.FC<NavItemComponentProps> = ({
-    item,
-    currentSection,
+    icon,
+    label,
+    isActive,
+    onClick,
     isCollapsed,
-    onSectionChange,
+    onContextMenu,
+    badge,
+    isAnimating = false,
+    animationLevel = 'moderate'
 }) => {
-    const isActive = currentSection === item.key;
+    const [rippleEffect, setRippleEffect] = useState<{x: number, y: number, size: number} | null>(null);
+    const [isHovered, setIsHovered] = useState(false);
+    const itemRef = useRef<HTMLDivElement>(null);
+
+    // Clear ripple effect after animation completes
+    useEffect(() => {
+        if (rippleEffect) {
+            const timer = setTimeout(() => setRippleEffect(null), 600);
+            return () => clearTimeout(timer);
+        }
+    }, [rippleEffect]);
+
+    // Handle click with ripple effect
+    const handleClick = (e: React.MouseEvent) => {
+        if (animationLevel !== 'minimal') {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height) * 2;
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+            setRippleEffect({ x, y, size });
+        }
+        onClick();
+    };
+
+    // Get badge content
+    const getBadgeContent = () => {
+        if (!badge) return null;
+        return 'count' in badge ? badge.count : badge.text;
+    };
 
     return (
-        <li className={isCollapsed ? 'tooltip relative' : ''}>
-            <button
-                onClick={() => onSectionChange(item.key)}
-                className={`w-full flex items-center p-2.5 rounded-xl transition-all duration-200 group ${isActive ? 'bg-active text-accent shadow-sm' : 'hover:bg-hover'
-                    }`}
-                aria-label={item.label}
-            >
-                <div
-                    className={`${isActive
-                        ? 'bg-accent bg-opacity-10 text-accent'
-                        : 'text-secondary group-hover:text-primary bg-transparent'
-                        } rounded-lg p-2 transition-colors duration-200`}
-                >
-                    <item.icon
-                        size={20}
-                        className="transition-transform duration-200 group-hover:scale-110"
-                    />
+        <div 
+            ref={itemRef}
+            className={`nav-item ${isActive ? 'active' : ''} ${isHovered ? 'hovered' : ''} ${isAnimating ? 'animating' : ''}`}
+            onClick={handleClick}
+            onContextMenu={onContextMenu}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            role="menuitem"
+            aria-label={label}
+        >
+            {/* Visual indicators and effects */}
+            <div className="hover-indicator" />
+            {isActive && <div className="active-backdrop" />}
+            <div className="glow-effect" />
+            
+            {/* Icon container with pulse animation */}
+            <div className="icon-container">
+                <div className={`icon ${isActive ? 'active' : ''}`}>
+                    {icon}
                 </div>
-
-                {!isCollapsed && (
-                    <div className="ml-3 flex-1 text-left overflow-hidden">
-                        <div className="flex justify-between items-center">
-                            <span className={`font-medium ${isActive ? 'text-primary' : 'text-primary'}`}>
-                                {item.label}
-                            </span>
-                            {item.badge && (
-                                <span
-                                    className={`px-1.5 py-0.5 rounded-full text-xs font-medium text-white ${item.badgeColor || 'bg-accent'
-                                        }`}
-                                >
-                                    {item.badge}
-                                </span>
-                            )}
+                {isActive && animationLevel !== 'minimal' && <div className="icon-pulse" />}
+            </div>
+            
+            {/* Label and description */}
+            {!isCollapsed && (
+                <div className="content">
+                    <div className="label">{label}</div>
+                    {badge && (
+                        <div className={`badge ${isActive ? 'active' : ''}`}>
+                            {getBadgeContent()}
+                            {animationLevel !== 'minimal' && <div className="badge-shine" />}
                         </div>
-                        {item.description && (
-                            <span className="text-xs text-secondary block mt-0.5 truncate">
-                                {item.description}
+                    )}
+                </div>
+            )}
+            
+            {/* Active indicator line */}
+            {isActive && !isCollapsed && <div className="active-indicator" />}
+            
+            {/* Collapsed state tooltip */}
+            {isCollapsed && isHovered && (
+                <div className="tooltip">
+                    <div className="tooltip-content">
+                        <span className="tooltip-label">{label}</span>
+                        {badge && (
+                            <span className="tooltip-badge">
+                                {getBadgeContent()}
                             </span>
                         )}
                     </div>
-                )}
-
-                {isCollapsed && item.badge && (
-                    <span
-                        className={`absolute -right-1 top-0 w-4 h-4 rounded-full text-xs font-medium text-white flex items-center justify-center ${item.badgeColor || 'bg-accent'
-                            }`}
-                    >
-                        {item.badge}
-                    </span>
-                )}
-
-                {isActive && !isCollapsed && (
-                    <div className="w-1 h-12 bg-accent rounded-full absolute -right-0.5" />
-                )}
-            </button>
-
-            {/* Tooltip for collapsed state */}
-            {isCollapsed && (
-                <span className="tooltiptext absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white text-xs rounded-md p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                    {item.label}
-                    {item.description && <p className="text-xs mt-1">{item.description}</p>}
-                </span>
+                    <div className="tooltip-arrow" />
+                </div>
             )}
-        </li>
+            
+            {/* Ripple animation effect */}
+            {rippleEffect && (
+                <span 
+                    className="ripple"
+                    style={{
+                        left: rippleEffect.x,
+                        top: rippleEffect.y,
+                        width: rippleEffect.size,
+                        height: rippleEffect.size
+                    }}
+                />
+            )}
+            
+            <style jsx>{`
+                .nav-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: ${isCollapsed ? '10px' : '12px 16px'};
+                    margin-bottom: 4px;
+                    position: relative;
+                    cursor: pointer;
+                    border-radius: var(--border-radius);
+                    transition: all var(--transition-normal) var(--easing-standard);
+                    overflow: hidden;
+                }
+                
+                /* Hover and active states */
+                .nav-item:hover {
+                    background-color: var(--hover-bg);
+                    transform: translateX(2px);
+                }
+                
+                .nav-item.active {
+                    background-color: var(--active-bg);
+                    color: var(--text-accent);
+                    font-weight: 500;
+                }
+                
+                .nav-item.active:hover {
+                    transform: translateX(3px);
+                }
+                
+                /* Hover indicator line */
+                .hover-indicator {
+                    position: absolute;
+                    left: 0;
+                    top: 15%;
+                    width: 3px;
+                    height: 70%;
+                    background-color: var(--accent-primary);
+                    opacity: 0;
+                    transform: translateX(-10px) scaleY(0.6);
+                    transition: all var(--transition-normal) var(--easing-accelerate);
+                    border-radius: 0 4px 4px 0;
+                }
+                
+                .nav-item:hover .hover-indicator {
+                    opacity: 0.6;
+                    transform: translateX(0) scaleY(0.8);
+                }
+                
+                .nav-item.active .hover-indicator {
+                    opacity: 1;
+                    transform: translateX(0) scaleY(1);
+                    box-shadow: 0 0 8px var(--accent-primary-glow);
+                }
+                
+                /* Active background effect */
+                .active-backdrop {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(90deg, 
+                        rgba(var(--accent-primary-rgb), 0.07), 
+                        rgba(var(--accent-primary-rgb), 0.01)
+                    );
+                    opacity: 0.6;
+                    z-index: -1;
+                    border-radius: var(--border-radius);
+                }
+                
+                /* Glow effect on hover */
+                .glow-effect {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: radial-gradient(
+                        circle at 30% 50%, 
+                        rgba(var(--accent-primary-rgb), 0.12), 
+                        transparent 70%
+                    );
+                    opacity: 0;
+                    z-index: -1;
+                    transition: opacity var(--transition-normal) var(--easing-standard);
+                    pointer-events: none;
+                }
+                
+                .nav-item:hover .glow-effect,
+                .nav-item.active .glow-effect {
+                    opacity: 1;
+                }
+                
+                /* Icon container styling */
+                .icon-container {
+                    position: relative;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: ${isCollapsed ? '100%' : '28px'};
+                    height: 28px;
+                    flex-shrink: 0;
+                }
+                
+                .icon {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all var(--transition-normal) var(--easing-standard);
+                    color: var(--text-secondary);
+                    z-index: 1;
+                }
+                
+                .icon.active {
+                    color: var(--accent-primary);
+                }
+                
+                .nav-item:hover .icon {
+                    transform: scale(1.1);
+                    color: var(--text-primary);
+                }
+                
+                .nav-item.active:hover .icon {
+                    color: var(--accent-primary);
+                }
+                
+                .nav-item.active .icon {
+                    filter: drop-shadow(0 0 3px rgba(var(--accent-primary-rgb), 0.5));
+                }
+                
+                /* Animated pulse behind active icon */
+                .icon-pulse {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    width: 32px;
+                    height: 32px;
+                    background: radial-gradient(
+                        circle, 
+                        rgba(var(--accent-primary-rgb), 0.15), 
+                        transparent 70%
+                    );
+                    border-radius: 50%;
+                    z-index: -1;
+                    animation: pulse-subtle 3s infinite;
+                }
+                
+                /* Content area (label + badge) */
+                .content {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    flex: 1;
+                    min-width: 0;
+                }
+                
+                .label {
+                    color: ${isActive ? 'var(--text-accent)' : 'var(--text-primary)'};
+                    font-weight: ${isActive ? '600' : '500'};
+                    transition: all var(--transition-normal) var(--easing-standard);
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+                
+                /* Badge styling */
+                .badge {
+                    background-color: var(--accent-secondary);
+                    color: white;
+                    padding: 3px 8px;
+                    border-radius: 12px;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    position: relative;
+                    overflow: hidden;
+                    transition: all var(--transition-normal) var(--easing-standard);
+                    margin-left: 8px;
+                    animation: badge-pulse 2s infinite cubic-bezier(0.66, 0, 0, 1);
+                }
+                
+                .badge.active {
+                    background-color: var(--accent-primary);
+                    transform: scale(1.05);
+                    animation: badge-pulse-active 2s infinite cubic-bezier(0.66, 0, 0, 1);
+                }
+                
+                .badge-shine {
+                    position: absolute;
+                    top: 0;
+                    left: -100%;
+                    width: 50%;
+                    height: 100%;
+                    background: linear-gradient(
+                        90deg,
+                        rgba(255, 255, 255, 0),
+                        rgba(255, 255, 255, 0.3),
+                        rgba(255, 255, 255, 0)
+                    );
+                    transform: skewX(-20deg);
+                    animation: badge-shine 3s infinite;
+                }
+                
+                /* Active indicator bar */
+                .active-indicator {
+                    position: absolute;
+                    right: 0;
+                    top: 15%;
+                    width: 3px;
+                    height: 70%;
+                    background-color: var(--accent-primary);
+                    border-radius: 4px 0 0 4px;
+                    box-shadow: 0 0 8px var(--accent-primary-glow);
+                }
+                
+                /* Tooltip for collapsed state */
+                .tooltip {
+                    position: absolute;
+                    left: 60px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    background-color: var(--tooltip-bg);
+                    border-radius: var(--border-radius);
+                    box-shadow: var(--shadow);
+                    z-index: 100;
+                    padding: 0;
+                    min-width: 120px;
+                    animation: fade-in 0.2s var(--easing-standard);
+                    backdrop-filter: blur(var(--blur-amount));
+                    -webkit-backdrop-filter: blur(var(--blur-amount));
+                    border: 1px solid var(--border-thin);
+                }
+                
+                .tooltip-content {
+                    padding: 8px 12px;
+                    position: relative;
+                }
+                
+                .tooltip-label {
+                    font-weight: 600;
+                    color: var(--text-primary);
+                    display: block;
+                }
+                
+                .tooltip-badge {
+                    display: inline-block;
+                    margin-top: 4px;
+                    padding: 2px 8px;
+                    background-color: var(--accent-primary);
+                    color: white;
+                    border-radius: 10px;
+                    font-size: 0.7rem;
+                    font-weight: 600;
+                }
+                
+                .tooltip-arrow {
+                    position: absolute;
+                    top: 50%;
+                    left: -6px;
+                    transform: translateY(-50%) rotate(45deg);
+                    width: 12px;
+                    height: 12px;
+                    background-color: var(--tooltip-bg);
+                    border-left: 1px solid var(--border-thin);
+                    border-bottom: 1px solid var(--border-thin);
+                }
+                
+                /* Ripple effect */
+                .ripple {
+                    position: absolute;
+                    border-radius: 50%;
+                    background-color: rgba(255, 255, 255, 0.3);
+                    transform: scale(0);
+                    animation: ripple 0.6s ease-out forwards;
+                    pointer-events: none;
+                }
+                
+                /* Animation for nav item that's currently activating */
+                .nav-item.animating .icon {
+                    animation: pop-in 0.5s var(--easing-overshoot);
+                }
+                
+                .nav-item.animating.active .hover-indicator {
+                    animation: slide-in 0.5s var(--easing-overshoot);
+                }
+                
+                /* Animations */
+                @keyframes ripple {
+                    to {
+                        transform: scale(2.5);
+                        opacity: 0;
+                    }
+                }
+                
+                @keyframes pulse-subtle {
+                    0% {
+                        opacity: 0.6;
+                        transform: translate(-50%, -50%) scale(0.95);
+                    }
+                    50% {
+                        opacity: 1;
+                        transform: translate(-50%, -50%) scale(1.05);
+                    }
+                    100% {
+                        opacity: 0.6;
+                        transform: translate(-50%, -50%) scale(0.95);
+                    }
+                }
+                
+                @keyframes badge-pulse {
+                    0% {
+                        transform: scale(0.95);
+                    }
+                    70% {
+                        transform: scale(1.0);
+                    }
+                    100% {
+                        transform: scale(0.95);
+                    }
+                }
+                
+                @keyframes badge-pulse-active {
+                    0% {
+                        transform: scale(1.0);
+                    }
+                    70% {
+                        transform: scale(1.05);
+                    }
+                    100% {
+                        transform: scale(1.0);
+                    }
+                }
+                
+                @keyframes badge-shine {
+                    0% {
+                        left: -100%;
+                    }
+                    20% {
+                        left: 100%;
+                    }
+                    100% {
+                        left: 100%;
+                    }
+                }
+                
+                @keyframes fade-in {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-50%) translateX(-10px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(-50%) translateX(0);
+                    }
+                }
+                
+                @keyframes pop-in {
+                    0% { transform: scale(0.8); }
+                    50% { transform: scale(1.2); }
+                    100% { transform: scale(1); }
+                }
+                
+                @keyframes slide-in {
+                    0% { transform: translateX(-10px) scaleY(0.6); opacity: 0; }
+                    100% { transform: translateX(0) scaleY(1); opacity: 1; }
+                }
+                
+                /* Media queries for responsive design */
+                @media (max-width: 768px) {
+                    .nav-item {
+                        padding: ${isCollapsed ? '8px' : '10px 12px'};
+                    }
+                    
+                    .tooltip-content {
+                        padding: 6px 10px;
+                    }
+                }
+            `}</style>
+        </div>
     );
 };
 

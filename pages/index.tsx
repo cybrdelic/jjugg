@@ -1102,6 +1102,7 @@ export default function Home(): JSX.Element {
   const sidebarItems: NavItemType[] = [
     {
       id: 'dashboard-home',
+      key: 'dashboard-home',
       label: 'Dashboard',
       icon: <House className="w-5 h-5" />,
       color: 'var(--accent-blue)',
@@ -1109,6 +1110,7 @@ export default function Home(): JSX.Element {
     },
     {
       id: 'applications-section',
+      key: 'applications-section',
       label: 'Applications',
       icon: <FileText className="w-5 h-5" />,
       color: 'var(--accent-purple)',
@@ -1116,6 +1118,7 @@ export default function Home(): JSX.Element {
     },
     {
       id: 'reminders-section',
+      key: 'reminders-section',
       label: 'Reminders',
       icon: <Bell className="w-5 h-5" />,
       color: 'var(--accent-pink)',
@@ -1123,6 +1126,7 @@ export default function Home(): JSX.Element {
     },
     {
       id: 'interviews-section',
+      key: 'interviews-section',
       label: 'Interviews',
       icon: <Users className="w-5 h-5" />,
       color: 'var(--accent-orange)',
@@ -1130,18 +1134,21 @@ export default function Home(): JSX.Element {
     },
     {
       id: 'profile-artifacts-section',
+      key: 'profile-artifacts-section',
       label: 'Profile',
       icon: <User className="w-5 h-5" />,
       color: 'var(--accent-green)'
     },
     {
       id: 'goals-section',
+      key: 'goals-section',
       label: 'Goals',
       icon: <Target className="w-5 h-5" />,
       color: 'var(--accent-yellow)'
     },
     {
       id: 'timeline-section',
+      key: 'timeline-section',
       label: 'Timeline',
       icon: <Clock className="w-5 h-5" />,
       color: 'var(--accent-red)',

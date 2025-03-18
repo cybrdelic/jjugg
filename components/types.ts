@@ -23,6 +23,7 @@ export interface NavItem {
 
 export interface NavItemType {
     id: SectionKey;
+    key: SectionKey;
     label: string;
     icon: JSX.Element;
     color: string;

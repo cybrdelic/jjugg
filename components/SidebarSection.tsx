@@ -155,8 +155,8 @@ export default function SidebarSection({
                         key={item.id}
                         item={item}
                         isCollapsed={isCollapsed}
-                        isActive={currentSection === item.id}
-                        onClick={() => setCurrentSection(item.id)}
+                        currentSection={currentSection}
+                        onNavigate={setCurrentSection}
                         onContextMenu={(e) => onContextMenu(e, item)}
                     />
                 ))}

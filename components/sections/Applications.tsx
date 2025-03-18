@@ -1,22 +1,79 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { 
-  Search, PlusCircle, Filter, SlidersHorizontal, Download, 
-  Grid3x3, ListFilter, MoreHorizontal, ChevronDown, CheckCircle2, X,
-  ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Copy, Edit, Trash2,
-  ExternalLink, MoreVertical, Check, AlertCircle
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  PlusCircle, Grid3x3, ListFilter, ChevronDown,
+  SlidersHorizontal, Download, X, Clock,
+  ArrowUp, ArrowDown, FileText, Calendar,
+  User, Briefcase, MessageSquare, Bell, Phone
 } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 import CardHeader from '../CardHeader';
+import ApplicationCard from '../applications/ApplicationCard';
+import SearchFilter from '../applications/SearchFilter';
+import KanbanColumn from '../applications/KanbanColumn';
+import ActionButton from '../dashboard/ActionButton';
+import ApplicationDetailModal from '../applications/ApplicationDetailModal';
 
+// Types
 interface Company {
   id: string;
   name: string;
   logo: string;
   industry: string;
+  website?: string;
+  description?: string;
+  headquarters?: string;
+  size?: string;
+  founded?: string;
+}
+
+interface Contact {
+  id: string;
+  name: string;
+  role: string;
+  email: string;
+  phone?: string;
+  linkedin?: string;
+  notes?: string;
+}
+
+interface InterviewEvent {
+  id: string;
+  type: 'phone' | 'video' | 'onsite' | 'technical' | 'other';
+  date: Date;
+  duration: number; // in minutes
+  with?: string;
+  location?: string;
+  notes?: string;
+  completed: boolean;
+  feedback?: string;
 }
 
 type ApplicationStage = 'applied' | 'screening' | 'interview' | 'offer' | 'rejected';
+
+interface Task {
+  id: string;
+  title: string;
+  completed: boolean;
+  dueDate?: Date;
+  priority: 'low' | 'medium' | 'high';
+}
+
+interface Note {
+  id: string;
+  content: string;
+  createdAt: Date;
+  type?: 'general' | 'interview' | 'research' | 'followup';
+}
+
+interface Document {
+  id: string;
+  name: string;
+  type: 'resume' | 'cover-letter' | 'portfolio' | 'other';
+  url: string;
+  createdAt: Date;
+}
 
 interface Application {
   id: string;
@@ -29,7 +86,11 @@ interface Application {
   location: string;
   remote: boolean;
   notes: string;
-  contacts: { name: string; role: string; email: string }[];
+  contacts: Contact[];
+  interviews?: InterviewEvent[];
+  tasks?: Task[];
+  documents?: Document[];
+  allNotes?: Note[];
 }
 
 // Helper function to format dates
@@ -41,23 +102,222 @@ const formatDate = (date: Date): string => {
   }).format(date);
 };
 
-// Mock applications data - this would normally come from props or context
+// Mock data
 const companies: Company[] = [
-  { id: 'c1', name: 'Google', logo: '/companies/google.svg', industry: 'Technology' },
-  { id: 'c2', name: 'Microsoft', logo: '/companies/microsoft.svg', industry: 'Technology' },
-  { id: 'c3', name: 'Apple', logo: '/companies/apple.svg', industry: 'Technology' },
-  { id: 'c4', name: 'Amazon', logo: '/companies/amazon.svg', industry: 'E-commerce' },
-  { id: 'c5', name: 'Facebook', logo: '/companies/facebook.svg', industry: 'Social Media' },
-  { id: 'c6', name: 'Netflix', logo: '/companies/netflix.svg', industry: 'Entertainment' },
-  { id: 'c7', name: 'Stripe', logo: '/companies/stripe.svg', industry: 'Fintech' },
-  { id: 'c8', name: 'Airbnb', logo: '/companies/airbnb.svg', industry: 'Travel' },
-  { id: 'c9', name: 'Uber', logo: '/companies/uber.svg', industry: 'Transportation' },
-  { id: 'c10', name: 'Slack', logo: '/companies/slack.svg', industry: 'Technology' },
-  { id: 'c11', name: 'Spotify', logo: '/companies/spotify.svg', industry: 'Music' },
-  { id: 'c12', name: 'Adobe', logo: '/companies/adobe.svg', industry: 'Software' },
-  { id: 'c13', name: 'Salesforce', logo: '/companies/salesforce.svg', industry: 'CRM' },
+  {
+    id: 'c1',
+    name: 'Google',
+    logo: '/companies/google.svg',
+    industry: 'Technology',
+    website: 'https://google.com',
+    description: 'A multinational technology company specializing in Internet-related services and products.',
+    headquarters: 'Mountain View, California',
+    size: '100,000+',
+    founded: '1998'
+  },
+  {
+    id: 'c2',
+    name: 'Microsoft',
+    logo: '/companies/microsoft.svg',
+    industry: 'Technology',
+    website: 'https://microsoft.com',
+    description: 'A multinational technology company that develops, manufactures, licenses, supports, and sells computer software, consumer electronics, and related services.',
+    headquarters: 'Redmond, Washington',
+    size: '180,000+',
+    founded: '1975'
+  },
+  {
+    id: 'c3',
+    name: 'Apple',
+    logo: '/companies/apple.svg',
+    industry: 'Technology',
+    website: 'https://apple.com',
+    description: 'A multinational technology company that designs, develops, and sells consumer electronics, computer software, and online services.',
+    headquarters: 'Cupertino, California',
+    size: '147,000+',
+    founded: '1976'
+  },
+  {
+    id: 'c4',
+    name: 'Amazon',
+    logo: '/companies/amazon.svg',
+    industry: 'E-commerce',
+    website: 'https://amazon.com',
+    description: 'A multinational technology company focusing on e-commerce, cloud computing, digital streaming, and artificial intelligence.',
+    headquarters: 'Seattle, Washington',
+    size: '1,500,000+',
+    founded: '1994'
+  },
+  {
+    id: 'c5',
+    name: 'Facebook',
+    logo: '/companies/facebook.svg',
+    industry: 'Social Media',
+    website: 'https://facebook.com',
+    description: 'A social media and technology company that operates the Facebook social networking service.',
+    headquarters: 'Menlo Park, California',
+    size: '60,000+',
+    founded: '2004'
+  },
+  {
+    id: 'c6',
+    name: 'Netflix',
+    logo: '/companies/netflix.svg',
+    industry: 'Entertainment',
+    website: 'https://netflix.com',
+    description: 'A streaming service that offers a wide variety of award-winning TV shows, movies, anime, documentaries, and more.',
+    headquarters: 'Los Gatos, California',
+    size: '11,000+',
+    founded: '1997'
+  },
+  {
+    id: 'c7',
+    name: 'Stripe',
+    logo: '/companies/stripe.svg',
+    industry: 'Fintech',
+    website: 'https://stripe.com',
+    description: 'A financial services and software as a service company that offers payment processing software and API for e-commerce websites and mobile applications.',
+    headquarters: 'San Francisco, California',
+    size: '4,000+',
+    founded: '2010'
+  },
+  {
+    id: 'c8',
+    name: 'Airbnb',
+    logo: '/companies/airbnb.svg',
+    industry: 'Travel',
+    website: 'https://airbnb.com',
+    description: 'An online marketplace for lodging, primarily homestays for vacation rentals, and tourism activities.',
+    headquarters: 'San Francisco, California',
+    size: '6,000+',
+    founded: '2008'
+  },
 ];
 
+// Create mock interviews, tasks, documents, and notes
+const createMockInterviews = (appId: string, stage: ApplicationStage): InterviewEvent[] => {
+  const interviews: InterviewEvent[] = [];
+
+  if (stage === 'screening' || stage === 'interview' || stage === 'offer') {
+    // Add completed phone screening
+    interviews.push({
+      id: `${appId}-int1`,
+      type: 'phone',
+      date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+      duration: 30,
+      with: 'HR Recruiter',
+      notes: 'Initial screening to discuss background and experience',
+      completed: true,
+      feedback: 'Positive feedback. Moving forward to technical interview.'
+    });
+  }
+
+  if (stage === 'interview' || stage === 'offer') {
+    // Add technical interview (completed)
+    interviews.push({
+      id: `${appId}-int2`,
+      type: 'technical',
+      date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+      duration: 60,
+      with: 'Senior Developer',
+      notes: 'Whiteboard coding and system design questions',
+      completed: true,
+      feedback: 'Strong technical skills demonstrated. Moving to next round.'
+    });
+  }
+
+  if (stage === 'interview') {
+    // Add upcoming interview
+    interviews.push({
+      id: `${appId}-int3`,
+      type: 'video',
+      date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days in future
+      duration: 45,
+      with: 'Hiring Manager',
+      notes: 'Discussion about team fit and future projects',
+      completed: false
+    });
+  }
+
+  return interviews;
+};
+
+const createMockTasks = (appId: string): Task[] => {
+  return [
+    {
+      id: `${appId}-task1`,
+      title: 'Send follow-up email',
+      completed: true,
+      dueDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      priority: 'high'
+    },
+    {
+      id: `${appId}-task2`,
+      title: 'Prepare for technical interview',
+      completed: false,
+      dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+      priority: 'high'
+    },
+    {
+      id: `${appId}-task3`,
+      title: 'Research company culture',
+      completed: false,
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      priority: 'medium'
+    }
+  ];
+};
+
+const createMockDocuments = (appId: string): Document[] => {
+  return [
+    {
+      id: `${appId}-doc1`,
+      name: 'Resume - Software Engineer',
+      type: 'resume',
+      url: '/documents/resume.pdf',
+      createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    },
+    {
+      id: `${appId}-doc2`,
+      name: 'Cover Letter',
+      type: 'cover-letter',
+      url: '/documents/cover-letter.pdf',
+      createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    },
+    {
+      id: `${appId}-doc3`,
+      name: 'Portfolio Website',
+      type: 'portfolio',
+      url: 'https://portfolio.example.com',
+      createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+    }
+  ];
+};
+
+const createMockNotes = (appId: string): Note[] => {
+  return [
+    {
+      id: `${appId}-note1`,
+      content: 'Initial research shows this company has strong growth potential in the AI sector.',
+      createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
+      type: 'research'
+    },
+    {
+      id: `${appId}-note2`,
+      content: 'Spoke with Jane who currently works there. She mentioned the work-life balance is excellent.',
+      createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+      type: 'research'
+    },
+    {
+      id: `${appId}-note3`,
+      content: 'Need to highlight my experience with React and TypeScript for this role.',
+      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      type: 'general'
+    }
+  ];
+};
+
+// Create enhanced applications with additional data
 const applications: Application[] = [
   {
     id: 'app1',
@@ -65,12 +325,19 @@ const applications: Application[] = [
     company: companies[0],
     dateApplied: new Date(2023, 11, 10),
     stage: 'interview',
-    jobDescription: 'Building and maintaining Google Maps web applications...',
+    jobDescription: 'Building and maintaining Google Maps web applications using React, TypeScript, and various Google APIs. The role involves close collaboration with the design team to implement responsive and accessible user interfaces, optimizing performance, and ensuring cross-browser compatibility. You\'ll also contribute to the component library and help establish best practices for front-end development.',
     salary: '$140,000 - $180,000',
     location: 'Mountain View, CA',
     remote: false,
-    notes: 'Had a great initial call with the recruiter',
-    contacts: [{ name: 'Sarah Johnson', role: 'Recruiter', email: 'sarah.j@google.com' }],
+    notes: 'Had a great initial call with the recruiter. They seem very interested in my experience with large-scale applications and performance optimization.',
+    contacts: [
+      { id: 'contact1', name: 'Sarah Johnson', role: 'Technical Recruiter', email: 'sarah.j@google.com', phone: '650-555-1234' },
+      { id: 'contact2', name: 'David Chen', role: 'Engineering Manager', email: 'dchen@google.com' }
+    ],
+    interviews: createMockInterviews('app1', 'interview'),
+    tasks: createMockTasks('app1'),
+    documents: createMockDocuments('app1'),
+    allNotes: createMockNotes('app1')
   },
   {
     id: 'app2',
@@ -78,12 +345,18 @@ const applications: Application[] = [
     company: companies[1],
     dateApplied: new Date(2023, 11, 12),
     stage: 'screening',
-    jobDescription: 'Developing features for Microsoft Azure...',
+    jobDescription: 'Developing features for Microsoft Azure cloud services. This role involves working with distributed systems, containerization technologies, and microservices architecture. You\'ll be part of a team that designs, implements, and maintains cloud infrastructure components that power millions of applications worldwide.',
     salary: '$130,000 - $160,000',
     location: 'Redmond, WA',
     remote: true,
-    notes: 'Submitted coding assessment',
-    contacts: [],
+    notes: 'Submitted coding assessment. The questions were focused on algorithm efficiency and system design.',
+    contacts: [
+      { id: 'contact3', name: 'Michael Smith', role: 'HR Coordinator', email: 'msmith@microsoft.com' }
+    ],
+    interviews: createMockInterviews('app2', 'screening'),
+    tasks: createMockTasks('app2'),
+    documents: createMockDocuments('app2'),
+    allNotes: createMockNotes('app2')
   },
   {
     id: 'app3',
@@ -91,12 +364,16 @@ const applications: Application[] = [
     company: companies[2],
     dateApplied: new Date(2023, 11, 15),
     stage: 'applied',
-    jobDescription: 'Creating innovative iOS applications...',
+    jobDescription: 'Creating innovative iOS applications using Swift and Apple\'s latest frameworks. You\'ll work on consumer-facing apps that are used by millions of people daily. The role requires strong knowledge of iOS development patterns, performance optimization, and user experience design principles.',
     salary: '$135,000 - $170,000',
     location: 'Cupertino, CA',
     remote: false,
-    notes: 'Tailored resume for this role',
+    notes: 'Tailored resume to highlight my Swift and iOS development experience.',
     contacts: [],
+    interviews: [],
+    tasks: createMockTasks('app3'),
+    documents: createMockDocuments('app3'),
+    allNotes: createMockNotes('app3')
   },
   {
     id: 'app4',
@@ -104,12 +381,18 @@ const applications: Application[] = [
     company: companies[3],
     dateApplied: new Date(2023, 11, 18),
     stage: 'offer',
-    jobDescription: 'Optimizing AWS infrastructure...',
+    jobDescription: 'Optimizing AWS infrastructure for high-scale services. This role focuses on designing and implementing cloud solutions that are scalable, secure, and cost-effective. You\'ll work with EC2, S3, Lambda, and other AWS services to build distributed systems that support Amazon\'s global operations.',
     salary: '$145,000 - $190,000',
     location: 'Seattle, WA',
     remote: true,
-    notes: 'Received offer, negotiating terms',
-    contacts: [{ name: 'Mike Brown', role: 'Hiring Manager', email: 'mike.b@amazon.com' }],
+    notes: 'Received offer, negotiating terms. Base salary offered is $145K with $20K sign-on bonus and RSUs valued at $80K over 4 years.',
+    contacts: [
+      { id: 'contact4', name: 'Mike Brown', role: 'Hiring Manager', email: 'mike.b@amazon.com', phone: '206-555-6789' }
+    ],
+    interviews: createMockInterviews('app4', 'offer'),
+    tasks: createMockTasks('app4'),
+    documents: createMockDocuments('app4'),
+    allNotes: createMockNotes('app4')
   },
   {
     id: 'app5',
@@ -117,12 +400,19 @@ const applications: Application[] = [
     company: companies[4],
     dateApplied: new Date(2023, 11, 20),
     stage: 'interview',
-    jobDescription: 'Leading product strategy for Instagram...',
+    jobDescription: 'Leading product strategy for Instagram features, collaborating with designers, engineers, and data scientists to define and launch new user experiences. This role requires a combination of technical understanding, user empathy, and business acumen to prioritize features that delight users while driving business metrics.',
     salary: '$150,000 - $200,000',
     location: 'Menlo Park, CA',
     remote: false,
-    notes: 'Preparing for behavioral interview',
-    contacts: [],
+    notes: 'Preparing for behavioral interview. Need to review STAR method answers and prepare examples of product management achievements.',
+    contacts: [
+      { id: 'contact5', name: 'Jessica Lee', role: 'Product Lead', email: 'jlee@fb.com' },
+      { id: 'contact6', name: 'Robert Taylor', role: 'Recruiter', email: 'rtaylor@fb.com', phone: '650-555-2345' }
+    ],
+    interviews: createMockInterviews('app5', 'interview'),
+    tasks: createMockTasks('app5'),
+    documents: createMockDocuments('app5'),
+    allNotes: createMockNotes('app5')
   },
   {
     id: 'app6',
@@ -130,12 +420,16 @@ const applications: Application[] = [
     company: companies[5],
     dateApplied: new Date(2023, 11, 22),
     stage: 'rejected',
-    jobDescription: 'Scaling Netflix streaming services...',
+    jobDescription: 'Scaling Netflix streaming services using Java, Spring Boot, and AWS. You\'ll work on systems that handle billions of requests daily, focusing on reliability, performance, and global availability. The role involves designing and implementing microservices that power the content delivery pipeline.',
     salary: '$140,000 - $180,000',
     location: 'Los Gatos, CA',
     remote: true,
-    notes: 'Rejected after initial screening',
+    notes: 'Rejected after initial screening. Feedback mentioned they were looking for someone with more experience in high-scale distributed systems.',
     contacts: [],
+    interviews: [],
+    tasks: [],
+    documents: createMockDocuments('app6'),
+    allNotes: createMockNotes('app6')
   },
   {
     id: 'app7',
@@ -143,12 +437,18 @@ const applications: Application[] = [
     company: companies[6],
     dateApplied: new Date(2023, 11, 23),
     stage: 'screening',
-    jobDescription: 'Managing CI/CD pipelines at Stripe...',
+    jobDescription: 'Managing CI/CD pipelines at Stripe, ensuring smooth and reliable deployment of code changes. This role involves working with Kubernetes, Docker, and various monitoring/observability tools to support the engineering organization. You\'ll help design infrastructure as code and implement automation to increase developer productivity.',
     salary: '$130,000 - $165,000',
     location: 'San Francisco, CA',
     remote: true,
-    notes: 'Technical phone screen scheduled',
-    contacts: [],
+    notes: 'Technical phone screen scheduled for next week. Need to review Kubernetes concepts and CI/CD best practices.',
+    contacts: [
+      { id: 'contact7', name: 'Alex Wong', role: 'DevOps Lead', email: 'awong@stripe.com' }
+    ],
+    interviews: createMockInterviews('app7', 'screening'),
+    tasks: createMockTasks('app7'),
+    documents: createMockDocuments('app7'),
+    allNotes: createMockNotes('app7')
   },
   {
     id: 'app8',
@@ -156,30 +456,30 @@ const applications: Application[] = [
     company: companies[7],
     dateApplied: new Date(2023, 11, 24),
     stage: 'applied',
-    jobDescription: 'Building Airbnb\'s booking platform...',
+    jobDescription: 'Building Airbnb\'s booking platform using React, Redux, and GraphQL. The role involves implementing complex UI components, optimizing for performance across devices, and collaborating with designers and product managers to deliver features that enhance the user experience for both hosts and guests.',
     salary: '$125,000 - $155,000',
     location: 'San Francisco, CA',
     remote: true,
-    notes: 'Applied through referral',
-    contacts: [{ name: 'Lisa Chen', role: 'Engineer', email: 'lisa.c@airbnb.com' }],
+    notes: 'Applied through referral from Lisa Chen who works on the frontend team.',
+    contacts: [
+      { id: 'contact8', name: 'Lisa Chen', role: 'Senior Engineer', email: 'lisa.c@airbnb.com', linkedin: 'linkedin.com/in/lisachen' }
+    ],
+    interviews: [],
+    tasks: createMockTasks('app8'),
+    documents: createMockDocuments('app8'),
+    allNotes: createMockNotes('app8')
   },
 ];
 
 // Get stage color
 const getStageColor = (stage: ApplicationStage): string => {
   switch (stage) {
-    case 'applied':
-      return 'var(--accent-blue)';
-    case 'screening':
-      return 'var(--accent-purple)';
-    case 'interview':
-      return 'var(--accent-green)';
-    case 'offer':
-      return 'var(--accent-success)';
-    case 'rejected':
-      return 'var(--accent-red)';
-    default:
-      return 'var(--text-secondary)';
+    case 'applied': return 'var(--accent-blue)';
+    case 'screening': return 'var(--accent-purple)';
+    case 'interview': return 'var(--accent-green)';
+    case 'offer': return 'var(--accent-success)';
+    case 'rejected': return 'var(--accent-red)';
+    default: return 'var(--text-secondary)';
   }
 };
 
@@ -189,707 +489,450 @@ const getStageLabel = (stage: ApplicationStage): string => {
 };
 
 export default function Applications() {
+  const { currentTheme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
-  // Default to table view for better data presentation
-  const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
-  const [filter, setFilter] = useState<ApplicationStage | 'all'>('all');
+  const [viewMode, setViewMode] = useState<'table' | 'kanban'>('kanban');
+  const [stageFilter, setStageFilter] = useState<ApplicationStage | 'all'>('all');
+  const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({});
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [sortConfig, setSortConfig] = useState<{column: keyof Application | 'company.name', direction: 'asc' | 'desc'}>({
     column: 'dateApplied',
     direction: 'desc'
   });
-  const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [currentApplication, setCurrentApplication] = useState<Application | null>(null);
-  const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
-  
-  const searchRef = useRef<HTMLInputElement>(null);
+  const [selectedApplication, setSelectedApplication] = useState<string | null>(null);
+  const [applicationData, setApplicationData] = useState<Application[]>(applications);
+  const [mounted, setMounted] = useState(false);
+  const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
 
-  // Filter applications based on search and stage filter
-  const filteredApplications = applications.filter(app => {
-    const matchesSearch = searchTerm === '' || 
-      app.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      app.company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      app.location.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesFilter = filter === 'all' || app.stage === filter;
-    
-    return matchesSearch && matchesFilter;
-  });
-
-  // Sort applications
-  const sortedApplications = useMemo(() => {
-    const sortableApps = [...filteredApplications];
-    
-    return sortableApps.sort((a, b) => {
-      if (sortConfig.column === 'company.name') {
-        const valueA = a.company.name;
-        const valueB = b.company.name;
-        
-        if (sortConfig.direction === 'asc') {
-          return valueA.localeCompare(valueB);
-        } else {
-          return valueB.localeCompare(valueA);
-        }
-      } else {
-        const valueA = a[sortConfig.column];
-        const valueB = b[sortConfig.column];
-        
-        if (valueA instanceof Date && valueB instanceof Date) {
-          if (sortConfig.direction === 'asc') {
-            return valueA.getTime() - valueB.getTime();
-          } else {
-            return valueB.getTime() - valueA.getTime();
-          }
-        } else if (typeof valueA === 'string' && typeof valueB === 'string') {
-          if (sortConfig.direction === 'asc') {
-            return valueA.localeCompare(valueB);
-          } else {
-            return valueB.localeCompare(valueA);
-          }
-        }
-        return 0;
-      }
-    });
-  }, [filteredApplications, sortConfig]);
-
-  // Pagination
-  const totalPages = Math.ceil(sortedApplications.length / rowsPerPage);
-  const startIndex = (currentPage - 1) * rowsPerPage;
-  const paginatedApplications = sortedApplications.slice(startIndex, startIndex + rowsPerPage);
-
-  // Group applications by stage for kanban view
-  const applicationsByStage = {
-    applied: filteredApplications.filter(app => app.stage === 'applied'),
-    screening: filteredApplications.filter(app => app.stage === 'screening'),
-    interview: filteredApplications.filter(app => app.stage === 'interview'),
-    offer: filteredApplications.filter(app => app.stage === 'offer'),
-    rejected: filteredApplications.filter(app => app.stage === 'rejected'),
-  };
-
-  // Handle sort
-  const handleSort = (column: keyof Application | 'company.name') => {
-    if (sortConfig.column === column) {
-      setSortConfig({
-        column, 
-        direction: sortConfig.direction === 'asc' ? 'desc' : 'asc'
-      });
-    } else {
-      setSortConfig({
-        column,
-        direction: 'asc'
-      });
-    }
-  };
-
-  // Handle row selection
-  const toggleRowSelection = (id: string) => {
-    const newSelected = new Set(selectedRows);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    setSelectedRows(newSelected);
-  };
-
-  // Handle bulk selection
-  const toggleAllRows = () => {
-    if (selectedRows.size === paginatedApplications.length) {
-      setSelectedRows(new Set());
-    } else {
-      setSelectedRows(new Set(paginatedApplications.map(app => app.id)));
-    }
-  };
-
-  // Handle detail view
-  const openDetailView = (app: Application) => {
-    setCurrentApplication(app);
-    setIsDetailModalOpen(true);
-  };
-
-  // Toggle action menu
-  const toggleActionMenu = (id: string) => {
-    if (actionMenuOpen === id) {
-      setActionMenuOpen(null);
-    } else {
-      setActionMenuOpen(id);
-    }
-  };
-
-  // Focus search input when mounted
+  // Animation effect on mount
   useEffect(() => {
-    if (searchRef.current) {
-      searchRef.current.focus();
-    }
+    setMounted(true);
   }, []);
 
-  // Reset selection when filters or pagination change
-  useEffect(() => {
-    setSelectedRows(new Set());
-  }, [searchTerm, filter, currentPage]);
+  // Find selected application
+  const selectedAppData = useMemo(() => {
+    if (!selectedApplication) return null;
+    return applicationData.find(app => app.id === selectedApplication) || null;
+  }, [selectedApplication, applicationData]);
+
+  // Handle search
+  const handleSearch = (query: string) => {
+    setSearchTerm(query);
+  };
+
+  // Handle filter change
+  const handleFilterChange = (filters: Record<string, string[]>) => {
+    setSelectedFilters(filters);
+  };
+
+  // Handle view mode toggle
+  const toggleViewMode = () => {
+    setViewMode(prev => prev === 'table' ? 'kanban' : 'table');
+  };
+
+  // Handle stage change for an application
+  const handleStageChange = (appId: string, newStage: ApplicationStage) => {
+    setApplicationData(prev =>
+      prev.map(app =>
+        app.id === appId ? { ...app, stage: newStage } : app
+      )
+    );
+  };
+
+  // Handle application edit
+  const handleEditApplication = (appId: string) => {
+    setSelectedApplication(appId);
+    console.log(`Edit application ${appId}`);
+    // Open edit modal
+  };
+
+  // Handle application delete
+  const handleDeleteApplication = (appId: string) => {
+    console.log(`Delete application ${appId}`);
+    // Show confirmation dialog before deleting
+    if (confirm(`Are you sure you want to delete this application?`)) {
+      setApplicationData(prev => prev.filter(app => app.id !== appId));
+      if (selectedApplication === appId) {
+        setSelectedApplication(null);
+        setIsDetailModalVisible(false);
+      }
+    }
+  };
+
+  // Handle adding new application
+  const handleAddApplication = () => {
+    setIsAddModalOpen(true);
+    console.log('Add new application');
+    // Open add modal
+  };
+
+  // Open application detail modal
+  const handleOpenDetailModal = (appId: string) => {
+    setSelectedApplication(appId);
+    setIsDetailModalVisible(true);
+  };
+
+  // Close application detail modal
+  const handleCloseDetailModal = () => {
+    setIsDetailModalVisible(false);
+  };
+
+  // Filter and sort applications
+  const filteredApplications = useMemo(() => {
+    let filtered = [...applicationData];
+
+    // Apply search term filter
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      filtered = filtered.filter(app =>
+        app.position.toLowerCase().includes(search) ||
+        app.company.name.toLowerCase().includes(search) ||
+        app.location.toLowerCase().includes(search) ||
+        app.notes.toLowerCase().includes(search)
+      );
+    }
+
+    // Apply stage filter
+    if (stageFilter !== 'all') {
+      filtered = filtered.filter(app => app.stage === stageFilter);
+    }
+
+    // Apply selected filters
+    if (Object.keys(selectedFilters).length > 0) {
+      filtered = filtered.filter(app => {
+        for (const [key, values] of Object.entries(selectedFilters)) {
+          if (values.length === 0) continue;
+
+          switch (key) {
+            case 'stages':
+              if (values.length > 0 && !values.includes(app.stage)) return false;
+              break;
+            case 'companies':
+              if (values.length > 0 && !values.includes(app.company.name)) return false;
+              break;
+            case 'locations':
+              if (values.includes('remote') && !app.remote) return false;
+              if (values.some(loc => loc !== 'remote') &&
+                  !values.some(loc => app.location.includes(loc) && loc !== 'remote')) return false;
+              break;
+            // Add other filter types as needed
+          }
+        }
+        return true;
+      });
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      const { column, direction } = sortConfig;
+
+      let valueA, valueB;
+
+      if (column === 'company.name') {
+        valueA = a.company.name;
+        valueB = b.company.name;
+      } else {
+        valueA = a[column];
+        valueB = b[column];
+      }
+
+      if (valueA instanceof Date && valueB instanceof Date) {
+        return direction === 'asc'
+          ? valueA.getTime() - valueB.getTime()
+          : valueB.getTime() - valueA.getTime();
+      }
+
+      if (typeof valueA === 'string' && typeof valueB === 'string') {
+        return direction === 'asc'
+          ? valueA.localeCompare(valueB)
+          : valueB.localeCompare(valueA);
+      }
+
+      return 0;
+    });
+
+    return filtered;
+  }, [applicationData, searchTerm, stageFilter, selectedFilters, sortConfig]);
+
+  // Group applications by stage for kanban view
+  const applicationsByStage = useMemo(() => {
+    const stages: Record<ApplicationStage, Application[]> = {
+      applied: [],
+      screening: [],
+      interview: [],
+      offer: [],
+      rejected: []
+    };
+
+    filteredApplications.forEach(app => {
+      stages[app.stage].push(app);
+    });
+
+    return stages;
+  }, [filteredApplications]);
 
   return (
-    <section className="applications-section reveal-element">
-      <CardHeader 
-        title="Applications" 
-        subtitle={`Track and manage your job applications (${applications.length})`}
-        accentColor="var(--accent-purple)"
+    <section className={`applications-section ${mounted ? 'mounted' : ''}`}>
+      <CardHeader
+        title="Applications"
+        subtitle="Track and manage your job applications"
+        accentColor="var(--accent-primary)"
         variant="default"
       >
-        <button 
-          className="add-application-btn"
-          onClick={() => setIsAddModalOpen(true)}
-        >
-          <PlusCircle size={18} />
-          <span className="btn-text">Add New</span>
-        </button>
+        <div className="header-actions">
+          <ActionButton
+            label="Add Application"
+            icon={PlusCircle}
+            variant="primary"
+            onClick={handleAddApplication}
+          />
+        </div>
       </CardHeader>
 
-      <div className="applications-controls reveal-element">
-        <div className="search-filter-container">
-          <div className="search-container">
-            <Search size={18} className="search-icon" />
-            <input
-              ref={searchRef}
-              type="text"
-              className="search-input"
-              placeholder="Search applications..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            {searchTerm && (
-              <button 
-                className="clear-search" 
-                onClick={() => setSearchTerm('')}
-                aria-label="Clear search"
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
+      <div className="applications-toolbar">
+        <SearchFilter
+          onSearch={handleSearch}
+          onFilter={handleFilterChange}
+          placeholder="Search applications..."
+        />
 
-          <div className="filter-container">
-            <button className="filter-btn">
-              <Filter size={16} />
-              <span>Filter</span>
-              <ChevronDown size={14} />
-            </button>
-            
-            <select 
-              className="stage-filter" 
-              value={filter}
-              onChange={(e) => setFilter(e.target.value as ApplicationStage | 'all')}
-            >
-              <option value="all">All Stages</option>
-              <option value="applied">Applied</option>
-              <option value="screening">Screening</option>
-              <option value="interview">Interview</option>
-              <option value="offer">Offer</option>
-              <option value="rejected">Rejected</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="view-controls">
-          <button 
-            className={`view-btn ${viewMode === 'table' ? 'active' : ''}`}
-            onClick={() => setViewMode('table')}
-            aria-label="Table view"
-          >
-            <ListFilter size={18} />
-          </button>
-          <button 
-            className={`view-btn ${viewMode === 'kanban' ? 'active' : ''}`}
+        <div className="view-toggles">
+          <button
+            className={`view-toggle-btn ${viewMode === 'kanban' ? 'active' : ''}`}
             onClick={() => setViewMode('kanban')}
-            aria-label="Kanban view"
           >
             <Grid3x3 size={18} />
+            <span>Kanban</span>
+          </button>
+
+          <button
+            className={`view-toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
+            onClick={() => setViewMode('table')}
+          >
+            <ListFilter size={18} />
+            <span>List</span>
           </button>
         </div>
       </div>
 
-      {viewMode === 'table' ? (
-        <div className="applications-table-container reveal-element">
-          <div className="table-actions">
-            <div className="bulk-actions">
-              {selectedRows.size > 0 && (
-                <>
-                  <span className="selected-count">{selectedRows.size} selected</span>
-                  <div className="bulk-buttons">
-                    <button className="bulk-btn" title="Update Stage">
-                      <Edit size={16} />
-                      <span>Update Stage</span>
-                    </button>
-                    <button className="bulk-btn" title="Export Selected">
-                      <Download size={16} />
-                      <span>Export</span>
-                    </button>
-                    <button className="bulk-btn danger" title="Delete Selected">
-                      <Trash2 size={16} />
-                      <span>Delete</span>
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-            <div className="table-pagination">
-              <div className="rows-per-page">
-                <span>Rows per page:</span>
-                <select 
-                  value={rowsPerPage}
-                  onChange={(e) => {
-                    setRowsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                </select>
-              </div>
-              <div className="pagination-controls">
-                <span className="pagination-info">
-                  {startIndex + 1}-{Math.min(startIndex + rowsPerPage, sortedApplications.length)} of {sortedApplications.length}
-                </span>
-                <button 
-                  className="pagination-btn" 
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(1)}
-                  title="First Page"
-                >
-                  <ChevronLeft size={14} />
-                  <ChevronLeft size={14} style={{marginLeft: '-8px'}} />
-                </button>
-                <button 
-                  className="pagination-btn" 
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  title="Previous Page"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <span className="page-number">Page {currentPage}</span>
-                <button 
-                  className="pagination-btn" 
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  title="Next Page"
-                >
-                  <ChevronRight size={16} />
-                </button>
-                <button 
-                  className="pagination-btn" 
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(totalPages)}
-                  title="Last Page"
-                >
-                  <ChevronRight size={14} />
-                  <ChevronRight size={14} style={{marginLeft: '-8px'}} />
-                </button>
-              </div>
-            </div>
+      {viewMode === 'kanban' ? (
+        <div className="kanban-view">
+          <div className="kanban-container">
+            {(['applied', 'screening', 'interview', 'offer', 'rejected'] as ApplicationStage[]).map(stage => (
+              <KanbanColumn
+                key={stage}
+                title={getStageLabel(stage)}
+                count={applicationsByStage[stage].length}
+                color={getStageColor(stage)}
+                onAddNew={() => {
+                  // Pre-fill the stage when adding from a specific column
+                  console.log(`Add new application with stage: ${stage}`);
+                  setIsAddModalOpen(true);
+                }}
+                onCollapseToggle={(collapsed) => {
+                  console.log(`${stage} column ${collapsed ? 'collapsed' : 'expanded'}`);
+                }}
+              >
+                {applicationsByStage[stage].map(app => (
+                  <ApplicationCard
+                    key={app.id}
+                    id={app.id}
+                    position={app.position}
+                    company={app.company}
+                    dateApplied={app.dateApplied}
+                    stage={app.stage}
+                    salary={app.salary}
+                    location={app.location}
+                    remote={app.remote}
+                    notes={app.notes}
+                    onEdit={() => handleEditApplication(app.id)}
+                    onDelete={() => handleDeleteApplication(app.id)}
+                    onStageChange={(newStage) => handleStageChange(app.id, newStage)}
+                    onClick={() => handleOpenDetailModal(app.id)}
+                  />
+                ))}
+              </KanbanColumn>
+            ))}
           </div>
-          <table className="applications-table">
-            <thead>
-              <tr>
-                <th className="checkbox-cell">
-                  <div className="checkbox-wrapper">
-                    <input 
-                      type="checkbox"
-                      checked={selectedRows.size === paginatedApplications.length && paginatedApplications.length > 0}
-                      onChange={toggleAllRows}
-                      id="select-all"
-                    />
-                    <label htmlFor="select-all" className="checkbox-label">
-                      <span className="checkbox-custom">
-                        {selectedRows.size === paginatedApplications.length && paginatedApplications.length > 0 && (
-                          <Check size={14} />
-                        )}
-                      </span>
-                    </label>
-                  </div>
-                </th>
-                <th 
-                  className="sortable-header company-header"
-                  onClick={() => handleSort('company.name')}
-                >
-                  <div className="header-content">
-                    <span>Company</span>
-                    <div className="sort-indicator">
-                      {sortConfig.column === 'company.name' && (
-                        sortConfig.direction === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
-                      )}
-                    </div>
-                  </div>
-                </th>
-                <th 
-                  className="sortable-header"
-                  onClick={() => handleSort('position')}
-                >
-                  <div className="header-content">
-                    <span>Position</span>
-                    <div className="sort-indicator">
-                      {sortConfig.column === 'position' && (
-                        sortConfig.direction === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
-                      )}
-                    </div>
-                  </div>
-                </th>
-                <th 
-                  className="sortable-header"
-                  onClick={() => handleSort('dateApplied')}
-                >
-                  <div className="header-content">
-                    <span>Date Applied</span>
-                    <div className="sort-indicator">
-                      {sortConfig.column === 'dateApplied' && (
-                        sortConfig.direction === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
-                      )}
-                    </div>
-                  </div>
-                </th>
-                <th 
-                  className="sortable-header"
-                  onClick={() => handleSort('location')}
-                >
-                  <div className="header-content">
-                    <span>Location</span>
-                    <div className="sort-indicator">
-                      {sortConfig.column === 'location' && (
-                        sortConfig.direction === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
-                      )}
-                    </div>
-                  </div>
-                </th>
-                <th 
-                  className="sortable-header"
-                  onClick={() => handleSort('stage')}
-                >
-                  <div className="header-content">
-                    <span>Stage</span>
-                    <div className="sort-indicator">
-                      {sortConfig.column === 'stage' && (
-                        sortConfig.direction === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
-                      )}
-                    </div>
-                  </div>
-                </th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedApplications.length > 0 ? (
-                paginatedApplications.map(application => (
-                  <tr 
-                    key={application.id} 
-                    className={`application-row ${selectedRows.has(application.id) ? 'selected-row' : ''}`}
-                    onClick={() => openDetailView(application)}
-                  >
-                    <td className="checkbox-cell" onClick={(e) => {
-                      e.stopPropagation();
-                      toggleRowSelection(application.id);
-                    }}>
-                      <div className="checkbox-wrapper">
-                        <input 
-                          type="checkbox"
-                          checked={selectedRows.has(application.id)}
-                          onChange={() => toggleRowSelection(application.id)}
-                          id={`select-${application.id}`}
-                        />
-                        <label htmlFor={`select-${application.id}`} className="checkbox-label">
-                          <span className="checkbox-custom">
-                            {selectedRows.has(application.id) && (
-                              <Check size={14} />
-                            )}
-                          </span>
-                        </label>
-                      </div>
-                    </td>
-                    <td className="company-cell">
-                      <div className="company-info">
-                        <div className="company-logo-container">
-                          <div className="company-logo-placeholder">{application.company.name.charAt(0)}</div>
-                        </div>
-                        <span className="company-name">{application.company.name}</span>
-                      </div>
-                    </td>
-                    <td className="position-cell">
-                      <div className="position-info">
-                        <span className="position-title">{application.position}</span>
-                        <span className="position-salary">{application.salary}</span>
-                      </div>
-                    </td>
-                    <td className="date-cell">{formatDate(application.dateApplied)}</td>
-                    <td className="location-cell">
-                      <div className="location-display">
-                        <span>{application.location}</span>
-                        {application.remote && <span className="remote-badge">Remote</span>}
-                      </div>
-                    </td>
-                    <td className="stage-cell">
-                      <div 
-                        className="stage-badge"
-                        style={{ backgroundColor: `${getStageColor(application.stage)}10`, color: getStageColor(application.stage) }}
-                      >
-                        <span 
-                          className="stage-indicator"
-                          style={{ backgroundColor: getStageColor(application.stage) }}
-                        ></span>
-                        {getStageLabel(application.stage)}
-                      </div>
-                    </td>
-                    <td className="actions-cell" onClick={(e) => e.stopPropagation()}>
-                      <div className="actions-container">
-                        <button 
-                          className="action-btn"
-                          onClick={() => toggleActionMenu(application.id)}
-                        >
-                          <MoreVertical size={16} />
-                        </button>
-                        
-                        {actionMenuOpen === application.id && (
-                          <div className="action-menu">
-                            <button className="menu-item">
-                              <Edit size={14} />
-                              <span>Edit</span>
-                            </button>
-                            <button className="menu-item">
-                              <ExternalLink size={14} />
-                              <span>View Job</span>
-                            </button>
-                            <button className="menu-item">
-                              <Copy size={14} />
-                              <span>Duplicate</span>
-                            </button>
-                            <div className="menu-divider"></div>
-                            <button className="menu-item danger">
-                              <Trash2 size={14} />
-                              <span>Delete</span>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr className="empty-state-row">
-                  <td colSpan={7}>
-                    <div className="empty-state">
-                      <Search size={32} className="empty-icon" />
-                      <p>No applications found matching your search</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
         </div>
       ) : (
-        <div className="kanban-board reveal-element">
-          <div className="kanban-container">
-            {['applied', 'screening', 'interview', 'offer', 'rejected'].map((stage) => (
-              <div key={stage} className="kanban-column">
-                <div 
-                  className="kanban-column-header"
-                  style={{ borderColor: getStageColor(stage as ApplicationStage) }}
-                >
-                  <div className="column-title">
-                    <span 
-                      className="column-indicator"
-                      style={{ backgroundColor: getStageColor(stage as ApplicationStage) }}
-                    ></span>
-                    <h3>{getStageLabel(stage as ApplicationStage)}</h3>
-                  </div>
-                  <div className="column-count">{applicationsByStage[stage as ApplicationStage].length}</div>
+        <div className="table-view">
+          <div className="applications-table">
+            <div className="table-header">
+              <div
+                className={`header-cell company-cell ${sortConfig.column === 'company.name' ? 'sorted' : ''}`}
+                onClick={() => setSortConfig({
+                  column: 'company.name',
+                  direction: sortConfig.column === 'company.name' && sortConfig.direction === 'asc' ? 'desc' : 'asc'
+                })}
+              >
+                <span>Company</span>
+                {sortConfig.column === 'company.name' && (
+                  sortConfig.direction === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                )}
+              </div>
+
+              <div
+                className={`header-cell position-cell ${sortConfig.column === 'position' ? 'sorted' : ''}`}
+                onClick={() => setSortConfig({
+                  column: 'position',
+                  direction: sortConfig.column === 'position' && sortConfig.direction === 'asc' ? 'desc' : 'asc'
+                })}
+              >
+                <span>Position</span>
+                {sortConfig.column === 'position' && (
+                  sortConfig.direction === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                )}
+              </div>
+
+              <div
+                className={`header-cell date-cell ${sortConfig.column === 'dateApplied' ? 'sorted' : ''}`}
+                onClick={() => setSortConfig({
+                  column: 'dateApplied',
+                  direction: sortConfig.column === 'dateApplied' && sortConfig.direction === 'asc' ? 'desc' : 'asc'
+                })}
+              >
+                <span>Date Applied</span>
+                {sortConfig.column === 'dateApplied' && (
+                  sortConfig.direction === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                )}
+              </div>
+
+              <div className="header-cell stage-cell">
+                <span>Stage</span>
+              </div>
+
+              <div className="header-cell location-cell">
+                <span>Location</span>
+              </div>
+
+              <div className="header-cell actions-cell">
+                <span>Actions</span>
+              </div>
+            </div>
+
+            <div className="table-body">
+              {filteredApplications.length === 0 ? (
+                <div className="empty-state">
+                  <p>No applications match your filters</p>
+                  <button
+                    className="clear-filters-btn"
+                    onClick={() => {
+                      setSearchTerm('');
+                      setStageFilter('all');
+                      setSelectedFilters({});
+                    }}
+                  >
+                    <X size={14} />
+                    <span>Clear filters</span>
+                  </button>
                 </div>
-                <div className="kanban-cards">
-                  {applicationsByStage[stage as ApplicationStage].map(app => (
-                    <div key={app.id} className="kanban-card">
-                      <div className="card-header">
-                        <div className="company-logo-placeholder">{app.company.name.charAt(0)}</div>
-                        <div className="card-title-container">
-                          <h4 className="card-title">{app.position}</h4>
-                          <p className="card-subtitle">{app.company.name}</p>
-                        </div>
-                      </div>
-                      <div className="card-details">
-                        <div className="card-detail">
-                          <span className="detail-label">Applied:</span>
-                          <span className="detail-value">{formatDate(app.dateApplied)}</span>
-                        </div>
-                        <div className="card-detail">
-                          <span className="detail-label">Location:</span>
-                          <span className="detail-value">
-                            {app.location}
-                            {app.remote && <span className="remote-chip">Remote</span>}
-                          </span>
-                        </div>
-                        {app.contacts.length > 0 && (
-                          <div className="card-detail">
-                            <span className="detail-label">Contact:</span>
-                            <span className="detail-value">{app.contacts[0].name}</span>
-                          </div>
+              ) : (
+                filteredApplications.map(app => (
+                  <div
+                    key={app.id}
+                    className={`table-row ${selectedApplication === app.id ? 'selected' : ''}`}
+                    onClick={() => handleOpenDetailModal(app.id)}
+                  >
+                    <div className="cell company-cell">
+                      <div className="company-logo">
+                        {app.company.logo ? (
+                          <img src={app.company.logo} alt={app.company.name} />
+                        ) : (
+                          app.company.name.charAt(0)
                         )}
                       </div>
-                      <div className="card-footer">
-                        <div className="salary-info">{app.salary}</div>
-                        <button className="card-more-btn">
-                          <MoreHorizontal size={16} />
+                      <span className="company-name">{app.company.name}</span>
+                    </div>
+
+                    <div className="cell position-cell">
+                      <span className="position-title">{app.position}</span>
+                    </div>
+
+                    <div className="cell date-cell">
+                      <span className="date-applied">{formatDate(app.dateApplied)}</span>
+                    </div>
+
+                    <div className="cell stage-cell">
+                      <div
+                        className="stage-badge"
+                        style={{
+                          backgroundColor: `rgba(${getStageColor(app.stage).replace('var(--accent-', 'var(--accent-').replace(')', '-rgb)')}, 0.1)`,
+                          color: getStageColor(app.stage)
+                        }}
+                      >
+                        <span className="stage-indicator" style={{ backgroundColor: getStageColor(app.stage) }}></span>
+                        <span>{getStageLabel(app.stage)}</span>
+                      </div>
+                    </div>
+
+                    <div className="cell location-cell">
+                      <span className="location">{app.location}</span>
+                      {app.remote && <span className="remote-badge">Remote</span>}
+                    </div>
+
+                    <div className="cell actions-cell">
+                      <div className="row-actions">
+                        <button
+                          className="action-btn view"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDetailModal(app.id);
+                          }}
+                        >
+                          View
+                        </button>
+                        <button
+                          className="action-btn edit"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditApplication(app.id);
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="action-btn delete"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteApplication(app.id);
+                          }}
+                        >
+                          Delete
                         </button>
                       </div>
                     </div>
-                  ))}
-                  
-                  {applicationsByStage[stage as ApplicationStage].length === 0 && (
-                    <div className="empty-column-card">
-                      <p>No applications</p>
-                    </div>
-                  )}
-                  
-                  <button className="add-to-column-btn">
-                    <PlusCircle size={16} />
-                    <span>Add Application</span>
-                  </button>
-                </div>
-              </div>
-            ))}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}
 
       {/* Application Detail Modal */}
-      {isDetailModalOpen && currentApplication && (
-        <div className="detail-modal-overlay" onClick={() => setIsDetailModalOpen(false)}>
-          <div className="detail-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="detail-modal-header">
-              <div className="detail-company-info">
-                <div className="detail-company-logo">
-                  <div className="company-logo-placeholder large">{currentApplication.company.name.charAt(0)}</div>
-                </div>
-                <div className="detail-title-container">
-                  <h2 className="detail-title">{currentApplication.position}</h2>
-                  <div className="detail-subtitle">
-                    <span className="detail-company-name">{currentApplication.company.name}</span>
-                    <span className="detail-separator">•</span>
-                    <span className="detail-industry">{currentApplication.company.industry}</span>
-                  </div>
-                </div>
-              </div>
-              <div 
-                className="detail-stage" 
-                style={{ backgroundColor: `${getStageColor(currentApplication.stage)}15`, color: getStageColor(currentApplication.stage) }}
-              >
-                <span 
-                  className="detail-stage-indicator"
-                  style={{ backgroundColor: getStageColor(currentApplication.stage) }}
-                ></span>
-                {getStageLabel(currentApplication.stage)}
-              </div>
-              <button className="detail-close-btn" onClick={() => setIsDetailModalOpen(false)}>
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="detail-modal-content">
-              <div className="detail-grid">
-                <div className="detail-column">
-                  <div className="detail-section">
-                    <h3 className="detail-section-title">Application Details</h3>
-                    <div className="detail-field">
-                      <span className="detail-field-label">Date Applied</span>
-                      <span className="detail-field-value">{formatDate(currentApplication.dateApplied)}</span>
-                    </div>
-                    <div className="detail-field">
-                      <span className="detail-field-label">Location</span>
-                      <div className="detail-field-value location-field">
-                        <span>{currentApplication.location}</span>
-                        {currentApplication.remote && <span className="detail-remote-badge">Remote</span>}
-                      </div>
-                    </div>
-                    <div className="detail-field">
-                      <span className="detail-field-label">Salary</span>
-                      <span className="detail-field-value salary-value">{currentApplication.salary}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="detail-section">
-                    <h3 className="detail-section-title">Contacts</h3>
-                    {currentApplication.contacts.length > 0 ? (
-                      <div className="detail-contacts">
-                        {currentApplication.contacts.map((contact, index) => (
-                          <div key={index} className="detail-contact-card">
-                            <div className="contact-avatar">{contact.name.charAt(0)}</div>
-                            <div className="contact-info">
-                              <div className="contact-name">{contact.name}</div>
-                              <div className="contact-role">{contact.role}</div>
-                              <a href={`mailto:${contact.email}`} className="contact-email">{contact.email}</a>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="detail-empty-section">
-                        <p>No contacts added yet</p>
-                        <button className="detail-add-btn">
-                          <PlusCircle size={14} />
-                          <span>Add Contact</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="detail-column">
-                  <div className="detail-section">
-                    <h3 className="detail-section-title">Job Description</h3>
-                    <div className="detail-description">
-                      <p>{currentApplication.jobDescription}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="detail-section">
-                    <h3 className="detail-section-title">Notes</h3>
-                    <div className="detail-notes">
-                      <p>{currentApplication.notes}</p>
-                    </div>
-                    <button className="detail-edit-btn">
-                      <Edit size={14} />
-                      <span>Edit Notes</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="detail-modal-footer">
-              <div className="detail-footer-actions">
-                <button className="detail-footer-btn primary">
-                  <Check size={16} />
-                  <span>Update Status</span>
-                </button>
-                <div className="detail-footer-secondary">
-                  <button className="detail-footer-btn">
-                    <Edit size={16} />
-                    <span>Edit</span>
-                  </button>
-                  <button className="detail-footer-btn">
-                    <Download size={16} />
-                    <span>Export</span>
-                  </button>
-                  <button className="detail-footer-btn danger">
-                    <Trash2 size={16} />
-                    <span>Delete</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {selectedAppData && (
+        <ApplicationDetailModal
+          id={selectedAppData.id}
+          position={selectedAppData.position}
+          company={selectedAppData.company}
+          dateApplied={selectedAppData.dateApplied}
+          stage={selectedAppData.stage}
+          jobDescription={selectedAppData.jobDescription}
+          salary={selectedAppData.salary}
+          location={selectedAppData.location}
+          remote={selectedAppData.remote}
+          notes={selectedAppData.notes}
+          contacts={selectedAppData.contacts}
+          interviews={selectedAppData.interviews || []}
+          tasks={selectedAppData.tasks || []}
+          documents={selectedAppData.documents || []}
+          allNotes={selectedAppData.allNotes || []}
+          isVisible={isDetailModalVisible}
+          onClose={handleCloseDetailModal}
+          onEdit={() => handleEditApplication(selectedAppData.id)}
+          onStageChange={(newStage) => handleStageChange(selectedAppData.id, newStage)}
+        />
       )}
 
       <style jsx>{`
@@ -897,507 +940,229 @@ export default function Applications() {
           display: flex;
           flex-direction: column;
           gap: 24px;
-          position: relative;
-          z-index: 1;
-          padding: 0;
-          min-height: 100%;
+          opacity: 0;
+          transform: translateY(10px);
+          transition: all 0.6s var(--easing-standard);
         }
 
-        .applications-controls {
+        .applications-section.mounted {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        .header-actions {
+          display: flex;
+          gap: 12px;
+        }
+
+        .applications-toolbar {
           display: flex;
           justify-content: space-between;
           align-items: center;
+          gap: 16px;
           margin-bottom: 24px;
-          flex-wrap: wrap;
-          gap: 16px;
+          animation: slideUp 0.5s var(--easing-standard) both;
+          animation-delay: 0.1s;
         }
 
-        .search-filter-container {
+        .view-toggles {
           display: flex;
-          align-items: center;
-          gap: 16px;
-          flex-wrap: wrap;
-          flex: 1;
-        }
-
-        .search-container {
-          position: relative;
-          min-width: 300px;
-          flex: 1;
-        }
-
-        .search-icon {
-          position: absolute;
-          left: 14px;
-          top: 50%;
-          transform: translateY(-50%);
-          color: var(--text-tertiary);
-        }
-
-        .search-input {
-          width: 100%;
-          padding: 12px 12px 12px 40px;
-          border-radius: var(--border-radius);
-          border: 1px solid var(--border-thin);
-          background: var(--glass-bg);
-          color: var(--text-primary);
-          font-size: 14px;
-          transition: all 0.2s ease;
-          box-shadow: var(--shadow-sharp);
-        }
-
-        .search-input:focus {
-          border-color: var(--accent-purple);
-          box-shadow: 0 0 0 2px rgba(var(--accent-purple-rgb), 0.1);
-          outline: none;
-        }
-
-        .clear-search {
-          position: absolute;
-          right: 12px;
-          top: 50%;
-          transform: translateY(-50%);
-          background: var(--hover-bg);
-          border: none;
-          border-radius: 50%;
-          width: 20px;
-          height: 20px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: var(--text-tertiary);
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .clear-search:hover {
-          background: var(--active-bg);
-          color: var(--text-primary);
-        }
-
-        .filter-container {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .filter-btn {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 10px 16px;
-          border-radius: var(--border-radius);
-          border: 1px solid var(--border-thin);
-          background: var(--glass-bg);
-          color: var(--text-primary);
-          font-size: 14px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          box-shadow: var(--shadow-sharp);
-        }
-
-        .filter-btn:hover {
-          border-color: var(--accent-purple);
-          box-shadow: 0 2px 6px rgba(var(--accent-purple-rgb), 0.15);
-          transform: translateY(-1px);
-        }
-
-        .stage-filter {
-          padding: 10px 16px;
-          border-radius: var(--border-radius);
-          border: 1px solid var(--border-thin);
-          background: var(--glass-bg);
-          color: var(--text-primary);
-          font-size: 14px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          box-shadow: var(--shadow-sharp);
-          -webkit-appearance: none;
-          appearance: none;
-          background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' stroke='currentColor' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round' class='css-i6dzq1'%3e%3cpath d='M6 9l6 6 6-6'%3e%3c/path%3e%3c/svg%3e");
-          background-repeat: no-repeat;
-          background-position: right 10px center;
-          background-size: 16px;
-          padding-right: 30px;
-        }
-
-        .stage-filter:focus {
-          border-color: var(--accent-purple);
-          box-shadow: 0 0 0 2px rgba(var(--accent-purple-rgb), 0.1);
-          outline: none;
-        }
-
-        .view-controls {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          background: var(--glass-bg);
-          border-radius: var(--border-radius);
-          padding: 4px;
-          border: 1px solid var(--border-thin);
-          box-shadow: var(--shadow-sharp);
-        }
-
-        .view-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 8px;
-          border-radius: var(--border-radius-sm);
-          border: none;
-          background: transparent;
-          color: var(--text-tertiary);
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .view-btn:hover {
-          color: var(--text-primary);
-          background: var(--hover-bg);
-          transform: translateY(-1px);
-        }
-
-        .view-btn.active {
-          background: var(--active-bg);
-          color: var(--accent-purple);
-        }
-
-        /* Enhanced Table Styles */
-        .applications-table-container {
-          display: flex;
-          flex-direction: column;
-          border-radius: var(--border-radius);
-          background: var(--glass-card-bg);
-          box-shadow: var(--shadow);
-          border: 1px solid var(--border-thin);
-          overflow: hidden;
-        }
-
-        .table-actions {
-          display: flex;
-          justify-content: space-between;
-          padding: 12px 16px;
-          border-bottom: 1px solid var(--border-divider);
-          background: var(--glass-header-bg);
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 12px;
-        }
-
-        .bulk-actions {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-        }
-
-        .selected-count {
-          font-weight: 500;
-          font-size: 14px;
-          color: var(--text-primary);
-          background: var(--hover-bg);
-          padding: 4px 12px;
-          border-radius: 20px;
-        }
-
-        .bulk-buttons {
-          display: flex;
-          align-items: center;
           gap: 8px;
         }
 
-        .bulk-btn {
+        .view-toggle-btn {
           display: flex;
           align-items: center;
           gap: 6px;
-          padding: 6px 12px;
+          padding: 8px 14px;
+          background: var(--glass-bg);
+          border: 1px solid var(--border-thin);
           border-radius: var(--border-radius);
-          background: var(--glass-bg);
-          color: var(--text-primary);
-          border: 1px solid var(--border-thin);
-          font-size: 13px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .bulk-btn:hover {
-          background: var(--hover-bg);
-          border-color: var(--border-hover);
-        }
-
-        .bulk-btn.danger {
-          color: var(--accent-red);
-        }
-
-        .bulk-btn.danger:hover {
-          background: rgba(var(--accent-red-rgb), 0.1);
-          border-color: rgba(var(--accent-red-rgb), 0.3);
-        }
-
-        .table-pagination {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-        }
-
-        .rows-per-page {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 13px;
           color: var(--text-secondary);
-        }
-
-        .rows-per-page select {
-          padding: 5px 10px;
-          border-radius: var(--border-radius);
-          border: 1px solid var(--border-thin);
-          background: var(--glass-bg);
-          color: var(--text-primary);
-          font-size: 13px;
+          font-size: 14px;
           cursor: pointer;
-          transition: all 0.2s ease;
-          -webkit-appearance: none;
-          appearance: none;
-          background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' stroke='currentColor' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round' class='css-i6dzq1'%3e%3cpath d='M6 9l6 6 6-6'%3e%3c/path%3e%3c/svg%3e");
-          background-repeat: no-repeat;
-          background-position: right 6px center;
-          background-size: 12px;
-          padding-right: 20px;
+          transition: all 0.2s var(--easing-standard);
         }
 
-        .pagination-controls {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .pagination-info {
-          font-size: 13px;
-          color: var(--text-secondary);
-          margin-right: 8px;
-        }
-
-        .pagination-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 28px;
-          height: 28px;
-          border-radius: var(--border-radius-sm);
-          border: 1px solid var(--border-thin);
-          background: var(--glass-bg);
-          color: var(--text-primary);
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .pagination-btn:hover:not(:disabled) {
+        .view-toggle-btn:hover {
           background: var(--hover-bg);
-          border-color: var(--border-hover);
-        }
-
-        .pagination-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .page-number {
-          font-size: 13px;
           color: var(--text-primary);
-          font-weight: 500;
+        }
+
+        .view-toggle-btn.active {
+          background: rgba(var(--accent-primary-rgb), 0.1);
+          border-color: var(--accent-primary);
+          color: var(--accent-primary);
+        }
+
+        /* Kanban View */
+        .kanban-view {
+          animation: slideUp 0.5s var(--easing-standard) both;
+          animation-delay: 0.2s;
+          padding-bottom: 24px;
+        }
+
+        .kanban-container {
+          display: flex;
+          gap: 20px;
+          overflow-x: auto;
+          padding: 12px 8px 32px 8px;
+          min-height: calc(100vh - 200px);
+          scrollbar-width: thin;
+          scrollbar-color: var(--border-thin) transparent;
+        }
+
+        .kanban-container::-webkit-scrollbar {
+          height: 8px;
+        }
+
+        .kanban-container::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        .kanban-container::-webkit-scrollbar-thumb {
+          background-color: var(--border-thin);
+          border-radius: 20px;
+        }
+
+        /* Table View */
+        .table-view {
+          animation: slideUp 0.5s var(--easing-standard) both;
+          animation-delay: 0.2s;
         }
 
         .applications-table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 14px;
+          background: var(--glass-card-bg);
+          border-radius: var(--border-radius);
+          border: 1px solid var(--border-thin);
+          overflow: hidden;
+          box-shadow: var(--shadow);
         }
 
-        .applications-table th,
-        .applications-table td {
-          text-align: left;
-          padding: 16px;
+        .table-header {
+          display: flex;
+          background: var(--glass-bg);
           border-bottom: 1px solid var(--border-divider);
-        }
-
-        .applications-table th {
-          font-weight: 600;
-          color: var(--text-secondary);
-          background: var(--glass-header-bg);
           position: sticky;
           top: 0;
           z-index: 10;
         }
 
-        .checkbox-cell {
-          width: 40px;
-          padding-left: 16px;
-          padding-right: 0;
-        }
-
-        .checkbox-wrapper {
-          position: relative;
+        .header-cell {
+          padding: 16px;
+          font-weight: 600;
+          color: var(--text-secondary);
           display: flex;
           align-items: center;
-          justify-content: center;
-        }
-
-        .checkbox-wrapper input[type="checkbox"] {
-          position: absolute;
-          opacity: 0;
-          width: 0;
-          height: 0;
-        }
-
-        .checkbox-label {
-          display: flex;
+          gap: 6px;
           cursor: pointer;
+          transition: all 0.2s var(--easing-standard);
         }
 
-        .checkbox-custom {
-          width: 18px;
-          height: 18px;
-          border-radius: 4px;
-          border: 1px solid var(--border-thin);
-          background: var(--glass-bg);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s ease;
-          color: white;
-        }
-
-        .checkbox-wrapper input[type="checkbox"]:checked + .checkbox-label .checkbox-custom {
-          background-color: var(--accent-purple);
-          border-color: var(--accent-purple);
-        }
-
-        .checkbox-wrapper input[type="checkbox"]:focus + .checkbox-label .checkbox-custom {
-          box-shadow: 0 0 0 2px rgba(var(--accent-purple-rgb), 0.2);
-        }
-
-        .sortable-header {
-          cursor: pointer;
-          user-select: none;
-          transition: background-color 0.2s ease;
-        }
-
-        .sortable-header:hover {
-          background-color: var(--hover-bg);
-        }
-
-        .header-content {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          position: relative;
-        }
-
-        .sort-indicator {
-          min-width: 14px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: var(--accent-purple);
-        }
-
-        .application-row {
-          transition: all 0.2s ease;
-          cursor: pointer;
-        }
-
-        .application-row:hover {
+        .header-cell:hover {
+          color: var(--text-primary);
           background: var(--hover-bg);
         }
 
-        .application-row.selected-row {
-          background: rgba(var(--accent-purple-rgb), 0.05);
-        }
-
-        .application-row.selected-row:hover {
-          background: rgba(var(--accent-purple-rgb), 0.08);
-        }
-
-        .application-row:last-child td {
-          border-bottom: none;
+        .header-cell.sorted {
+          color: var(--accent-primary);
         }
 
         .company-cell {
-          min-width: 180px;
+          width: 22%;
         }
 
         .position-cell {
-          min-width: 200px;
+          width: 28%;
         }
 
-        .position-info {
+        .date-cell {
+          width: 15%;
+        }
+
+        .stage-cell {
+          width: 15%;
+        }
+
+        .location-cell {
+          width: 15%;
+        }
+
+        .actions-cell {
+          width: 15%;
+        }
+
+        .table-body {
+          max-height: calc(100vh - 200px);
+          overflow-y: auto;
+        }
+
+        .table-row {
           display: flex;
-          flex-direction: column;
-          gap: 4px;
+          border-bottom: 1px solid var(--border-divider);
+          transition: all 0.2s var(--easing-standard);
+          cursor: pointer;
         }
 
-        .position-title {
-          font-weight: 500;
+        .table-row:hover {
+          background: var(--hover-bg);
         }
 
-        .position-salary {
-          font-size: 12px;
-          color: var(--accent-green);
+        .table-row.selected {
+          background: rgba(var(--accent-primary-rgb), 0.05);
+          border-left: 3px solid var(--accent-primary);
         }
 
-        .company-info {
+        .cell {
+          padding: 16px;
+          display: flex;
+          align-items: center;
+        }
+
+        .company-cell {
           display: flex;
           align-items: center;
           gap: 12px;
         }
 
-        .company-logo-container {
-          width: 36px;
-          height: 36px;
+        .company-logo {
+          width: 32px;
+          height: 32px;
           border-radius: 8px;
-          overflow: hidden;
-          background: linear-gradient(135deg, var(--accent-primary), var(--accent-purple));
           display: flex;
           align-items: center;
           justify-content: center;
-          font-weight: 600;
+          background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
           color: white;
-          font-size: 16px;
+          font-weight: 600;
+          overflow: hidden;
+        }
+
+        .company-logo img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
         }
 
         .company-name {
           font-weight: 500;
+          color: var(--text-primary);
         }
 
-        .date-cell {
-          min-width: 120px;
+        .position-title {
+          font-weight: 500;
+          color: var(--text-primary);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .date-applied {
           color: var(--text-secondary);
         }
 
-        .location-cell {
-          min-width: 200px;
-        }
-
-        .location-display {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .remote-badge {
-          font-size: 12px;
-          padding: 2px 6px;
-          border-radius: 4px;
-          background: rgba(var(--accent-blue-rgb), 0.1);
-          color: var(--accent-blue);
-        }
-
-        .stage-cell {
-          min-width: 120px;
-        }
-
         .stage-badge {
-          display: inline-flex;
+          display: flex;
           align-items: center;
           gap: 6px;
           padding: 6px 10px;
@@ -1412,77 +1177,69 @@ export default function Applications() {
           border-radius: 50%;
         }
 
-        .actions-cell {
-          width: 60px;
+        .location {
+          color: var(--text-secondary);
         }
 
-        .actions-container {
-          position: relative;
+        .remote-badge {
+          display: inline-block;
+          padding: 2px 6px;
+          background: rgba(var(--accent-green-rgb), 0.1);
+          color: var(--accent-green);
+          border-radius: 10px;
+          font-size: 11px;
+          font-weight: 500;
+          margin-left: 8px;
+        }
+
+        .row-actions {
+          display: flex;
+          gap: 8px;
+          opacity: 0;
+          transform: translateY(10px);
+          transition: all 0.2s var(--easing-standard);
+        }
+
+        .table-row:hover .row-actions {
+          opacity: 1;
+          transform: translateY(0);
         }
 
         .action-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
-          border: none;
-          background: transparent;
-          color: var(--text-tertiary);
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .action-btn:hover {
-          background: var(--active-bg);
-          color: var(--text-primary);
-        }
-
-        .action-menu {
-          position: absolute;
-          top: 100%;
-          right: 0;
-          min-width: 160px;
-          background: var(--glass-card-bg);
+          padding: 6px 10px;
           border-radius: var(--border-radius);
-          box-shadow: var(--shadow);
-          border: 1px solid var(--border-thin);
-          z-index: 100;
-          overflow: hidden;
-        }
-
-        .menu-item {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          width: 100%;
-          padding: 10px 14px;
-          border: none;
-          background: transparent;
-          text-align: left;
           font-size: 13px;
-          color: var(--text-primary);
+          border: none;
+          font-weight: 500;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all 0.2s var(--easing-standard);
         }
 
-        .menu-item:hover {
-          background: var(--hover-bg);
+        .action-btn.view {
+          background: rgba(var(--accent-primary-rgb), 0.1);
+          color: var(--accent-primary);
         }
 
-        .menu-item.danger {
+        .action-btn.view:hover {
+          background: rgba(var(--accent-primary-rgb), 0.2);
+        }
+
+        .action-btn.edit {
+          background: rgba(var(--accent-blue-rgb), 0.1);
+          color: var(--accent-blue);
+        }
+
+        .action-btn.edit:hover {
+          background: rgba(var(--accent-blue-rgb), 0.2);
+        }
+
+        .action-btn.delete {
+          background: rgba(var(--accent-red-rgb), 0.1);
           color: var(--accent-red);
         }
 
-        .menu-item.danger:hover {
-          background: rgba(var(--accent-red-rgb), 0.1);
-        }
-
-        .menu-divider {
-          height: 1px;
-          background: var(--border-divider);
-          margin: 4px 0;
+        .action-btn.delete:hover {
+          background: rgba(var(--accent-red-rgb), 0.2);
         }
 
         .empty-state {
@@ -1490,676 +1247,101 @@ export default function Applications() {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          padding: 48px;
-          color: var(--text-tertiary);
-          gap: 16px;
-        }
-
-        .empty-icon {
-          opacity: 0.5;
-        }
-
-        /* Kanban Board Styles */
-        .kanban-board {
-          overflow-x: auto;
-          padding-bottom: 16px;
-        }
-
-        .kanban-container {
-          display: flex;
-          gap: 20px;
-          min-width: min-content;
-        }
-
-        .kanban-column {
-          width: 300px;
-          min-width: 300px;
-          background: var(--glass-card-bg);
-          border-radius: var(--border-radius);
-          display: flex;
-          flex-direction: column;
-          overflow: hidden;
-          border: 1px solid var(--border-thin);
-          box-shadow: var(--shadow);
-          max-height: calc(100vh - 260px);
-        }
-
-        .kanban-column-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 16px;
-          background: var(--glass-header-bg);
-          border-bottom: 1px solid var(--border-divider);
-          border-top: 3px solid;
-        }
-
-        .column-title {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .column-indicator {
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-        }
-
-        .column-title h3 {
-          font-weight: 600;
-          font-size: 16px;
-        }
-
-        .column-count {
-          background: var(--hover-bg);
-          color: var(--text-secondary);
-          font-size: 13px;
-          font-weight: 500;
-          padding: 2px 8px;
-          border-radius: 20px;
-          min-width: 24px;
+          padding: 40px;
           text-align: center;
         }
 
-        .kanban-cards {
-          padding: 16px;
-          overflow-y: auto;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        .kanban-card {
-          background: var(--card-bg);
-          border-radius: var(--border-radius);
-          padding: 16px;
-          border: 1px solid var(--border-thin);
-          transition: all 0.2s ease;
-          box-shadow: var(--shadow-sharp);
-          cursor: pointer;
-        }
-
-        .kanban-card:hover {
-          border-color: var(--border-hover);
-          transform: translateY(-2px);
-          box-shadow: var(--shadow);
-        }
-
-        .card-header {
-          display: flex;
-          gap: 12px;
-          margin-bottom: 12px;
-        }
-
-        .card-title-container {
-          overflow: hidden;
-        }
-
-        .card-title {
-          margin: 0 0 4px 0;
-          font-weight: 600;
-          font-size: 15px;
-          color: var(--text-primary);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .card-subtitle {
-          margin: 0;
+        .empty-state p {
           color: var(--text-secondary);
-          font-size: 13px;
-        }
-
-        .card-details {
-          margin-bottom: 12px;
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .card-detail {
-          display: flex;
-          font-size: 13px;
-          line-height: 1.4;
-        }
-
-        .detail-label {
-          min-width: 70px;
-          color: var(--text-tertiary);
-        }
-
-        .detail-value {
-          color: var(--text-secondary);
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .remote-chip {
-          font-size: 11px;
-          padding: 1px 5px;
-          border-radius: 3px;
-          background: rgba(var(--accent-blue-rgb), 0.1);
-          color: var(--accent-blue);
-          height: 18px;
-        }
-
-        .card-footer {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          border-top: 1px solid var(--border-divider);
-          padding-top: 12px;
-        }
-
-        .salary-info {
-          font-size: 13px;
-          color: var(--accent-green);
-          font-weight: 500;
-        }
-
-        .card-more-btn {
-          width: 28px;
-          height: 28px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: transparent;
-          border: none;
-          color: var(--text-tertiary);
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .card-more-btn:hover {
-          background: var(--hover-bg);
-          color: var(--text-primary);
-        }
-
-        .empty-column-card {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 24px;
-          border: 1px dashed var(--border-divider);
-          border-radius: var(--border-radius);
-          color: var(--text-tertiary);
-          font-size: 14px;
-        }
-
-        .add-to-column-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          padding: 10px;
-          border-radius: var(--border-radius);
-          border: 1px dashed var(--border-divider);
-          background: var(--hover-bg);
-          color: var(--text-secondary);
-          font-size: 14px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          margin-top: 8px;
-        }
-
-        .add-to-column-btn:hover {
-          background: var(--active-bg);
-          color: var(--text-primary);
-          border-color: var(--border-hover);
-        }
-
-        .add-application-btn {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 16px;
-          border-radius: var(--border-radius);
-          background: var(--accent-purple);
-          color: white;
-          border: none;
-          font-size: 14px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          box-shadow: 0 2px 6px rgba(var(--accent-purple-rgb), 0.25);
-        }
-
-        .add-application-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(var(--accent-purple-rgb), 0.3);
-        }
-
-        /* Detail Modal Styles */
-        .detail-modal-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.5);
-          backdrop-filter: blur(4px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
-          padding: 20px;
-        }
-
-        .detail-modal {
-          width: 900px;
-          max-width: 95%;
-          max-height: 90vh;
-          background: var(--glass-card-bg);
-          border-radius: var(--border-radius);
-          border: 1px solid var(--border-thin);
-          box-shadow: var(--shadow);
-          display: flex;
-          flex-direction: column;
-          overflow: hidden;
-        }
-
-        .detail-modal-header {
-          padding: 24px;
-          border-bottom: 1px solid var(--border-divider);
-          background: var(--glass-header-bg);
-          display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-          position: relative;
-        }
-
-        .detail-company-info {
-          display: flex;
-          gap: 16px;
-          align-items: center;
-          flex: 1;
-        }
-
-        .detail-company-logo {
-          width: 64px;
-          height: 64px;
-        }
-
-        .company-logo-placeholder.large {
-          width: 64px;
-          height: 64px;
-          border-radius: 12px;
-          font-size: 28px;
-        }
-
-        .detail-title-container {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-
-        .detail-title {
-          margin: 0;
-          font-size: 22px;
-          font-weight: 600;
-          color: var(--text-primary);
-        }
-
-        .detail-subtitle {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          color: var(--text-secondary);
-          font-size: 15px;
-        }
-
-        .detail-company-name {
-          font-weight: 500;
-        }
-
-        .detail-separator {
-          opacity: 0.5;
-        }
-
-        .detail-stage {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 14px;
-          border-radius: 20px;
-          font-size: 14px;
-          font-weight: 500;
-          margin-left: 16px;
-        }
-
-        .detail-stage-indicator {
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-        }
-
-        .detail-close-btn {
-          position: absolute;
-          top: 18px;
-          right: 18px;
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: var(--hover-bg);
-          border: 1px solid var(--border-thin);
-          color: var(--text-tertiary);
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .detail-close-btn:hover {
-          background: var(--active-bg);
-          color: var(--text-primary);
-        }
-
-        .detail-modal-content {
-          padding: 24px;
-          overflow-y: auto;
-          flex: 1;
-        }
-
-        .detail-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 24px;
-        }
-
-        .detail-column {
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
-        }
-
-        .detail-section {
-          background: var(--card-bg);
-          border-radius: var(--border-radius);
-          border: 1px solid var(--border-thin);
-          padding: 20px;
-        }
-
-        .detail-section-title {
-          margin: 0 0 16px 0;
-          font-size: 16px;
-          font-weight: 600;
-          color: var(--text-primary);
-        }
-
-        .detail-field {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
           margin-bottom: 16px;
         }
 
-        .detail-field:last-child {
-          margin-bottom: 0;
-        }
-
-        .detail-field-label {
-          font-size: 13px;
-          color: var(--text-tertiary);
-        }
-
-        .detail-field-value {
-          font-size: 15px;
-          color: var(--text-primary);
-        }
-
-        .location-field {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .detail-remote-badge {
-          font-size: 12px;
-          padding: 3px 8px;
-          border-radius: 4px;
-          background: rgba(var(--accent-blue-rgb), 0.1);
-          color: var(--accent-blue);
-        }
-
-        .salary-value {
-          color: var(--accent-green);
-          font-weight: 500;
-        }
-
-        .detail-contacts {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        .detail-contact-card {
-          display: flex;
-          gap: 12px;
-          padding: 12px;
-          border-radius: var(--border-radius);
-          background: var(--hover-bg);
-          border: 1px solid var(--border-thin);
-        }
-
-        .contact-avatar {
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, var(--accent-primary), var(--accent-green));
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-weight: 600;
-          font-size: 16px;
-        }
-
-        .contact-info {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-
-        .contact-name {
-          font-weight: 500;
-          font-size: 14px;
-        }
-
-        .contact-role {
-          font-size: 12px;
-          color: var(--text-secondary);
-        }
-
-        .contact-email {
-          font-size: 12px;
-          color: var(--accent-blue);
-          text-decoration: none;
-          margin-top: 4px;
-        }
-
-        .contact-email:hover {
-          text-decoration: underline;
-        }
-
-        .detail-empty-section {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 12px;
-          padding: 24px;
-          color: var(--text-tertiary);
-        }
-
-        .detail-add-btn {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 12px;
-          border-radius: var(--border-radius);
-          background: var(--hover-bg);
-          border: 1px solid var(--border-thin);
-          color: var(--text-secondary);
-          font-size: 13px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .detail-add-btn:hover {
-          background: var(--active-bg);
-          color: var(--text-primary);
-          border-color: var(--border-hover);
-        }
-
-        .detail-description, .detail-notes {
-          color: var(--text-primary);
-          font-size: 14px;
-          line-height: 1.6;
-        }
-
-        .detail-description p, .detail-notes p {
-          margin: 0 0 16px 0;
-        }
-
-        .detail-description p:last-child, .detail-notes p:last-child {
-          margin-bottom: 0;
-        }
-
-        .detail-edit-btn {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 12px;
-          border-radius: var(--border-radius);
-          background: var(--hover-bg);
-          border: 1px solid var(--border-thin);
-          color: var(--text-secondary);
-          font-size: 13px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          margin-top: 16px;
-          align-self: flex-start;
-        }
-
-        .detail-edit-btn:hover {
-          background: var(--active-bg);
-          color: var(--text-primary);
-          border-color: var(--border-hover);
-        }
-
-        .detail-modal-footer {
-          padding: 16px 24px;
-          border-top: 1px solid var(--border-divider);
-          background: var(--glass-header-bg);
-        }
-
-        .detail-footer-actions {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .detail-footer-secondary {
-          display: flex;
-          gap: 8px;
-        }
-
-        .detail-footer-btn {
+        .clear-filters-btn {
           display: flex;
           align-items: center;
           gap: 8px;
           padding: 8px 16px;
-          border-radius: var(--border-radius);
-          background: var(--hover-bg);
+          background: var(--glass-bg);
           border: 1px solid var(--border-thin);
-          color: var(--text-primary);
-          font-size: 14px;
+          border-radius: var(--border-radius);
+          color: var(--text-secondary);
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all 0.2s var(--easing-standard);
         }
 
-        .detail-footer-btn:hover {
-          background: var(--active-bg);
-          border-color: var(--border-hover);
+        .clear-filters-btn:hover {
+          background: var(--hover-bg);
+          color: var(--text-primary);
         }
 
-        .detail-footer-btn.primary {
-          background: var(--accent-purple);
-          color: white;
-          border-color: var(--accent-purple);
+        /* Animations */
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
-        .detail-footer-btn.primary:hover {
-          background: var(--accent-purple-hover);
-          box-shadow: 0 2px 6px rgba(var(--accent-purple-rgb), 0.3);
-        }
-
-        .detail-footer-btn.danger {
-          color: var(--accent-red);
-        }
-
-        .detail-footer-btn.danger:hover {
-          background: rgba(var(--accent-red-rgb), 0.1);
-          border-color: rgba(var(--accent-red-rgb), 0.3);
-        }
-
-        @media (max-width: 768px) {
-          .applications-controls {
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+          .applications-toolbar {
             flex-direction: column;
             align-items: stretch;
           }
 
-          .search-filter-container {
+          .table-header {
+            display: none;
+          }
+
+          .table-row {
             flex-direction: column;
+            padding: 16px;
+            border-bottom: 8px solid var(--hover-bg);
+          }
+
+          .cell {
             width: 100%;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-divider);
           }
 
-          .search-container {
-            width: 100%;
-            min-width: auto;
+          .cell:last-child {
+            border-bottom: none;
           }
 
-          .filter-container {
-            width: 100%;
-            justify-content: space-between;
+          .company-cell {
+            order: 1;
           }
 
-          .filter-btn, .stage-filter {
-            flex: 1;
+          .position-cell {
+            order: 2;
           }
 
-          .view-controls {
-            align-self: flex-end;
+          .stage-cell {
+            order: 3;
           }
 
-          .detail-grid {
-            grid-template-columns: 1fr;
+          .date-cell {
+            order: 4;
           }
 
-          .table-actions {
-            flex-direction: column;
-            align-items: flex-start;
+          .location-cell {
+            order: 5;
           }
 
-          .bulk-actions {
-            flex-direction: column;
-            align-items: flex-start;
-            width: 100%;
+          .actions-cell {
+            order: 6;
           }
 
-          .bulk-buttons {
-            width: 100%;
-          }
-
-          .table-pagination {
-            width: 100%;
-            justify-content: space-between;
+          .row-actions {
+            opacity: 1;
+            transform: translateY(0);
+            justify-content: flex-end;
+            margin-top: 8px;
           }
         }
       `}</style>
