@@ -15,23 +15,23 @@ interface StatCardProps {
   onClick?: () => void;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ 
-  value, 
-  label, 
-  icon: Icon, 
-  color, 
+const StatCard: React.FC<StatCardProps> = ({
+  value,
+  label,
+  icon: Icon,
+  color,
   trend,
   onClick
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
-  
+
   // Calculate RGB values for background
   const rgbMatch = color.match(/var\(--accent-(.*)-rgb\)/);
   const rgbVar = rgbMatch ? rgbMatch[0] : 'var(--accent-blue-rgb)';
-  
+
   return (
-    <div 
+    <div
       className={`stat-card ${isHovered ? 'hovered' : ''} ${isPressed ? 'pressed' : ''}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
@@ -41,7 +41,7 @@ const StatCard: React.FC<StatCardProps> = ({
       onMouseDown={() => setIsPressed(true)}
       onMouseUp={() => setIsPressed(false)}
       onClick={onClick}
-      style={{ 
+      style={{
         '--accent-color': color,
         '--accent-rgb': rgbVar
       } as React.CSSProperties}
@@ -51,7 +51,7 @@ const StatCard: React.FC<StatCardProps> = ({
         <Icon size={24} className="stat-icon" />
         <div className="stat-icon-glow"></div>
       </div>
-      
+
       <div className="stat-content">
         <div className="stat-value-container">
           <span className="stat-value">{value}</span>
@@ -63,24 +63,20 @@ const StatCard: React.FC<StatCardProps> = ({
         </div>
         <div className="stat-label">{label}</div>
       </div>
-      
+
       <style jsx>{`
         .stat-card {
           display: flex;
           align-items: center;
           gap: 16px;
           padding: 20px;
-          background: var(--glass-card-bg);
-          border-radius: var(--border-radius);
-          border: 1px solid var(--border-thin);
-          box-shadow: var(--shadow);
           transition: all 0.3s var(--easing-standard);
           cursor: ${onClick ? 'pointer' : 'default'};
           position: relative;
           overflow: hidden;
           z-index: 1;
         }
-        
+
         .stat-card::before {
           content: '';
           position: absolute;
@@ -89,30 +85,27 @@ const StatCard: React.FC<StatCardProps> = ({
           width: 100%;
           height: 100%;
           background: linear-gradient(
-            135deg, 
-            rgba(var(--accent-rgb), 0.03) 0%, 
+            135deg,
+            rgba(var(--accent-rgb), 0.03) 0%,
             rgba(var(--accent-rgb), 0) 60%
           );
           z-index: -1;
           opacity: 0;
           transition: opacity 0.5s var(--easing-standard);
         }
-        
+
         .stat-card.hovered {
           transform: translateY(-3px);
-          box-shadow: var(--shadow-lg);
-          border-color: rgba(var(--accent-rgb), 0.2);
         }
-        
+
         .stat-card.hovered::before {
           opacity: 1;
         }
-        
+
         .stat-card.pressed {
           transform: translateY(0px);
-          box-shadow: var(--shadow);
         }
-        
+
         .stat-icon-wrapper {
           position: relative;
           width: 48px;
@@ -123,7 +116,7 @@ const StatCard: React.FC<StatCardProps> = ({
           border-radius: var(--border-radius);
           overflow: hidden;
         }
-        
+
         .stat-icon-bg {
           position: absolute;
           width: 100%;
@@ -133,23 +126,23 @@ const StatCard: React.FC<StatCardProps> = ({
           transform-origin: center;
           border-radius: var(--border-radius);
         }
-        
+
         .stat-card.hovered .stat-icon-bg {
           transform: scale(1.1);
           background-color: rgba(var(--accent-rgb), 0.15);
         }
-        
+
         .stat-icon {
           position: relative;
           z-index: 1;
           color: var(--accent-color);
           transition: all 0.3s var(--easing-standard);
         }
-        
+
         .stat-card.hovered .stat-icon {
           transform: scale(1.1);
         }
-        
+
         .stat-icon-glow {
           position: absolute;
           top: 50%;
@@ -166,59 +159,59 @@ const StatCard: React.FC<StatCardProps> = ({
           opacity: 0;
           transition: all 0.5s var(--easing-standard);
         }
-        
+
         .stat-card.hovered .stat-icon-glow {
           width: 64px;
           height: 64px;
           opacity: 0.4;
         }
-        
+
         .stat-content {
           display: flex;
           flex-direction: column;
           flex: 1;
         }
-        
+
         .stat-value-container {
           display: flex;
           align-items: baseline;
           gap: 8px;
         }
-        
+
         .stat-value {
           font-size: 28px;
           font-weight: 700;
           color: var(--text-primary);
           transition: color 0.3s var(--easing-standard);
         }
-        
+
         .stat-card.hovered .stat-value {
           color: var(--accent-color);
         }
-        
+
         .stat-trend {
           font-size: 14px;
           font-weight: 600;
           padding: 2px 6px;
           border-radius: 10px;
         }
-        
+
         .stat-trend.positive {
           color: var(--accent-success);
           background: rgba(var(--accent-success-rgb), 0.1);
         }
-        
+
         .stat-trend.negative {
           color: var(--accent-red);
           background: rgba(var(--accent-red-rgb), 0.1);
         }
-        
+
         .stat-label {
           font-size: 14px;
           color: var(--text-tertiary);
           transition: color 0.3s var(--easing-standard);
         }
-        
+
         .stat-card.hovered .stat-label {
           color: var(--text-secondary);
         }

@@ -1,13 +1,14 @@
 // components/ThemeSwitcher.tsx
 import React, { useState, useEffect, useRef } from 'react';
-import { useTheme, ThemeName, ThemeSettings, ColorTheme, AccentColor, FontFamily, BorderRadius, Animation, GlassEffect } from '@/contexts/ThemeContext';
-import { Sun, Moon, Palette, Check, ChevronDown, RefreshCw } from 'lucide-react';
+import { useTheme, ThemeName, ThemeSettings, ColorTheme, AccentColor, FontFamily, BorderRadius, Animation, GlassEffect, BackgroundType, BackgroundPattern, BackgroundAnimation } from '@/contexts/ThemeContext';
+import { Sun, Moon, Palette, Check, ChevronDown, RefreshCw, Layers, Grid, CloudRain, Image } from 'lucide-react';
 import Dropdown from './Dropdown';
+import BackgroundCustomizer from './BackgroundCustomizer';
 
 const ThemeSwitcher: React.FC = () => {
   const { currentTheme, themeName, availableThemes, setThemeName, updateThemeSetting, toggleColorTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'presets' | 'customize'>('presets');
+  const [activeTab, setActiveTab] = useState<'presets' | 'customize' | 'background'>('presets');
 
   // Values for color swatches
   const accentColors: AccentColor[] = ['blue', 'purple', 'pink', 'orange', 'green', 'yellow', 'red'];
@@ -84,7 +85,7 @@ const ThemeSwitcher: React.FC = () => {
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         placement="bottom-start"
-        width={300}
+        width={activeTab === 'background' ? 480 : 300}
         className="theme-dropdown"
       >
         <div className="theme-tabs">
@@ -92,13 +93,19 @@ const ThemeSwitcher: React.FC = () => {
             className={`tab-btn ${activeTab === 'presets' ? 'active' : ''}`}
             onClick={() => setActiveTab('presets')}
           >
-            Theme Presets
+            Presets
           </button>
           <button
             className={`tab-btn ${activeTab === 'customize' ? 'active' : ''}`}
             onClick={() => setActiveTab('customize')}
           >
-            Customize
+            Style
+          </button>
+          <button
+            className={`tab-btn ${activeTab === 'background' ? 'active' : ''}`}
+            onClick={() => setActiveTab('background')}
+          >
+            Background
           </button>
         </div>
 
@@ -119,6 +126,13 @@ const ThemeSwitcher: React.FC = () => {
                     <div className="preview-card"></div>
                   </div>
                   <div className="preview-accent" style={{ background: `var(--accent-${theme.settings.accentColor})` }}></div>
+
+                  {/* Background preview indicator */}
+                  <div className={`preview-bg-type preview-bg-${theme.settings.background.type}`}>
+                    {theme.settings.background.pattern !== 'none' && (
+                      <div className={`preview-pattern preview-pattern-${theme.settings.background.pattern}`}></div>
+                    )}
+                  </div>
                 </div>
                 <div className="theme-name">
                   {theme.label}
@@ -235,6 +249,12 @@ const ThemeSwitcher: React.FC = () => {
             </button>
           </div>
         )}
+
+        {activeTab === 'background' && (
+          <div className="background-tab">
+            <BackgroundCustomizer />
+          </div>
+        )}
       </Dropdown>
 
       <style jsx>{`
@@ -269,6 +289,12 @@ const ThemeSwitcher: React.FC = () => {
 
         .chevron.rotate {
           transform: rotate(180deg);
+        }
+
+        .background-tab {
+          padding: 0;
+          max-height: 70vh;
+          overflow-y: auto;
         }
       `}</style>
 
@@ -357,6 +383,50 @@ const ThemeSwitcher: React.FC = () => {
           border-color: var(--accent-primary);
           box-shadow: 0 0 0 1px var(--accent-primary), var(--shadow);
           transform: translateY(-3px) scale(1.05);
+        }
+
+        /* Preview background type indicator */
+        .preview-bg-type {
+          position: absolute;
+          bottom: 8px;
+          right: 8px;
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.2);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .preview-bg-gradient {
+          background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        }
+
+        .preview-bg-pattern {
+          position: relative;
+        }
+
+        .preview-pattern {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          opacity: 0.3;
+          background-size: 4px 4px;
+        }
+
+        .preview-pattern-dots {
+          background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
+        }
+
+        .preview-pattern-grid {
+          background-image:
+            linear-gradient(to right, currentColor 1px, transparent 1px),
+            linear-gradient(to bottom, currentColor 1px, transparent 1px);
+        }
+
+        .preview-pattern-waves {
+          background-image: repeating-linear-gradient(45deg, currentColor 0, currentColor 1px, transparent 0, transparent 4px);
         }
 
         /* Custom backgrounds for each theme to make them more distinct */
@@ -674,6 +744,23 @@ const ThemeSwitcher: React.FC = () => {
         .accent-green { --accent-color: var(--accent-success); }
         .accent-yellow { --accent-color: var(--accent-warning); }
         .accent-red { --accent-color: var(--accent-danger); }
+
+        /* Responsive styles for smaller screens */
+        @media (max-width: 480px) {
+          .theme-dropdown {
+            max-width: 90vw !important;
+            left: 5vw !important;
+          }
+
+          .theme-presets {
+            grid-template-columns: repeat(2, 1fr);
+          }
+
+          .theme-tabs .tab-btn {
+            padding: 10px 6px;
+            font-size: 0.8rem;
+          }
+        }
       `}</style>
     </div>
   );
