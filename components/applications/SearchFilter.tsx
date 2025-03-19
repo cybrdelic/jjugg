@@ -6,6 +6,8 @@ import {
   SlidersHorizontal, Calendar, MapPin, Building,
   DollarSign, Briefcase, Clock
 } from 'lucide-react';
+import Dropdown from '../Dropdown';
+import Portal from '../Portal';
 
 interface FilterOption {
   id: string;
@@ -124,6 +126,8 @@ const SearchFilter: React.FC<SearchFilterProps> = ({
     return filterGroups.find(group => group.id === activeGroupId);
   };
   
+  // No longer need this since we're creating the button directly in the JSX
+
   return (
     <div className={`search-filter-container ${className}`}>
       <div className="search-input-container">
@@ -143,7 +147,7 @@ const SearchFilter: React.FC<SearchFilterProps> = ({
         )}
       </div>
       
-      <div ref={filterRef} className="filter-container">
+      <div className="filter-container" ref={filterRef}>
         <button 
           className={`filter-button ${isFilterOpen ? 'active' : ''} ${activeFilterCount > 0 ? 'has-filters' : ''}`}
           onClick={() => setIsFilterOpen(!isFilterOpen)}
@@ -153,87 +157,89 @@ const SearchFilter: React.FC<SearchFilterProps> = ({
           {activeFilterCount > 0 && (
             <span className="filter-count">{activeFilterCount}</span>
           )}
-          <ChevronDown size={14} className="dropdown-arrow" />
+          <ChevronDown size={14} className={`dropdown-arrow ${isFilterOpen ? 'rotate' : ''}`} />
         </button>
         
         {isFilterOpen && (
-          <div className="filter-dropdown">
+          <Portal>
+            <div className="filter-dropdown">
             <div className="filter-groups">
-              {filterGroups.map(group => (
-                <button 
-                  key={group.id}
-                  className={`filter-group-button ${activeGroupId === group.id ? 'active' : ''} ${selectedFilters[group.id]?.length ? 'has-selection' : ''}`}
-                  onClick={() => setActiveGroupId(prev => prev === group.id ? null : group.id)}
-                >
-                  {group.icon}
-                  <span>{group.label}</span>
-                  {selectedFilters[group.id]?.length > 0 && (
-                    <span className="option-count">{selectedFilters[group.id].length}</span>
-                  )}
-                  <ChevronDown size={14} className="group-arrow" />
-                </button>
-              ))}
-            </div>
-            
-            {activeGroupId && getActiveGroup() && (
-              <div className="filter-options">
-                <div className="options-header">
-                  <h4>{getActiveGroup()?.label}</h4>
-                  {selectedFilters[activeGroupId]?.length > 0 && (
-                    <button 
-                      className="clear-group"
-                      onClick={() => {
-                        const newFilters = { ...selectedFilters };
-                        delete newFilters[activeGroupId];
-                        setSelectedFilters(newFilters);
-                        onFilter(newFilters);
-                      }}
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-                
-                <div className="options-list">
-                  {getActiveGroup()?.options.map(option => (
-                    <button
-                      key={option.id}
-                      className={`option-button ${isFilterSelected(activeGroupId, option.value) ? 'selected' : ''}`}
-                      onClick={() => handleFilterToggle(activeGroupId, option.value)}
-                    >
-                      <div className="checkbox">
-                        {isFilterSelected(activeGroupId, option.value) && (
-                          <Check size={12} />
-                        )}
-                      </div>
-                      <span>{option.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            <div className="filter-actions">
+            {filterGroups.map(group => (
               <button 
-                className="apply-filters"
-                onClick={() => {
-                  setIsFilterOpen(false);
-                  setActiveGroupId(null);
-                }}
+                key={group.id}
+                className={`filter-group-button ${activeGroupId === group.id ? 'active' : ''} ${selectedFilters[group.id]?.length ? 'has-selection' : ''}`}
+                onClick={() => setActiveGroupId(prev => prev === group.id ? null : group.id)}
               >
-                Apply Filters
+                {group.icon}
+                <span>{group.label}</span>
+                {selectedFilters[group.id]?.length > 0 && (
+                  <span className="option-count">{selectedFilters[group.id].length}</span>
+                )}
+                <ChevronDown size={14} className={`group-arrow ${activeGroupId === group.id ? 'rotate' : ''}`} />
               </button>
-              
-              {activeFilterCount > 0 && (
-                <button 
-                  className="reset-filters"
-                  onClick={resetFilters}
-                >
-                  Reset All
-                </button>
-              )}
-            </div>
+            ))}
           </div>
+          
+          {activeGroupId && getActiveGroup() && (
+            <div className="filter-options">
+              <div className="options-header">
+                <h4>{getActiveGroup()?.label}</h4>
+                {selectedFilters[activeGroupId]?.length > 0 && (
+                  <button 
+                    className="clear-group"
+                    onClick={() => {
+                      const newFilters = { ...selectedFilters };
+                      delete newFilters[activeGroupId];
+                      setSelectedFilters(newFilters);
+                      onFilter(newFilters);
+                    }}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              
+              <div className="options-list">
+                {getActiveGroup()?.options.map(option => (
+                  <button
+                    key={option.id}
+                    className={`option-button ${isFilterSelected(activeGroupId, option.value) ? 'selected' : ''}`}
+                    onClick={() => handleFilterToggle(activeGroupId, option.value)}
+                  >
+                    <div className="checkbox">
+                      {isFilterSelected(activeGroupId, option.value) && (
+                        <Check size={12} />
+                      )}
+                    </div>
+                    <span>{option.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          <div className="filter-actions">
+            <button 
+              className="apply-filters"
+              onClick={() => {
+                setIsFilterOpen(false);
+                setActiveGroupId(null);
+              }}
+            >
+              Apply Filters
+            </button>
+            
+            {activeFilterCount > 0 && (
+              <button 
+                className="reset-filters"
+                onClick={resetFilters}
+              >
+                Reset All
+              </button>
+            )}
+          </div>
+          </div>
+          </Portal>
         )}
       </div>
       
@@ -381,6 +387,12 @@ const SearchFilter: React.FC<SearchFilterProps> = ({
           animation: fadeInDown 0.2s var(--easing-standard);
           display: flex;
           flex-direction: column;
+          backdrop-filter: blur(var(--blur-amount));
+          -webkit-backdrop-filter: blur(var(--blur-amount));
+        }
+        
+        .filter-container {
+          position: relative;
         }
         
         .filter-groups {

@@ -15,6 +15,11 @@ import {
   Menu,
   ChevronLeft
 } from 'lucide-react';
+import ProfileArtifacts from '@/components/sections/ProfileArtifacts';
+import Interviews from '@/components/sections/Interviews';
+import Timeline from '@/components/sections/Timeline';
+import Goals from '@/components/sections/Goals';
+import Reminders from '@/components/sections/Reminders';
 
 type ApplicationStage = 'applied' | 'screening' | 'interview' | 'offer' | 'rejected';
 type ActivityType = 'application' | 'interview' | 'email' | 'viewed' | 'assessment' | 'offer' | 'screening' | 'rejected';
@@ -628,8 +633,8 @@ const DashboardHome = (): JSX.Element => {
                     style={{
                       width: `${goal.progress}%`,
                       backgroundColor: `var(--accent-${goal.progress >= 100 ? 'green' :
-                          goal.progress >= 60 ? 'blue' :
-                            goal.progress >= 30 ? 'orange' : 'red'
+                        goal.progress >= 60 ? 'blue' :
+                          goal.progress >= 30 ? 'orange' : 'red'
                         })`
                     }}
                   ></div>
@@ -1016,67 +1021,39 @@ const DashboardHome = (): JSX.Element => {
 };
 
 const ApplicationsSection = (): JSX.Element => {
-  // Import the Applications component directly 
+  // Import the Applications component directly
   const Applications = require('../components/sections/Applications').default;
   return <Applications />;
 };
 
 const RemindersSection = (): JSX.Element => {
   return (
-    <section className="reminders-section">
-      <header className="section-header">
-        <h1 className="text-primary">Reminders</h1>
-      </header>
-      <div className="reminders-list space-y-4">
-        {upcomingEvents.map(event => (
-          <div key={event.id} className="glass-card flex items-center gap-4">
-            <Bell size={20} className="text-accent" />
-            <div>
-              <h3 className="text-primary">{event.title}</h3>
-              <p className="text-secondary">{event.company.name} - {event.type}</p>
-              <small className="text-tertiary">{event.date.toLocaleDateString()} at {event.time}</small>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
+    <Reminders />
   );
 };
 
 // **Placeholder Components**
 const AnalyticsSection = (): JSX.Element => (
-  <section className="glass-card">
+  < section className="glass-card" >
     <h1 className="text-primary">Analytics</h1>
     <p className="text-secondary">Analytics data here...</p>
-  </section>
+  </section >
 );
 
 const InterviewsSection = (): JSX.Element => (
-  <section className="glass-card">
-    <h1 className="text-primary">Interviews</h1>
-    <p className="text-secondary">Interview details here...</p>
-  </section>
+  <Interviews />
 );
 
 const ProfileArtifactsSection = (): JSX.Element => (
-  <section className="glass-card">
-    <h1 className="text-primary">Profile & Artifacts</h1>
-    <p className="text-secondary">Profile data here...</p>
-  </section>
+  <ProfileArtifacts />
 );
 
 const GoalsSection = (): JSX.Element => (
-  <section className="glass-card">
-    <h1 className="text-primary">Goals</h1>
-    <p className="text-secondary">Goals data here...</p>
-  </section>
+  <Goals />
 );
 
 const TimelineSection = (): JSX.Element => (
-  <section className="glass-card">
-    <h1 className="text-primary">Timeline</h1>
-    <p className="text-secondary">Timeline data here...</p>
-  </section>
+  <Timeline />
 );
 
 // **Sections Mapping**

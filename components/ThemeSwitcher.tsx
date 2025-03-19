@@ -1,55 +1,13 @@
 // components/ThemeSwitcher.tsx
 import React, { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { useTheme, ThemeName, ThemeSettings, ColorTheme, AccentColor, FontFamily, BorderRadius, Animation, GlassEffect } from '@/contexts/ThemeContext';
 import { Sun, Moon, Palette, Check, ChevronDown, RefreshCw } from 'lucide-react';
+import Dropdown from './Dropdown';
 
 const ThemeSwitcher: React.FC = () => {
   const { currentTheme, themeName, availableThemes, setThemeName, updateThemeSetting, toggleColorTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'presets' | 'customize'>('presets');
-  const [mounted, setMounted] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [buttonPosition, setButtonPosition] = useState({ top: 0, left: 0, width: 0, height: 0 });
-  
-  // Track if we're client-side (for portal rendering)
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-  
-  // Update position of the button for the dropdown portal positioning
-  useEffect(() => {
-    if (isOpen && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setButtonPosition({
-        top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX,
-        width: rect.width,
-        height: rect.height
-      });
-    }
-  }, [isOpen]);
-  
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        isOpen && 
-        buttonRef.current && 
-        dropdownRef.current && 
-        !buttonRef.current.contains(event.target as Node) && 
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
 
   // Values for color swatches
   const accentColors: AccentColor[] = ['blue', 'purple', 'pink', 'orange', 'green', 'yellow', 'red'];
@@ -105,25 +63,38 @@ const ThemeSwitcher: React.FC = () => {
     heavy: 'Heavy',
   };
 
-  // Create dropdown content
-  const renderDropdown = () => {
-    return (
-      <div className="theme-dropdown-portal" ref={dropdownRef} style={{
-        position: 'fixed',
-        top: `${buttonPosition.top + 8}px`,
-        left: `${buttonPosition.left}px`,
-        width: '300px',
-        maxHeight: '80vh',
-        overflowY: 'auto'
-      }}>
+  // Dropdown trigger
+  const triggerButton = (
+    <button
+      className="theme-toggle-btn"
+      aria-expanded={isOpen}
+      aria-label="Toggle theme menu"
+      onClick={() => setIsOpen(!isOpen)}
+    >
+      <Palette size={20} />
+      <span>Theme</span>
+      <ChevronDown size={16} className={`chevron ${isOpen ? 'rotate' : ''}`} />
+    </button>
+  );
+
+  return (
+    <div className="theme-switcher-container">
+      <Dropdown
+        trigger={triggerButton}
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        placement="bottom-start"
+        width={300}
+        className="theme-dropdown"
+      >
         <div className="theme-tabs">
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'presets' ? 'active' : ''}`}
             onClick={() => setActiveTab('presets')}
           >
             Theme Presets
           </button>
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'customize' ? 'active' : ''}`}
             onClick={() => setActiveTab('customize')}
           >
@@ -163,14 +134,14 @@ const ThemeSwitcher: React.FC = () => {
             <div className="theme-option">
               <label>Mode</label>
               <div className="toggle-group">
-                <button 
+                <button
                   className={`toggle-btn ${currentTheme.colorTheme === 'light' ? 'active' : ''}`}
                   onClick={() => updateThemeSetting('colorTheme', 'light')}
                 >
                   <Sun size={14} />
                   <span>Light</span>
                 </button>
-                <button 
+                <button
                   className={`toggle-btn ${currentTheme.colorTheme === 'dark' ? 'active' : ''}`}
                   onClick={() => updateThemeSetting('colorTheme', 'dark')}
                 >
@@ -184,7 +155,7 @@ const ThemeSwitcher: React.FC = () => {
               <label>Accent Color</label>
               <div className="color-swatches">
                 {accentColors.map(color => (
-                  <button 
+                  <button
                     key={color}
                     className={`color-swatch ${color} ${currentTheme.accentColor === color ? 'active' : ''}`}
                     style={{ backgroundColor: `var(--accent-${color})` }}
@@ -200,7 +171,7 @@ const ThemeSwitcher: React.FC = () => {
 
             <div className="theme-option">
               <label>Font Family</label>
-              <select 
+              <select
                 className="select-dropdown"
                 value={currentTheme.fontFamily}
                 onChange={(e) => updateThemeSetting('fontFamily', e.target.value as FontFamily)}
@@ -215,7 +186,7 @@ const ThemeSwitcher: React.FC = () => {
 
             <div className="theme-option">
               <label>Border Radius</label>
-              <select 
+              <select
                 className="select-dropdown"
                 value={currentTheme.borderRadius}
                 onChange={(e) => updateThemeSetting('borderRadius', e.target.value as BorderRadius)}
@@ -230,7 +201,7 @@ const ThemeSwitcher: React.FC = () => {
 
             <div className="theme-option">
               <label>Animation Level</label>
-              <select 
+              <select
                 className="select-dropdown"
                 value={currentTheme.animation}
                 onChange={(e) => updateThemeSetting('animation', e.target.value as Animation)}
@@ -245,7 +216,7 @@ const ThemeSwitcher: React.FC = () => {
 
             <div className="theme-option">
               <label>Glass Effect</label>
-              <select 
+              <select
                 className="select-dropdown"
                 value={currentTheme.glassEffect}
                 onChange={(e) => updateThemeSetting('glassEffect', e.target.value as GlassEffect)}
@@ -264,29 +235,7 @@ const ThemeSwitcher: React.FC = () => {
             </button>
           </div>
         )}
-      </div>
-    );
-  };
-
-  return (
-    <div className="theme-switcher-container">
-      <button 
-        ref={buttonRef}
-        className="theme-toggle-btn" 
-        onClick={() => setIsOpen(!isOpen)}
-        aria-expanded={isOpen}
-        aria-label="Toggle theme menu"
-      >
-        <Palette size={20} />
-        <span>Theme</span>
-        <ChevronDown size={16} className={`chevron ${isOpen ? 'rotate' : ''}`} />
-      </button>
-
-      {/* Render dropdown via portal when open */}
-      {isOpen && mounted && createPortal(
-        renderDropdown(),
-        document.body
-      )}
+      </Dropdown>
 
       <style jsx>{`
         .theme-switcher-container {
@@ -295,6 +244,7 @@ const ThemeSwitcher: React.FC = () => {
 
         .theme-toggle-btn {
           display: flex;
+          flex-direction: row;
           align-items: center;
           gap: 8px;
           background: var(--glass-bg);
@@ -321,22 +271,9 @@ const ThemeSwitcher: React.FC = () => {
           transform: rotate(180deg);
         }
       `}</style>
-      
-      {/* Global styles for the portal element */}
-      <style jsx global>{`
-        .theme-dropdown-portal {
-          position: absolute;
-          background: var(--glass-bg);
-          border: 1px solid var(--border-thin);
-          border-radius: var(--border-radius-lg);
-          box-shadow: var(--shadow-lg);
-          backdrop-filter: blur(calc(var(--blur-amount) * 1.5));
-          -webkit-backdrop-filter: blur(calc(var(--blur-amount) * 1.5));
-          overflow: hidden;
-          animation: fade-in 0.2s ease-out;
-          z-index: 9999; /* Very high z-index since it's at document body level */
-        }
 
+      {/* Global styles for the dropdown content */}
+      <style jsx global>{`
         .theme-tabs {
           display: flex;
           border-bottom: 1px solid var(--border-thin);
@@ -415,7 +352,7 @@ const ThemeSwitcher: React.FC = () => {
           transition: all var(--transition-normal) var(--easing-standard);
           box-shadow: var(--shadow-sharp);
         }
-        
+
         .active .theme-preview {
           border-color: var(--accent-primary);
           box-shadow: 0 0 0 1px var(--accent-primary), var(--shadow);
@@ -430,48 +367,48 @@ const ThemeSwitcher: React.FC = () => {
         .theme-preview.dark {
           background: linear-gradient(135deg, #0f172a, #1e293b);
         }
-        
+
         /* Cyberpunk theme preview */
         .active .theme-preview.dark.accent-pink.radius-lg {
           background: linear-gradient(135deg, #0f172a, #1e1b31);
           box-shadow: 0 0 0 1px var(--accent-pink), 0 0 15px rgba(236, 72, 153, 0.5);
         }
-        
+
         /* Premium theme preview */
         .active .theme-preview.dark.accent-purple.radius-md {
           background: linear-gradient(135deg, #1a1625, #2d2541);
           box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.3), 0 0 15px rgba(139, 92, 246, 0.5);
         }
-        
+
         /* Enterprise theme preview */
         .active .theme-preview.light.accent-green.radius-sm {
           background: linear-gradient(135deg, #f8fafc, #ecfdf5);
           box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.3), 0 0 10px rgba(16, 185, 129, 0.2);
         }
-        
+
         /* Warm theme preview */
         .active .theme-preview.dark.accent-orange.radius-lg {
           background: linear-gradient(135deg, #1c1917, #292524);
           box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.3), 0 0 12px rgba(249, 115, 22, 0.4);
         }
-        
+
         /* Deep Sea theme preview */
         .active .theme-preview.dark.accent-blue.radius-xl {
           background: linear-gradient(135deg, #0c4a6e, #164e63);
           box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.3), 0 0 12px rgba(14, 165, 233, 0.4);
         }
-        
+
         /* Monochrome theme preview */
         .active .theme-preview.light.accent-blue.radius-md.glass-none {
           background: linear-gradient(135deg, #ffffff, #f5f5f5);
           box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 0 8px rgba(0, 0, 0, 0.1);
         }
-        
+
         .theme-preset-btn:hover .theme-preview {
           transform: translateY(-3px) scale(1.02);
           box-shadow: var(--shadow);
         }
-        
+
         .preview-accent {
           position: absolute;
           top: 8px;
@@ -481,32 +418,32 @@ const ThemeSwitcher: React.FC = () => {
           border-radius: var(--border-radius-full);
           box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
         }
-        
+
         .dark .preview-accent {
           box-shadow: 0 0 8px rgba(0, 0, 0, 0.4), 0 0 12px currentColor;
         }
-        
+
         /* Border radius variations in the preview */
         .theme-preview.radius-none .preview-card {
           border-radius: 0;
         }
-        
+
         .theme-preview.radius-sm .preview-card {
           border-radius: 2px;
         }
-        
+
         .theme-preview.radius-md .preview-card {
           border-radius: 3px;
         }
-        
+
         .theme-preview.radius-lg .preview-card {
           border-radius: 4px;
         }
-        
+
         .theme-preview.radius-xl .preview-card {
           border-radius: 6px;
         }
-        
+
         .theme-preview.radius-full .preview-card {
           border-radius: 8px;
         }
@@ -627,7 +564,7 @@ const ThemeSwitcher: React.FC = () => {
           transform: scale(1.15);
           box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5), var(--shadow);
         }
-        
+
         .color-swatch::after {
           content: '';
           position: absolute;
@@ -638,7 +575,7 @@ const ThemeSwitcher: React.FC = () => {
           background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 50%);
           border-radius: calc(var(--border-radius-md) - 2px);
         }
-        
+
         .dark .color-swatch.active {
           box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3), 0 0 5px 2px var(--accent-primary);
         }
@@ -676,7 +613,7 @@ const ThemeSwitcher: React.FC = () => {
           box-shadow: 0 0 0 2px var(--ring-color), var(--shadow);
           transform: translateY(-1px);
         }
-        
+
         .dark .select-dropdown:focus {
           box-shadow: 0 0 0 2px var(--ring-color), var(--accent-glow);
         }
@@ -720,25 +657,13 @@ const ThemeSwitcher: React.FC = () => {
           box-shadow: var(--shadow);
           border-color: var(--border-divider);
         }
-        
+
         .reset-btn:hover::after {
           opacity: 1;
         }
-        
+
         .dark .reset-btn:hover {
           box-shadow: var(--shadow), var(--accent-glow);
-        }
-
-        /* Animation */
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(-5px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
         }
 
         /* Define accent colors */

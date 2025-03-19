@@ -13,7 +13,7 @@ import ApplicationCard from '../applications/ApplicationCard';
 import SearchFilter from '../applications/SearchFilter';
 import KanbanColumn from '../applications/KanbanColumn';
 import ActionButton from '../dashboard/ActionButton';
-import ApplicationDetailModal from '../applications/ApplicationDetailModal';
+import ApplicationDetailDrawer from '../applications/ApplicationDetailDrawer';
 
 // Types
 interface Company {
@@ -491,11 +491,11 @@ const getStageLabel = (stage: ApplicationStage): string => {
 export default function Applications() {
   const { currentTheme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<'table' | 'kanban'>('kanban');
+  const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
   const [stageFilter, setStageFilter] = useState<ApplicationStage | 'all'>('all');
   const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({});
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [sortConfig, setSortConfig] = useState<{column: keyof Application | 'company.name', direction: 'asc' | 'desc'}>({
+  const [sortConfig, setSortConfig] = useState<{ column: keyof Application | 'company.name', direction: 'asc' | 'desc' }>({
     column: 'dateApplied',
     direction: 'desc'
   });
@@ -613,7 +613,7 @@ export default function Applications() {
             case 'locations':
               if (values.includes('remote') && !app.remote) return false;
               if (values.some(loc => loc !== 'remote') &&
-                  !values.some(loc => app.location.includes(loc) && loc !== 'remote')) return false;
+                !values.some(loc => app.location.includes(loc) && loc !== 'remote')) return false;
               break;
             // Add other filter types as needed
           }
@@ -910,9 +910,9 @@ export default function Applications() {
         </div>
       )}
 
-      {/* Application Detail Modal */}
+      {/* Application Detail Drawer */}
       {selectedAppData && (
-        <ApplicationDetailModal
+        <ApplicationDetailDrawer
           id={selectedAppData.id}
           position={selectedAppData.position}
           company={selectedAppData.company}

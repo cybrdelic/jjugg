@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { LucideIcon } from 'lucide-react';
 import { NavItem, SectionKey } from './types';
+import Tooltip from './Tooltip';
 
 interface NavItemComponentProps {
     icon: React.ReactNode;
@@ -28,7 +29,6 @@ const NavItemComponent: React.FC<NavItemComponentProps> = ({
     animationLevel = 'moderate'
 }) => {
     const [rippleEffect, setRippleEffect] = useState<{x: number, y: number, size: number} | null>(null);
-    const [isHovered, setIsHovered] = useState(false);
     const itemRef = useRef<HTMLDivElement>(null);
 
     // Clear ripple effect after animation completes
@@ -57,14 +57,47 @@ const NavItemComponent: React.FC<NavItemComponentProps> = ({
         return 'count' in badge ? badge.count : badge.text;
     };
 
-    return (
+    // Tooltip content for collapsed state
+    const tooltipContent = (
+        <div className="tooltip-content">
+            <span className="tooltip-label">{label}</span>
+            {badge && (
+                <span className="tooltip-badge">
+                    {getBadgeContent()}
+                </span>
+            )}
+            <style jsx>{`
+                .tooltip-content {
+                    padding: 4px 0;
+                }
+                
+                .tooltip-label {
+                    font-weight: 600;
+                    color: var(--text-primary);
+                    display: block;
+                }
+                
+                .tooltip-badge {
+                    display: inline-block;
+                    margin-top: 4px;
+                    padding: 2px 8px;
+                    background-color: var(--accent-primary);
+                    color: white;
+                    border-radius: 10px;
+                    font-size: 0.7rem;
+                    font-weight: 600;
+                }
+            `}</style>
+        </div>
+    );
+
+    // Wrap with tooltip if collapsed
+    const itemContent = (
         <div 
             ref={itemRef}
-            className={`nav-item ${isActive ? 'active' : ''} ${isHovered ? 'hovered' : ''} ${isAnimating ? 'animating' : ''}`}
+            className={`nav-item ${isActive ? 'active' : ''} ${isAnimating ? 'animating' : ''}`}
             onClick={handleClick}
             onContextMenu={onContextMenu}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
             role="menuitem"
             aria-label={label}
         >
@@ -96,21 +129,6 @@ const NavItemComponent: React.FC<NavItemComponentProps> = ({
             
             {/* Active indicator line */}
             {isActive && !isCollapsed && <div className="active-indicator" />}
-            
-            {/* Collapsed state tooltip */}
-            {isCollapsed && isHovered && (
-                <div className="tooltip">
-                    <div className="tooltip-content">
-                        <span className="tooltip-label">{label}</span>
-                        {badge && (
-                            <span className="tooltip-badge">
-                                {getBadgeContent()}
-                            </span>
-                        )}
-                    </div>
-                    <div className="tooltip-arrow" />
-                </div>
-            )}
             
             {/* Ripple animation effect */}
             {rippleEffect && (
@@ -341,58 +359,6 @@ const NavItemComponent: React.FC<NavItemComponentProps> = ({
                     box-shadow: 0 0 8px var(--accent-primary-glow);
                 }
                 
-                /* Tooltip for collapsed state */
-                .tooltip {
-                    position: absolute;
-                    left: 60px;
-                    top: 50%;
-                    transform: translateY(-50%);
-                    background-color: var(--tooltip-bg);
-                    border-radius: var(--border-radius);
-                    box-shadow: var(--shadow);
-                    z-index: 100;
-                    padding: 0;
-                    min-width: 120px;
-                    animation: fade-in 0.2s var(--easing-standard);
-                    backdrop-filter: blur(var(--blur-amount));
-                    -webkit-backdrop-filter: blur(var(--blur-amount));
-                    border: 1px solid var(--border-thin);
-                }
-                
-                .tooltip-content {
-                    padding: 8px 12px;
-                    position: relative;
-                }
-                
-                .tooltip-label {
-                    font-weight: 600;
-                    color: var(--text-primary);
-                    display: block;
-                }
-                
-                .tooltip-badge {
-                    display: inline-block;
-                    margin-top: 4px;
-                    padding: 2px 8px;
-                    background-color: var(--accent-primary);
-                    color: white;
-                    border-radius: 10px;
-                    font-size: 0.7rem;
-                    font-weight: 600;
-                }
-                
-                .tooltip-arrow {
-                    position: absolute;
-                    top: 50%;
-                    left: -6px;
-                    transform: translateY(-50%) rotate(45deg);
-                    width: 12px;
-                    height: 12px;
-                    background-color: var(--tooltip-bg);
-                    border-left: 1px solid var(--border-thin);
-                    border-bottom: 1px solid var(--border-thin);
-                }
-                
                 /* Ripple effect */
                 .ripple {
                     position: absolute;
@@ -471,17 +437,6 @@ const NavItemComponent: React.FC<NavItemComponentProps> = ({
                     }
                 }
                 
-                @keyframes fade-in {
-                    from {
-                        opacity: 0;
-                        transform: translateY(-50%) translateX(-10px);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translateY(-50%) translateX(0);
-                    }
-                }
-                
                 @keyframes pop-in {
                     0% { transform: scale(0.8); }
                     50% { transform: scale(1.2); }
@@ -498,14 +453,17 @@ const NavItemComponent: React.FC<NavItemComponentProps> = ({
                     .nav-item {
                         padding: ${isCollapsed ? '8px' : '10px 12px'};
                     }
-                    
-                    .tooltip-content {
-                        padding: 6px 10px;
-                    }
                 }
             `}</style>
         </div>
     );
+
+    // Return with or without tooltip
+    return isCollapsed ? (
+        <Tooltip content={tooltipContent} placement="right" delay={200}>
+            {itemContent}
+        </Tooltip>
+    ) : itemContent;
 };
 
 export default NavItemComponent;

@@ -6,7 +6,7 @@ import NavItem from './NavItem';
 import SidebarSection from './SidebarSection';
 import ResizeHandle from './ResizeHandle';
 import ThemeSwitcher from './ThemeSwitcher';
-import { Menu, ChevronLeft } from 'lucide-react';
+import { Menu, ChevronLeft, Github, MailIcon } from 'lucide-react';
 
 interface GlassSidebarProps {
   items: NavItemType[];
@@ -19,12 +19,12 @@ interface GlassSidebarProps {
   userAvatar: string;
 }
 
-export default function GlassSidebar({ 
-  items, 
-  currentSection, 
-  setCurrentSection, 
-  isCollapsed, 
-  width, 
+export default function GlassSidebar({
+  items,
+  currentSection,
+  setCurrentSection,
+  isCollapsed,
+  width,
   onResize,
   userName,
   userAvatar
@@ -74,7 +74,7 @@ export default function GlassSidebar({
 
   const [hoveredHeaderButton, setHoveredHeaderButton] = useState(false);
   const [hoveredAvatar, setHoveredAvatar] = useState(false);
-  
+
   // Animated background particles for visual polish
   const renderBackgroundParticles = () => {
     return (
@@ -89,38 +89,38 @@ export default function GlassSidebar({
   };
 
   return (
-    <div 
-      ref={sidebarRef} 
+    <div
+      ref={sidebarRef}
       className={`glass-sidebar ${isCollapsed ? 'collapsed' : ''}`}
       style={{ width: isCollapsed ? '70px' : `${width}px` }}
     >
       {/* Animated background effects */}
       {currentTheme.animation !== 'minimal' && renderBackgroundParticles()}
-      
+
       {/* Glass effect overlay */}
       <div className="glass-overlay"></div>
-      
+
       {/* Top accent line */}
       <div className="top-accent-line"></div>
-      
+
       {/* ResizeHandle component for adjusting sidebar width */}
       {!isCollapsed && (
-        <ResizeHandle 
-          setExpandedWidth={setExpandedWidth} 
-          width={width} 
+        <ResizeHandle
+          setExpandedWidth={setExpandedWidth}
+          width={width}
           variant="accent"
           showActiveIndicator={true}
         />
       )}
-      
+
       {/* Header with enhanced animations */}
       <div className="sidebar-header">
         <div className="logo">
           <span className="logo-text">{isCollapsed ? 'J' : 'jjugg'}</span>
           <div className="logo-glow"></div>
         </div>
-        <button 
-          onClick={toggleSidebar} 
+        <button
+          onClick={toggleSidebar}
           className={`toggle-btn ${hoveredHeaderButton ? 'hovered' : ''}`}
           onMouseEnter={() => setHoveredHeaderButton(true)}
           onMouseLeave={() => setHoveredHeaderButton(false)}
@@ -134,19 +134,19 @@ export default function GlassSidebar({
           <div className="btn-background"></div>
         </button>
       </div>
-      
+
       {/* User Profile with enhanced interactions */}
-      <div 
+      <div
         className={`user-profile ${hoveredAvatar ? 'hovered' : ''}`}
         onMouseEnter={() => setHoveredAvatar(true)}
         onMouseLeave={() => setHoveredAvatar(false)}
       >
         <div className="avatar">
           {userAvatar ? (
-            <img 
-              src={userAvatar} 
-              alt={`${userName}'s avatar`} 
-              className="avatar-img" 
+            <img
+              src={userAvatar}
+              alt={`${userName}'s avatar`}
+              className="avatar-img"
             />
           ) : (
             <div className="avatar-placeholder">
@@ -205,6 +205,10 @@ export default function GlassSidebar({
       <div className="sidebar-footer">
         <div className="footer-content">
           <ThemeSwitcher />
+          <a href="/">
+            <MailIcon />
+            <div>Sign in With Gmail</div>
+          </a>
         </div>
         <div className="footer-shadow"></div>
       </div>
@@ -224,7 +228,7 @@ export default function GlassSidebar({
           transition: all var(--transition-normal) var(--easing-decelerate);
           overflow: hidden;
         }
-        
+
         /* Glass overlay for enhanced depth */
         .glass-overlay {
           position: absolute;
@@ -241,7 +245,7 @@ export default function GlassSidebar({
           pointer-events: none;
           z-index: -1;
         }
-        
+
         .dark .glass-overlay {
           background: linear-gradient(
             135deg,
@@ -250,7 +254,7 @@ export default function GlassSidebar({
             rgba(255, 255, 255, 0.01) 70%
           );
         }
-        
+
         /* Accent line at the top of sidebar */
         .top-accent-line {
           position: absolute;
@@ -267,7 +271,7 @@ export default function GlassSidebar({
           opacity: 0.6;
           z-index: 1;
         }
-        
+
         /* Animated background particles */
         .sidebar-bg-particles {
           position: absolute;
@@ -279,7 +283,7 @@ export default function GlassSidebar({
           pointer-events: none;
           z-index: -1;
         }
-        
+
         .particle {
           position: absolute;
           border-radius: 50%;
@@ -287,7 +291,7 @@ export default function GlassSidebar({
           opacity: 0;
           z-index: -1;
         }
-        
+
         .p1 {
           width: 20px;
           height: 20px;
@@ -298,7 +302,7 @@ export default function GlassSidebar({
           animation-delay: 0s;
           background: var(--accent-primary);
         }
-        
+
         .p2 {
           width: 30px;
           height: 30px;
@@ -309,7 +313,7 @@ export default function GlassSidebar({
           animation-delay: 5s;
           background: var(--accent-secondary);
         }
-        
+
         .p3 {
           width: 10px;
           height: 10px;
@@ -320,7 +324,7 @@ export default function GlassSidebar({
           animation-delay: 2s;
           background: var(--accent-primary);
         }
-        
+
         .p4 {
           width: 15px;
           height: 15px;
@@ -331,7 +335,7 @@ export default function GlassSidebar({
           animation-delay: 8s;
           background: var(--accent-secondary);
         }
-        
+
         .p5 {
           width: 25px;
           height: 25px;
@@ -342,7 +346,7 @@ export default function GlassSidebar({
           animation-delay: 12s;
           background: var(--accent-primary);
         }
-        
+
         /* Sidebar header with enhanced styling */
         .sidebar-header {
           display: flex;
@@ -353,7 +357,7 @@ export default function GlassSidebar({
           position: relative;
           z-index: 2;
         }
-        
+
         /* Logo with glow effect */
         .logo {
           position: relative;
@@ -367,17 +371,17 @@ export default function GlassSidebar({
           transition: all var(--transition-normal) var(--easing-standard);
           overflow: hidden;
         }
-        
+
         .logo:hover {
           transform: translateY(-1px);
           box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
         }
-        
+
         .logo-text {
           position: relative;
           z-index: 1;
         }
-        
+
         .logo-glow {
           position: absolute;
           top: 0;
@@ -394,7 +398,7 @@ export default function GlassSidebar({
           animation: logo-shine 6s infinite;
           opacity: 0;
         }
-        
+
         /* Toggle button with hover effects */
         .toggle-btn {
           position: relative;
@@ -411,7 +415,7 @@ export default function GlassSidebar({
           overflow: hidden;
           z-index: 1;
         }
-        
+
         .btn-background {
           position: absolute;
           top: 0;
@@ -424,24 +428,24 @@ export default function GlassSidebar({
           border-radius: var(--border-radius-sm);
           z-index: -1;
         }
-        
+
         .toggle-btn.hovered .btn-background {
           opacity: 1;
         }
-        
+
         .toggle-btn:hover {
           transform: scale(1.1);
           color: var(--accent-primary);
         }
-        
+
         .dark .toggle-btn:hover {
           text-shadow: 0 0 8px rgba(var(--accent-primary-rgb), 0.5);
         }
-        
+
         .toggle-icon {
           transition: transform var(--transition-normal) var(--easing-standard);
         }
-        
+
         .toggle-icon.open {
           transform: rotate(180deg);
         }
@@ -457,11 +461,11 @@ export default function GlassSidebar({
           transition: background-color var(--transition-normal) var(--easing-standard);
           cursor: pointer;
         }
-        
+
         .user-profile.hovered {
           background-color: var(--hover-bg);
         }
-        
+
         /* Avatar with glow/highlight effects */
         .avatar {
           position: relative;
@@ -482,13 +486,13 @@ export default function GlassSidebar({
           transition: all var(--transition-normal) var(--easing-standard);
           z-index: 1;
         }
-        
+
         .user-profile.hovered .avatar {
           transform: scale(1.05);
           box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
           border-color: var(--accent-primary);
         }
-        
+
         .avatar-highlight {
           position: absolute;
           top: -2px;
@@ -505,7 +509,7 @@ export default function GlassSidebar({
           z-index: -1;
           animation: rotate 3s linear infinite;
         }
-        
+
         .avatar-img {
           width: 100%;
           height: 100%;
@@ -538,7 +542,7 @@ export default function GlassSidebar({
           text-overflow: ellipsis;
           padding-bottom: 2px;
         }
-        
+
         .name-underline {
           position: absolute;
           bottom: 0;
@@ -548,7 +552,7 @@ export default function GlassSidebar({
           background-color: var(--accent-primary);
           transition: width var(--transition-normal) var(--easing-standard);
         }
-        
+
         .user-profile.hovered .name-underline {
           width: 100%;
         }
@@ -575,7 +579,7 @@ export default function GlassSidebar({
         .status-dot.online {
           background-color: var(--accent-success);
         }
-        
+
         .status-pulse {
           position: absolute;
           width: 100%;
@@ -585,7 +589,7 @@ export default function GlassSidebar({
           opacity: 0.6;
           animation: status-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
-        
+
         /* User tooltip in collapsed mode */
         .avatar-tooltip {
           position: absolute;
@@ -603,7 +607,7 @@ export default function GlassSidebar({
           -webkit-backdrop-filter: blur(var(--blur-amount));
           border: 1px solid var(--border-thin);
         }
-        
+
         .avatar-tooltip::before {
           content: '';
           position: absolute;
@@ -616,14 +620,14 @@ export default function GlassSidebar({
           border-left: 1px solid var(--border-thin);
           border-bottom: 1px solid var(--border-thin);
         }
-        
+
         .tooltip-name {
           font-weight: 600;
           color: var(--text-primary);
           margin-bottom: 4px;
           white-space: nowrap;
         }
-        
+
         .tooltip-status {
           display: flex;
           align-items: center;
@@ -631,7 +635,7 @@ export default function GlassSidebar({
           font-size: 12px;
           color: var(--text-tertiary);
         }
-        
+
         .tooltip-dot {
           width: 6px;
           height: 6px;
@@ -649,7 +653,7 @@ export default function GlassSidebar({
           position: relative;
           z-index: 1;
         }
-        
+
         /* Shimmering scrollbar track effect */
         .nav-scroll::-webkit-scrollbar-track {
           background: linear-gradient(
@@ -660,12 +664,12 @@ export default function GlassSidebar({
           );
           border-radius: 4px;
         }
-        
+
         .dark .nav-scroll::-webkit-scrollbar-thumb {
           background: rgba(156, 163, 175, 0.4);
           box-shadow: 0 0 6px rgba(var(--accent-primary-rgb), 0.2);
         }
-        
+
         .dark .nav-scroll::-webkit-scrollbar-thumb:hover {
           background: rgba(156, 163, 175, 0.6);
           box-shadow: 0 0 8px rgba(var(--accent-primary-rgb), 0.4);
@@ -681,13 +685,13 @@ export default function GlassSidebar({
           justify-content: ${isCollapsed ? 'center' : 'space-between'};
           z-index: 2;
         }
-        
+
         .footer-content {
           position: relative;
           z-index: 1;
           width: 100%;
         }
-        
+
         .footer-shadow {
           position: absolute;
           bottom: calc(100% - 1px);
@@ -717,7 +721,7 @@ export default function GlassSidebar({
             transform: translate(0, -10px);
           }
         }
-        
+
         @keyframes logo-shine {
           0%, 100% {
             opacity: 0;
@@ -734,7 +738,7 @@ export default function GlassSidebar({
             opacity: 0;
           }
         }
-        
+
         @keyframes status-pulse {
           0%, 100% {
             transform: scale(1);
@@ -745,12 +749,12 @@ export default function GlassSidebar({
             opacity: 0;
           }
         }
-        
+
         @keyframes rotate {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
-        
+
         @keyframes fade-in {
           from {
             opacity: 0;
@@ -769,20 +773,20 @@ export default function GlassSidebar({
             transition: transform var(--transition-normal) var(--easing-standard), width var(--transition-normal) var(--easing-decelerate);
           }
         }
-        
+
         @media (max-width: 768px) {
           .sidebar-header {
             padding: 14px;
           }
-          
+
           .user-profile {
             padding: 14px;
           }
-          
+
           .nav-scroll {
             padding: 14px 12px;
           }
-          
+
           .sidebar-footer {
             padding: 14px;
           }
