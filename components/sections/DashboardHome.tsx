@@ -17,6 +17,8 @@ import UpcomingEvent from '../dashboard/UpcomingEvent';
 import GoalCard from '../dashboard/GoalCard';
 import StageCard from '../dashboard/StageCard';
 import ActionButton from '../dashboard/ActionButton';
+import ApplicationFunnel from '../ApplicationFunnel';
+import WeeklyActivity from '../WeeklyActivity';
 
 // Types
 interface Company {
@@ -363,21 +365,13 @@ export default function DashboardHome() {
 
   return (
     <section className={`dashboard-home ${mounted ? 'mounted' : ''}`}>
-      <CardHeader
-        title="Key Performance Indicators"
-        subtitle="Analytics, insights and action items to optimize your job hunt"
-        accentColor="var(--accent-blue)"
-        variant="elevated"
-        onAction={() => console.log('Dashboard settings')}
-        actionLabel="Customize Dashboard"
-      >
-        <div className="time-range-selector">
-          <button className={timeRange === '7d' ? 'active' : ''} onClick={() => setTimeRange('7d')}>7d</button>
-          <button className={timeRange === '30d' ? 'active' : ''} onClick={() => setTimeRange('30d')}>30d</button>
-          <button className={timeRange === '90d' ? 'active' : ''} onClick={() => setTimeRange('90d')}>90d</button>
-          <button className={timeRange === 'all' ? 'active' : ''} onClick={() => setTimeRange('all')}>All</button>
-        </div>
-      </CardHeader>
+
+      <div className="time-range-selector">
+        <button className={timeRange === '7d' ? 'active' : ''} onClick={() => setTimeRange('7d')}>7d</button>
+        <button className={timeRange === '30d' ? 'active' : ''} onClick={() => setTimeRange('30d')}>30d</button>
+        <button className={timeRange === '90d' ? 'active' : ''} onClick={() => setTimeRange('90d')}>90d</button>
+        <button className={timeRange === 'all' ? 'active' : ''} onClick={() => setTimeRange('all')}>All</button>
+      </div>
       <div className="stats-summary">
         <StatCard
           value={totalApplications}
@@ -706,136 +700,15 @@ export default function DashboardHome() {
       {
         activeTab === 'overview' && (
           <div className="dashboard-grid overview-grid">
-            {/* Application Funnel */}
-            <div className="dashboard-card funnel-card">
-              <div className="card-header">
-                <h3 className="card-title">Application Funnel</h3>
-                <ActionButton
-                  label="View All"
-                  icon={ChevronRight}
-                  variant="ghost"
-                  size="small"
-                  onClick={() => console.log('View all applications')}
-                />
-              </div>
+            <ApplicationFunnel
+              stageCounts={stageCounts}
+              onViewAll={() => console.log('View all applications')}
+            />
 
-              <div className="funnel-visualization">
-                <div className="funnel-stage applied">
-                  <div className="stage-label">
-                    <span className="stage-name">Applied</span>
-                    <span className="stage-count">{stageCounts.applied}</span>
-                  </div>
-                  <div className="funnel-bar">
-                    <div className="stage-progress" style={{ width: `100%` }}></div>
-                  </div>
-                  <div className="stage-percent">100%</div>
-                </div>
-
-                <div className="funnel-stage screening">
-                  <div className="stage-label">
-                    <span className="stage-name">Screening</span>
-                    <span className="stage-count">{stageCounts.screening}</span>
-                  </div>
-                  <div className="funnel-bar">
-                    <div className="stage-progress" style={{ width: `${(stageCounts.screening / stageCounts.applied) * 100}%` }}></div>
-                  </div>
-                  <div className="stage-percent">{((stageCounts.screening / stageCounts.applied) * 100).toFixed(0)}%</div>
-                </div>
-
-                <div className="funnel-stage interview">
-                  <div className="stage-label">
-                    <span className="stage-name">Interview</span>
-                    <span className="stage-count">{stageCounts.interview}</span>
-                  </div>
-                  <div className="funnel-bar">
-                    <div className="stage-progress" style={{ width: `${(stageCounts.interview / stageCounts.applied) * 100}%` }}></div>
-                  </div>
-                  <div className="stage-percent">{((stageCounts.interview / stageCounts.applied) * 100).toFixed(0)}%</div>
-                </div>
-
-                <div className="funnel-stage offer">
-                  <div className="stage-label">
-                    <span className="stage-name">Offer</span>
-                    <span className="stage-count">{stageCounts.offer}</span>
-                  </div>
-                  <div className="funnel-bar">
-                    <div className="stage-progress" style={{ width: `${(stageCounts.offer / stageCounts.applied) * 100}%` }}></div>
-                  </div>
-                  <div className="stage-percent">{((stageCounts.offer / stageCounts.applied) * 100).toFixed(0)}%</div>
-                </div>
-              </div>
-
-              <div className="funnel-insights">
-                <div className="funnel-insight">
-                  <span className="insight-value">38%</span>
-                  <span className="insight-label">Move to Screening</span>
-                </div>
-                <div className="funnel-insight">
-                  <span className="insight-value">20%</span>
-                  <span className="insight-label">Interview Rate</span>
-                </div>
-                <div className="funnel-insight">
-                  <span className="insight-value">7.7%</span>
-                  <span className="insight-label">Offer Rate</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Weekly Activity */}
-            <div className="dashboard-card activity-chart-card">
-              <div className="card-header">
-                <h3 className="card-title">Weekly Activity</h3>
-                <div className="chart-legend">
-                  <div className="legend-item">
-                    <span className="legend-color applications"></span>
-                    <span>Applications</span>
-                  </div>
-                  <div className="legend-item">
-                    <span className="legend-color interviews"></span>
-                    <span>Interviews</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="activity-chart">
-                <div className="chart-bars">
-                  {weeklyActivity.map((count, index) => (
-                    <div className="chart-bar-group" key={index}>
-                      <div className="chart-bar applications" style={{ height: `${count * 10}%` }}>
-                        <span className="bar-value">{count}</span>
-                      </div>
-                      <div className="chart-bar interviews" style={{ height: `${Math.floor(count * 0.4) * 10}%` }}>
-                        <span className="bar-value">{Math.floor(count * 0.4)}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="chart-labels">
-                  <span>Mon</span>
-                  <span>Tue</span>
-                  <span>Wed</span>
-                  <span>Thu</span>
-                  <span>Fri</span>
-                  <span>Sat</span>
-                  <span>Sun</span>
-                </div>
-              </div>
-
-              <div className="activity-summary">
-                <div className="summary-item">
-                  <span className="summary-value">31</span>
-                  <span className="summary-label">Applications</span>
-                </div>
-                <div className="summary-item">
-                  <span className="summary-value">12</span>
-                  <span className="summary-label">Interviews</span>
-                </div>
-                <div className="summary-item">
-                  <span className="summary-value">15%</span>
-                  <span className="summary-label">Week-over-Week</span>
-                </div>
-              </div>
-            </div>
+            <WeeklyActivity
+              weeklyActivity={weeklyActivity}
+              onViewDetails={() => console.log('View activity details')}
+            />
 
             {/* Upcoming Events */}
             <div className="dashboard-card upcoming-card">
