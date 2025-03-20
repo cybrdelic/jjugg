@@ -3,8 +3,8 @@
 import React, { useState, useEffect, ChangeEvent, KeyboardEvent } from 'react';
 import {
   Target, PlusCircle, ChevronDown, Calendar, TrendingUp,
-  MoreHorizontal, CheckCircle, Edit2, Trash2, PieChart, Award,
-  Loader
+  MoreHorizontal, CheckCircle, Edit2, Trash2, PieChart,
+  XCircle, Plus, Minus
 } from 'lucide-react';
 import CardHeader from '../CardHeader';
 import OpenAI from 'openai';
@@ -13,13 +13,15 @@ interface MonthlyGoal {
   id: string;
   title: string;
   description: string;
-  category: 'applications' | 'interviews' | 'networking' | 'skills' | 'offers' | 'other';
+  category: 'applications' | 'interviews' | 'networking' | 'skills';
   current: number;
   target: number;
   progress: number;
   deadline: Date;
   isCompleted: boolean;
   isApproved: boolean;
+  isRejected?: boolean;
+  isAIGenerated?: boolean;
 }
 
 interface NewGoalForm {
@@ -29,6 +31,12 @@ interface NewGoalForm {
   current: number;
   target: number;
   deadline: string;
+}
+
+interface StatusUpdate {
+  id: string;
+  message: string;
+  goalId: string | null; // null for global updates
 }
 
 const calculateProgress = (current: number, target: number): number => {
@@ -41,8 +49,6 @@ const getCategoryColor = (category: MonthlyGoal['category']): string => {
     case 'interviews': return 'var(--accent-green)';
     case 'networking': return 'var(--accent-purple)';
     case 'skills': return 'var(--accent-orange)';
-    case 'offers': return 'var(--accent-success)';
-    case 'other': return 'var(--accent-pink)';
     default: return 'var(--text-secondary)';
   }
 };
@@ -51,14 +57,14 @@ const formatDate = (date: Date): string => {
   return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
 };
 
-const categoryOrder: MonthlyGoal['category'][] = ['applications', 'interviews', 'networking', 'skills', 'offers', 'other'];
+const categoryOrder: MonthlyGoal['category'][] = ['applications', 'interviews', 'networking', 'skills'];
 
 export default function Goals() {
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<MonthlyGoal | null>(null);
   const [monthlyGoals, setMonthlyGoals] = useState<MonthlyGoal[]>([]);
-  const [isFetchingNewGoals, setIsFetchingNewGoals] = useState(false); // Changed from isLoading
+  const [isFetchingNewGoals, setIsFetchingNewGoals] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [newGoal, setNewGoal] = useState<NewGoalForm>({
     title: '',
@@ -69,14 +75,30 @@ export default function Goals() {
     deadline: ''
   });
   const [formError, setFormError] = useState<string>('');
+  const [statusUpdates, setStatusUpdates] = useState<StatusUpdate[]>([]);
+  const [hasShownOnboarding, setHasShownOnboarding] = useState(false);
 
   useEffect(() => {
     generateGoalsFromOpenAI();
+    if (!hasShownOnboarding) {
+      setTimeout(() => {
+        setHasShownOnboarding(true);
+      }, 5000);
+    }
   }, []);
+
+  const addStatusUpdate = (message: string, goalId: string | null) => {
+    const newId = `${goalId || 'global'}-${Date.now()}`;
+    setStatusUpdates(prev => [...prev, { id: newId, message, goalId }]);
+    setTimeout(() => {
+      setStatusUpdates(prev => prev.filter(update => update.id !== newId));
+    }, 2000);
+  };
 
   const generateGoalsFromOpenAI = async () => {
     setIsFetchingNewGoals(true);
     setError(null);
+    if (hasShownOnboarding) addStatusUpdate("Fetching new suggestions...", null);
 
     try {
       const jobApplicationHistory = {
@@ -139,7 +161,7 @@ export default function Goals() {
           },
           {
             role: "user",
-            content: `Based on my job application history, generate 6 realistic monthly job search goals in JSON format. Include goals for applications, interviews, networking, skills development, and job offers. Set "current" to 0 for all goals (representing unstarted goals) and "isCompleted" to false. Here’s my current job search history: ${JSON.stringify(jobApplicationHistory)}. Avoid duplicating or closely resembling these existing approved goals: ${JSON.stringify(approvedGoals)}. Return only valid JSON matching the provided schema with a root "goals" property containing the array of goals.`
+            content: `Based on my job application history, generate 4 realistic monthly job search goals in JSON format for the categories: applications, interviews, networking, and skills. Set "current" to 0 for all goals (representing unstarted goals) and "isCompleted" to false. Here’s my current job search history: ${JSON.stringify(jobApplicationHistory)}. Avoid duplicating or closely resembling these existing approved goals: ${JSON.stringify(approvedGoals)}. Return only valid JSON matching the provided schema with a root "goals" property containing the array of goals.`
           }
         ],
         response_format: {
@@ -166,11 +188,13 @@ export default function Goals() {
         progress: calculateProgress(goal.current ?? 0, goal.target ?? 1),
         deadline: new Date(goal.deadline ?? Date.now()),
         isCompleted: goal.isCompleted ?? false,
-        isApproved: false
+        isApproved: false,
+        isRejected: false,
+        isAIGenerated: true
       }));
 
       setMonthlyGoals(prevGoals => {
-        const existingApprovedGoals = prevGoals.filter(goal => goal.isApproved);
+        const existingApprovedGoals = prevGoals.filter(goal => goal.isApproved && !goal.isRejected);
         const uniqueNewGoals = formattedNewGoals.filter(goal => !prevGoals.some(prev => prev.id === goal.id));
         return [...existingApprovedGoals, ...uniqueNewGoals].sort((a, b) => categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category));
       });
@@ -178,46 +202,68 @@ export default function Goals() {
       console.error("Error generating goals:", err);
       setError("Failed to fetch new goals. Existing goals remain unchanged.");
       if (monthlyGoals.length === 0) {
-        setMonthlyGoals((prevGoals: any) => {
-          const existingApprovedGoals = prevGoals.filter((goal: any) => goal.isApproved);
-          return [...existingApprovedGoals, ...[
-            {
-              id: 'fallback-1',
-              title: 'Submit 10 Applications',
-              description: 'Focus on tech companies',
-              category: 'applications',
-              current: 0,
-              target: 10,
-              progress: calculateProgress(0, 10),
-              deadline: new Date(2025, 3, 15),
-              isCompleted: false,
-              isApproved: false
-            },
-            {
-              id: 'fallback-2',
-              title: 'Schedule 3 Interviews',
-              description: 'Prepare for technical rounds',
-              category: 'interviews',
-              current: 0,
-              target: 3,
-              progress: calculateProgress(0, 3),
-              deadline: new Date(2025, 3, 20),
-              isCompleted: false,
-              isApproved: false
-            },
-            {
-              id: 'fallback-3',
-              title: 'Attend 2 Networking Events',
-              description: 'Build professional connections',
-              category: 'networking',
-              current: 0,
-              target: 2,
-              progress: calculateProgress(0, 2),
-              deadline: new Date(2025, 3, 25),
-              isCompleted: false,
-              isApproved: false
-            }
-          ].filter(fallback => !prevGoals.some((prev: any) => prev.id === fallback.id))].sort((a, b) => categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category));
+        const fallbackGoals: MonthlyGoal[] = [
+          {
+            id: 'fallback-1',
+            title: 'Submit 10 Applications',
+            description: 'Focus on tech companies',
+            category: 'applications' as const,
+            current: 0,
+            target: 10,
+            progress: calculateProgress(0, 10),
+            deadline: new Date(2025, 3, 15),
+            isCompleted: false,
+            isApproved: false,
+            isRejected: false,
+            isAIGenerated: true
+          },
+          {
+            id: 'fallback-2',
+            title: 'Schedule 3 Interviews',
+            description: 'Prepare for technical rounds',
+            category: 'interviews' as const,
+            current: 0,
+            target: 3,
+            progress: calculateProgress(0, 3),
+            deadline: new Date(2025, 3, 20),
+            isCompleted: false,
+            isApproved: false,
+            isRejected: false,
+            isAIGenerated: true
+          },
+          {
+            id: 'fallback-3',
+            title: 'Attend 2 Networking Events',
+            description: 'Build professional connections',
+            category: 'networking' as const,
+            current: 0,
+            target: 2,
+            progress: calculateProgress(0, 2),
+            deadline: new Date(2025, 3, 25),
+            isCompleted: false,
+            isApproved: false,
+            isRejected: false,
+            isAIGenerated: true
+          },
+          {
+            id: 'fallback-4',
+            title: 'Learn 1 New Skill',
+            description: 'Master React hooks',
+            category: 'skills' as const,
+            current: 0,
+            target: 1,
+            progress: calculateProgress(0, 1),
+            deadline: new Date(2025, 3, 30),
+            isCompleted: false,
+            isApproved: false,
+            isRejected: false,
+            isAIGenerated: true
+          }
+        ];
+        setMonthlyGoals(prevGoals => {
+          const existingApprovedGoals = prevGoals.filter(goal => goal.isApproved && !goal.isRejected);
+          const uniqueFallbackGoals = fallbackGoals.filter(fallback => !prevGoals.some(prev => prev.id === fallback.id));
+          return [...existingApprovedGoals, ...uniqueFallbackGoals].sort((a, b) => categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category));
         });
       }
     } finally {
@@ -228,9 +274,20 @@ export default function Goals() {
   const handleApproveGoal = (goalId: string) => {
     setMonthlyGoals(prevGoals =>
       prevGoals.map(goal =>
-        goal.id === goalId ? { ...goal, isApproved: true } : goal
+        goal.id === goalId ? { ...goal, isApproved: true, isRejected: false } : goal
       ).sort((a, b) => categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category))
     );
+    addStatusUpdate("Approved!", goalId);
+  };
+
+  const handleRejectGoal = (goalId: string) => {
+    setMonthlyGoals(prevGoals =>
+      prevGoals.map(goal =>
+        goal.id === goalId ? { ...goal, isRejected: true } : goal
+      ).filter(goal => !goal.isRejected)
+        .sort((a, b) => categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category))
+    );
+    addStatusUpdate("Rejected", goalId);
   };
 
   const handleAddGoal = () => {
@@ -249,20 +306,75 @@ export default function Goals() {
       progress: calculateProgress(newGoal.current, newGoal.target),
       deadline: new Date(newGoal.deadline),
       isCompleted: false,
-      isApproved: true
+      isApproved: true,
+      isRejected: false,
+      isAIGenerated: false
     };
     setMonthlyGoals(prevGoals => [...prevGoals, newGoalData].sort((a, b) => categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category)));
     setNewGoal({ title: '', description: '', category: 'applications', current: 0, target: 1, deadline: '' });
     setShowAddForm(false);
+    addStatusUpdate("Goal Added!", newGoalData.id);
+  };
+
+  const handleIncrementProgress = (goalId: string) => {
+    setMonthlyGoals(prevGoals =>
+      prevGoals.map(goal => {
+        if (goal.id === goalId && !goal.isCompleted && goal.current < goal.target) {
+          const newCurrent = goal.current + 1;
+          const newProgress = calculateProgress(newCurrent, goal.target);
+          const isCompleted = newCurrent >= goal.target;
+          if (isCompleted) addStatusUpdate(`Completed!`, goalId);
+          else addStatusUpdate(`Progress +1`, goalId);
+          return { ...goal, current: newCurrent, progress: newProgress, isCompleted };
+        }
+        return goal;
+      })
+    );
+  };
+
+  const handleDecrementProgress = (goalId: string) => {
+    setMonthlyGoals(prevGoals =>
+      prevGoals.map(goal => {
+        if (goal.id === goalId && !goal.isCompleted && goal.current > 0) {
+          const newCurrent = goal.current - 1;
+          const newProgress = calculateProgress(newCurrent, goal.target);
+          addStatusUpdate(`Progress -1`, goalId);
+          return { ...goal, current: newCurrent, progress: newProgress, isCompleted: false };
+        }
+        return goal;
+      })
+    );
+  };
+
+  const handleMarkComplete = (goalId: string) => {
+    setMonthlyGoals(prevGoals =>
+      prevGoals.map(goal => {
+        if (goal.id === goalId && !goal.isCompleted) {
+          addStatusUpdate(`Marked Complete!`, goalId);
+          return { ...goal, isCompleted: true, current: goal.target, progress: 100 };
+        }
+        return goal;
+      })
+    );
   };
 
   const handleFormKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') handleAddGoal();
   };
 
+  const getFormPlaceholder = (field: keyof NewGoalForm): string => {
+    switch (newGoal.category) {
+      case 'applications': return field === 'title' ? 'Apply to 5 jobs' : 'Focus on tech roles';
+      case 'interviews': return field === 'title' ? 'Schedule 3 interviews' : 'Prepare for technical questions';
+      case 'networking': return field === 'title' ? 'Attend 2 events' : 'Meet industry professionals';
+      case 'skills': return field === 'title' ? 'Learn 1 new skill' : 'Practice React hooks';
+      default: return field === 'title' ? 'Set a goal' : 'Add details';
+    }
+  };
+
   const filteredGoals = monthlyGoals.filter(goal =>
     filter === 'all' ? true : filter === 'active' ? !goal.isCompleted : goal.isCompleted
-  );
+  ).filter(goal => !goal.isRejected);
 
   const goalsByCategory: Record<MonthlyGoal['category'], MonthlyGoal[]> = {} as Record<MonthlyGoal['category'], MonthlyGoal[]>;
   filteredGoals.forEach(goal => {
@@ -278,8 +390,7 @@ export default function Goals() {
       case 'interviews': return <Calendar size={16} aria-label="Interviews" />;
       case 'networking': return <TrendingUp size={16} aria-label="Networking" />;
       case 'skills': return <PieChart size={16} aria-label="Skills" />;
-      case 'offers': return <Award size={16} aria-label="Offers" />;
-      default: return <Target size={16} aria-label="Other" />;
+      default: return <Target size={16} aria-label="Default" />;
     }
   };
 
@@ -308,7 +419,6 @@ export default function Goals() {
           >
             <TrendingUp size={18} />
             <span className="btn-text">Refresh Goals</span>
-            {isFetchingNewGoals && <Loader size={16} className="fetching-icon" />}
           </button>
           <button
             className="add-goal-btn"
@@ -321,13 +431,21 @@ export default function Goals() {
         </div>
       </CardHeader>
 
+      <div className="global-status-bar" role="status">
+        {statusUpdates.filter(update => !update.goalId).map(update => (
+          <div key={update.id} className="global-status">
+            {update.message}
+          </div>
+        ))}
+      </div>
+
       <>
         {error && <div className="error-message" role="alert">{error}</div>}
         {showAddForm && (
           <div className="add-goal-form" role="dialog" aria-label="Add new goal form">
             <input
               type="text"
-              placeholder="Title (e.g., Apply to 5 jobs)"
+              placeholder={getFormPlaceholder('title')}
               value={newGoal.title}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setNewGoal({ ...newGoal, title: e.target.value })}
               onKeyDown={handleFormKeyDown}
@@ -336,7 +454,7 @@ export default function Goals() {
             />
             <input
               type="text"
-              placeholder="Description (e.g., Focus on tech roles)"
+              placeholder={getFormPlaceholder('description')}
               value={newGoal.description}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setNewGoal({ ...newGoal, description: e.target.value })}
               onKeyDown={handleFormKeyDown}
@@ -420,7 +538,6 @@ export default function Goals() {
         <div className="goals-grid reveal-element" aria-live="polite">
           {categoryOrder.map(category => {
             const goals = goalsByCategory[category] || [];
-            const hasUnapprovedGoals = goals.some(goal => !goal.isApproved);
             return (
               <div key={category} className="category-section">
                 <div className="category-header">
@@ -428,18 +545,30 @@ export default function Goals() {
                     {getCategoryIcon(category)}
                   </div>
                   <h3 className="category-title">{getCategoryLabel(category)}</h3>
-                  <div className="category-count">{goals.length}</div>
+                  <div className="category-count">{goals.length + (isFetchingNewGoals ? 1 : 0)}</div>
                 </div>
                 <div className="goals-list">
                   {goals.map(goal => (
                     <div
                       key={goal.id}
-                      className={`goal-card ${goal.isCompleted ? 'completed' : ''} ${goal.isApproved ? 'approved' : ''}`}
+                      className={`goal-card ${goal.isCompleted ? 'completed' : ''} ${goal.isApproved ? 'approved' : 'pending'}`}
                       onClick={() => setSelectedGoal(goal)}
                       tabIndex={0}
                       role="button"
                       aria-label={`View details for ${goal.title}`}
                     >
+                      <div className="status-updates">
+                        {statusUpdates.filter(update => update.goalId === goal.id).map(update => (
+                          <div key={update.id} className="status-bubble" role="status">
+                            {update.message}
+                          </div>
+                        ))}
+                      </div>
+                      {!goal.isApproved && !goal.isRejected && goal.isAIGenerated && (
+                        <div className="pending-banner" aria-label="AI suggested">
+                          AI Suggested
+                        </div>
+                      )}
                       <div className="goal-header">
                         <h4 className="goal-title">{goal.title}</h4>
                         <button className="action-button" aria-label="More options">
@@ -468,32 +597,90 @@ export default function Goals() {
                           <span>Due {formatDate(goal.deadline)}</span>
                         </div>
                         <div className="goal-actions">
-                          {!goal.isApproved && (
-                            <button
-                              className="action-icon-btn"
-                              title="Approve goal"
-                              onClick={(e) => { e.stopPropagation(); handleApproveGoal(goal.id); }}
-                              aria-label={`Approve ${goal.title}`}
-                            >
-                              <CheckCircle size={14} />
-                            </button>
-                          )}
-                          {!goal.isCompleted ? (
+                          {!goal.isApproved && !goal.isRejected && (
                             <>
-                              <button className="action-icon-btn" title="Edit goal" aria-label={`Edit ${goal.title}`}><Edit2 size={14} /></button>
-                              <button className="action-icon-btn" title="Mark as complete" aria-label={`Mark ${goal.title} as complete`}><CheckCircle size={14} /></button>
+                              <button
+                                className="action-icon-btn approve"
+                                title="Approve this goal"
+                                onClick={(e) => { e.stopPropagation(); handleApproveGoal(goal.id); }}
+                                aria-label={`Approve ${goal.title}`}
+                              >
+                                <CheckCircle size={14} className="icon" />
+                                <span className="label">Approve</span>
+                              </button>
+                              <button
+                                className="action-icon-btn reject"
+                                title="Reject this goal"
+                                onClick={(e) => { e.stopPropagation(); handleRejectGoal(goal.id); }}
+                                aria-label={`Reject ${goal.title}`}
+                              >
+                                <XCircle size={14} className="icon" />
+                                <span className="label">Reject</span>
+                              </button>
                             </>
-                          ) : (
-                            <button className="action-icon-btn delete" title="Delete goal" aria-label={`Delete ${goal.title}`}><Trash2 size={14} /></button>
+                          )}
+                          {goal.isApproved && !goal.isCompleted ? (
+                            <>
+                              <button
+                                className="action-icon-btn"
+                                title="Decrease progress"
+                                onClick={(e) => { e.stopPropagation(); handleDecrementProgress(goal.id); }}
+                                aria-label={`Decrease progress for ${goal.title}`}
+                                disabled={goal.current === 0}
+                              >
+                                <Minus size={14} />
+                              </button>
+                              <button
+                                className="action-icon-btn"
+                                title="Increase progress"
+                                onClick={(e) => { e.stopPropagation(); handleIncrementProgress(goal.id); }}
+                                aria-label={`Increase progress for ${goal.title}`}
+                                disabled={goal.current >= goal.target}
+                              >
+                                <Plus size={14} />
+                              </button>
+                              <button
+                                className="action-icon-btn"
+                                title="Mark as complete"
+                                onClick={(e) => { e.stopPropagation(); handleMarkComplete(goal.id); }}
+                                aria-label={`Mark ${goal.title} as complete`}
+                              >
+                                <CheckCircle size={14} />
+                              </button>
+                            </>
+                          ) : goal.isCompleted && (
+                            <button
+                              className="action-icon-btn delete"
+                              title="Delete goal"
+                              onClick={(e) => { e.stopPropagation(); setMonthlyGoals(prev => prev.filter(g => g.id !== goal.id)); addStatusUpdate("Deleted", goal.id); }}
+                              aria-label={`Delete ${goal.title}`}
+                            >
+                              <Trash2 size={14} />
+                            </button>
                           )}
                         </div>
                       </div>
                     </div>
                   ))}
-                  {isFetchingNewGoals && hasUnapprovedGoals && (
-                    <div className="loading-section" aria-live="polite">
-                      <Loader size={24} className="loading-icon" aria-hidden="true" />
-                      <span>Fetching new {getCategoryLabel(category)} goals...</span>
+                  {isFetchingNewGoals && (
+                    <div className="goal-card skeleton" aria-hidden="true">
+                      <div className="skeleton-banner"></div>
+                      <div className="goal-header">
+                        <div className="skeleton-title"></div>
+                        <div className="skeleton-action"></div>
+                      </div>
+                      <div className="skeleton-description"></div>
+                      <div className="goal-progress">
+                        <div className="progress-info">
+                          <div className="skeleton-numbers"></div>
+                          <div className="skeleton-percentage"></div>
+                        </div>
+                        <div className="skeleton-progress-bar"></div>
+                      </div>
+                      <div className="goal-footer">
+                        <div className="skeleton-deadline"></div>
+                        <div className="skeleton-actions"></div>
+                      </div>
                     </div>
                   )}
                   <button
@@ -508,7 +695,7 @@ export default function Goals() {
               </div>
             );
           })}
-          {Object.keys(goalsByCategory).length === 0 && (
+          {Object.keys(goalsByCategory).length === 0 && !isFetchingNewGoals && (
             <div className="empty-state" role="alert">
               <Target size={48} className="empty-icon" aria-hidden="true" />
               <h3>No goals found</h3>
@@ -524,37 +711,44 @@ export default function Goals() {
       <style jsx>{`
         .goals-section { display: flex; flex-direction: column; gap: 24px; position: relative; }
         .header-actions { display: flex; gap: 12px; }
-        .refresh-goals-btn, .add-goal-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: var(--border-radius); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; position: relative; }
+        .refresh-goals-btn, .add-goal-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: var(--border-radius); font-size: 14px; font-weight: 500; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; }
         .refresh-goals-btn { background: var(--glass-bg); color: var(--text-primary); border: 1px solid var(--border-thin); }
-        .refresh-goals-btn:hover:not(:disabled) { background: var(--hover-bg); transform: translateY(-2px); border-color: var(--accent-yellow); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+        .refresh-goals-btn:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); border-color: var(--accent-yellow); }
         .refresh-goals-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .fetching-icon { margin-left: 8px; animation: spin 1.5s linear infinite; }
         .add-goal-btn { background: var(--accent-yellow); color: white; border: none; box-shadow: 0 2px 6px rgba(var(--accent-yellow-rgb), 0.25); }
-        .add-goal-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(var(--accent-yellow-rgb), 0.3); }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .add-goal-btn:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(var(--accent-yellow-rgb), 0.3); }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes approvalFlash { 0% { border-color: var(--accent-success); box-shadow: 0 0 8px rgba(var(--accent-success-rgb), 0.5); } 100% { border-color: var(--accent-success); box-shadow: 0 0 0 rgba(var(--accent-success-rgb), 0); } }
+        @keyframes progressPulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+        @keyframes completionGlow { 0% { box-shadow: 0 0 12px rgba(var(--accent-success-rgb), 0.6); } 100% { box-shadow: 0 0 0 rgba(var(--accent-success-rgb), 0); } }
+        @keyframes pendingNudge { 0% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-2px); } 100% { transform: translateX(-50%) translateY(0); } }
+        @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(150%); } }
+        @keyframes bubbleFade { 0% { opacity: 0; transform: scale(0.8); } 20% { opacity: 1; transform: scale(1); } 80% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.8); } }
+        @keyframes statusBarFade { 0% { opacity: 0; height: 0; } 20% { opacity: 1; height: 24px; } 80% { opacity: 1; height: 24px; } 100% { opacity: 0; height: 0; } }
+        .global-status-bar { margin-bottom: 16px; min-height: 0; transition: all 0.2s ease; overflow: hidden; }
+        .global-status { padding: 4px 12px; background: rgba(var(--accent-yellow-rgb), 0.9); color: var(--text-primary); font-size: 14px; text-align: center; border-radius: var(--border-radius); animation: statusBarFade 2s ease-in-out forwards; }
         .error-message { padding: 12px 16px; background: rgba(var(--accent-red-rgb), 0.1); color: var(--accent-red); border-radius: var(--border-radius); border: 1px solid var(--accent-red); margin-bottom: 16px; font-size: 14px; animation: fadeIn 0.3s ease-in; }
-        .add-goal-form { display: flex; flex-direction: column; gap: 12px; padding: 20px; background: var(--glass-card-bg); border-radius: var(--border-radius); border: 1px solid var(--border-thin); margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); animation: slideIn 0.3s ease-out; }
-        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .add-goal-form { display: flex; flex-direction: column; gap: 12px; padding: 20px; background: var(--glass-card-bg); border-radius: var(--border-radius); border: 1px solid var(--border-thin); margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); animation: slideIn 0.3s ease-out; position: relative; z-index: 10; }
         .add-goal-form input, .add-goal-form select { padding: 10px; border-radius: var(--border-radius); border: 1px solid var(--border-thin); font-size: 14px; transition: border-color 0.2s ease; }
         .add-goal-form input:focus, .add-goal-form select:focus { border-color: var(--accent-yellow); outline: none; }
         .add-goal-form input.invalid { border-color: var(--accent-red); }
         .form-error { color: var(--accent-red); font-size: 12px; }
         .form-actions { display: flex; gap: 10px; }
-        .add-goal-form button { padding: 10px; border-radius: var(--border-radius); font-size: 14px; cursor: pointer; transition: all 0.2s ease; }
+        .add-goal-form button { padding: 10px; border-radius: var(--border-radius); font-size: 14px; cursor: pointer; transition: transform 0.2s ease, background 0.2s ease; }
         .add-goal-form button:first-child { background: var(--accent-yellow); color: white; border: none; }
-        .add-goal-form button:first-child:hover { background: var(--accent-yellow-dark); transform: translateY(-1px); }
+        .add-goal-form button:first-child:hover { transform: scale(1.05); background: var(--accent-yellow-dark); }
         .add-goal-form button:last-child { background: var(--hover-bg); color: var(--text-primary); border: 1px solid var(--border-thin); }
-        .add-goal-form button:last-child:hover { background: var(--active-bg); }
+        .add-goal-form button:last-child:hover { transform: scale(1.05); background: var(--active-bg); }
         .goals-controls { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 8px; }
         .filter-tabs { display: flex; background: var(--glass-bg); border-radius: var(--border-radius); padding: 4px; border: 1px solid var(--border-thin); box-shadow: var(--shadow-sharp); }
         .filter-tab { padding: 8px 16px; border-radius: var(--border-radius-sm); border: none; background: transparent; color: var(--text-secondary); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; }
-        .filter-tab:hover { color: var(--text-primary); background: var(--hover-bg); }
+        .filter-tab:hover { color: var(--text-primary); background: var(--hover-bg); transform: scale(1.05); }
         .filter-tab.active { background: var(--active-bg); color: var(--accent-yellow); }
         .view-options { display: flex; align-items: center; gap: 12px; }
-        .sort-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: var(--border-radius); border: 1px solid var(--border-thin); background: var(--glass-bg); color: var(--text-primary); font-size: 14px; cursor: pointer; transition: all 0.2s ease; box-shadow: var(--shadow-sharp); }
-        .sort-btn:hover { border-color: var(--accent-yellow); box-shadow: 0 2px 6px rgba(var(--accent-yellow-rgb), 0.15); transform: translateY(-1px); }
-        .goals-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
+        .sort-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: var(--border-radius); border: 1px solid var(--border-thin); background: var(--glass-bg); color: var(--text-primary); font-size: 14px; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .sort-btn:hover { transform: scale(1.05); box-shadow: 0 2px 6px rgba(var(--accent-yellow-rgb), 0.15); border-color: var(--accent-yellow); }
+        .goals-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; position: relative; }
         .category-section { display: flex; flex-direction: column; gap: 16px; }
         .category-header { display: flex; align-items: center; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-divider); }
         .category-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: var(--border-radius); transition: transform 0.2s ease; }
@@ -562,15 +756,31 @@ export default function Goals() {
         .category-title { font-size: 16px; font-weight: 600; color: var(--text-primary); margin: 0; flex: 1; }
         .category-count { background: var(--glass-bg); color: var(--text-secondary); font-size: 13px; font-weight: 500; padding: 2px 8px; border-radius: 12px; border: 1px solid var(--border-thin); }
         .goals-list { display: flex; flex-direction: column; gap: 16px; }
-        .goal-card { background: var(--glass-card-bg); border-radius: var(--border-radius); border: 1px solid var(--border-thin); padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow); transition: all 0.3s ease; cursor: pointer; animation: fadeIn 0.3s ease-in; }
-        .goal-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: var(--border-hover); }
+        .goal-card { position: relative; background: var(--glass-card-bg); border-radius: var(--border-radius); border: 1px solid var(--border-thin); padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .goal-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: var(--border-hover); filter: brightness(100%); }
         .goal-card:focus { outline: 2px solid var(--accent-yellow); outline-offset: 2px; }
-        .goal-card.completed { opacity: 0.7; }
-        .goal-card.approved { border-left: 4px solid var(--accent-success); }
+        .goal-card.completed { opacity: 0.7; animation: completionGlow 0.8s ease-out; }
+        .goal-card.approved { border-left: 4px solid var(--accent-success); animation: approvalFlash 0.4s ease-out; filter: brightness(100%); }
+        .goal-card.pending { border-left: 4px solid var(--accent-cyan); filter: brightness(85%); box-shadow: 0 0 8px rgba(var(--accent-cyan-rgb), 0.3); }
+        .goal-card.skeleton { background: var(--hover-bg); border: 1px dashed var(--border-divider); position: relative; overflow: hidden; }
+        .goal-card.skeleton::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0) 100%); transform: translateX(-100%); animation: shimmer 1.5s infinite ease-in-out; z-index: 2; }
+        .pending-banner { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--accent-cyan); color: white; font-size: 12px; padding: 2px 8px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); transition: transform 0.2s ease; z-index: 3; }
+        .pending-banner:hover { animation: pendingNudge 0.4s ease; }
+        .status-updates { position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; gap: 4px; z-index: 4; }
+        .status-bubble { padding: 4px 8px; background: rgba(0, 0, 0, 0.7); color: white; font-size: 12px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); animation: bubbleFade 2s ease-in-out forwards; }
+        .skeleton-banner { width: 80px; height: 16px; background: var(--border-thin); border-radius: 12px; position: relative; z-index: 3; }
+        .skeleton-title { width: 70%; height: 16px; background: var(--border-thin); border-radius: 4px; position: relative; z-index: 3; }
+        .skeleton-action { width: 28px; height: 28px; background: var(--border-thin); border-radius: 50%; position: relative; z-index: 3; }
+        .skeleton-description { width: 90%; height: 14px; background: var(--border-thin); border-radius: 4px; position: relative; z-index: 3; }
+        .skeleton-numbers { width: 50px; height: 14px; background: var(--border-thin); border-radius: 4px; position: relative; z-index: 3; }
+        .skeleton-percentage { width: 30px; height: 14px; background: var(--border-thin); border-radius: 4px; position: relative; z-index: 3; }
+        .skeleton-progress-bar { width: 100%; height: 8px; background: var(--border-thin); border-radius: 4px; position: relative; z-index: 3; }
+        .skeleton-deadline { width: 80px; height: 13px; background: var(--border-thin); border-radius: 4px; position: relative; z-index: 3; }
+        .skeleton-actions { width: 80px; height: 26px; background: var(--border-thin); border-radius: 50px; position: relative; z-index: 3; }
         .goal-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
         .goal-title { margin: 0; font-size: 16px; font-weight: 600; color: var(--text-primary); line-height: 1.4; }
-        .action-button { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--text-tertiary); cursor: pointer; border-radius: 50%; padding: 0; transition: all 0.2s ease; flex-shrink: 0; }
-        .action-button:hover { background: var(--hover-bg); color: var(--text-primary); }
+        .action-button { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--text-tertiary); cursor: pointer; border-radius: 50%; padding: 0; transition: transform 0.2s ease, background 0.2s ease; }
+        .action-button:hover { transform: scale(1.1); background: var(--hover-bg); color: var(--text-primary); }
         .goal-description { margin: 0; font-size: 14px; color: var(--text-secondary); line-height: 1.4; }
         .goal-progress { display: flex; flex-direction: column; gap: 6px; }
         .progress-info { display: flex; justify-content: space-between; align-items: center; }
@@ -580,24 +790,32 @@ export default function Goals() {
         .progress-percentage { font-size: 14px; font-weight: 600; color: var(--text-primary); }
         .progress-bar-container { height: 8px; background: var(--hover-bg); border-radius: 4px; overflow: hidden; position: relative; }
         .progress-bar { height: 100%; border-radius: 4px; transition: width 0.6s ease-out; position: relative; }
+        .progress-bar.updated { animation: progressPulse 0.3s ease-out; }
         .progress-check { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); color: white; }
         .goal-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-divider); padding-top: 12px; margin-top: 4px; }
         .goal-deadline { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-tertiary); }
         .deadline-icon { color: var(--text-tertiary); }
         .goal-actions { display: flex; gap: 8px; }
-        .action-icon-btn { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--glass-bg); border: 1px solid var(--border-thin); color: var(--text-tertiary); cursor: pointer; transition: all 0.2s ease; padding: 0; }
-        .action-icon-btn:hover { transform: translateY(-2px); color: var(--text-primary); border-color: var(--border-hover); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); }
-        .action-icon-btn.delete:hover { color: var(--accent-red); border-color: var(--accent-red); }
-        .loading-section { display: flex; align-items: center; gap: 8px; padding: 12px; background: var(--glass-card-bg); border-radius: var(--border-radius); border: 1px solid var(--border-thin); color: var(--text-secondary); font-size: 14px; animation: fadeIn 0.3s ease-in; }
-        .loading-icon { animation: spin 1.5s linear infinite; color: var(--accent-yellow); }
-        .add-category-goal { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; border-radius: var(--border-radius); border: 1px dashed var(--border-divider); background: var(--hover-bg); color: var(--text-secondary); font-size: 14px; cursor: pointer; transition: all 0.2s ease; }
-        .add-category-goal:hover { background: var(--active-bg); color: var(--text-primary); border-color: var(--border-hover); transform: translateY(-1px); }
+        .action-icon-btn { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--glass-bg); border: 1px solid var(--border-thin); color: var(--text-tertiary); cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease, width 0.2s ease, padding 0.2s ease, background 0.2s ease; position: relative; overflow: hidden; }
+        .action-icon-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .action-icon-btn .icon { transition: opacity 0.2s ease; }
+        .action-icon-btn .label { position: absolute; opacity: 0; font-size: 12px; font-weight: 500; transition: opacity 0.2s ease; }
+        .action-icon-btn:hover:not(:disabled) { transform: scale(1.1); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); width: auto; padding: 0 8px; }
+        .action-icon-btn:hover:not(:disabled) .icon { opacity: 0; }
+        .action-icon-btn:hover:not(:disabled) .label { opacity: 1; }
+        .action-icon-btn.approve { background: rgba(var(--accent-success-rgb), 0.1); }
+        .action-icon-btn.approve:hover:not(:disabled) { color: var(--accent-success); border-color: var(--accent-success); background: rgba(var(--accent-success-rgb), 0.2); }
+        .action-icon-btn.reject { background: rgba(var(--accent-red-rgb), 0.1); }
+        .action-icon-btn.reject:hover:not(:disabled) { color: var(--accent-red); border-color: var(--accent-red); background: rgba(var(--accent-red-rgb), 0.2); }
+        .action-icon-btn.delete:hover:not(:disabled) { color: var(--accent-red); border-color: var(--accent-red); }
+        .add-category-goal { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; border-radius: var(--border-radius); border: 1px dashed var(--border-divider); background: var(--hover-bg); color: var(--text-secondary); font-size: 14px; cursor: pointer; transition: transform 0.2s ease, background 0.2s ease; }
+        .add-category-goal:hover { transform: scale(1.05); background: var(--active-bg); color: var(--text-primary); border-color: var(--border-hover); }
         .empty-state { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 64px; text-align: center; color: var(--text-tertiary); gap: 16px; background: var(--glass-card-bg); border-radius: var(--border-radius); border: 1px solid var(--border-thin); animation: fadeIn 0.5s ease-in; }
         .empty-icon { opacity: 0.5; }
         .empty-state h3 { margin: 0; font-size: 18px; color: var(--text-secondary); }
         .empty-state p { margin: 0; font-size: 14px; }
-        .reset-filter-btn { margin-top: 16px; padding: 8px 16px; border-radius: var(--border-radius); background: var(--accent-yellow); color: white; border: none; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; }
-        .reset-filter-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(var(--accent-yellow-rgb), 0.3); }
+        .reset-filter-btn { margin-top: 16px; padding: 8px 16px; border-radius: var(--border-radius); background: var(--accent-yellow); color: white; border: none; font-size: 14px; font-weight: 500; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .reset-filter-btn:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(var(--accent-yellow-rgb), 0.3); }
         @media (max-width: 768px) {
           .header-actions { flex-direction: column; width: 100%; }
           .refresh-goals-btn, .add-goal-btn { width: 100%; justify-content: center; }
@@ -606,6 +824,7 @@ export default function Goals() {
           .view-options { align-self: flex-end; }
           .goals-grid { grid-template-columns: 1fr; }
           .add-goal-form { padding: 16px; }
+          .pending-banner, .status-bubble { font-size: 10px; padding: 2px 6px; }
         }
       `}</style>
     </section>
