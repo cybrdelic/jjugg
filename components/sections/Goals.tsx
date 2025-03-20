@@ -89,7 +89,11 @@ export default function Goals() {
 
   const addStatusUpdate = (message: string, goalId: string | null) => {
     const newId = `${goalId || 'global'}-${Date.now()}`;
-    setStatusUpdates(prev => [...prev, { id: newId, message, goalId }]);
+    setStatusUpdates(prev => {
+      const isDuplicate = prev.some(update => update.message === message && update.goalId === goalId);
+      if (isDuplicate) return prev;
+      return [...prev, { id: newId, message, goalId }];
+    });
     setTimeout(() => {
       setStatusUpdates(prev => prev.filter(update => update.id !== newId));
     }, 2000);
@@ -99,6 +103,8 @@ export default function Goals() {
     setIsFetchingNewGoals(true);
     setError(null);
     if (hasShownOnboarding) addStatusUpdate("Fetching new suggestions...", null);
+
+    setMonthlyGoals(prevGoals => prevGoals.filter(goal => goal.isApproved));
 
     try {
       const jobApplicationHistory = {
@@ -194,9 +200,9 @@ export default function Goals() {
       }));
 
       setMonthlyGoals(prevGoals => {
-        const existingApprovedGoals = prevGoals.filter(goal => goal.isApproved && !goal.isRejected);
-        const uniqueNewGoals = formattedNewGoals.filter(goal => !prevGoals.some(prev => prev.id === goal.id));
-        return [...existingApprovedGoals, ...uniqueNewGoals].sort((a, b) => categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category));
+        const approvedGoalsOnly = prevGoals.filter(goal => goal.isApproved);
+        const updatedGoals = [...approvedGoalsOnly, ...formattedNewGoals];
+        return updatedGoals.sort((a, b) => categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category));
       });
     } catch (err) {
       console.error("Error generating goals:", err);
@@ -261,9 +267,9 @@ export default function Goals() {
           }
         ];
         setMonthlyGoals(prevGoals => {
-          const existingApprovedGoals = prevGoals.filter(goal => goal.isApproved && !goal.isRejected);
-          const uniqueFallbackGoals = fallbackGoals.filter(fallback => !prevGoals.some(prev => prev.id === fallback.id));
-          return [...existingApprovedGoals, ...uniqueFallbackGoals].sort((a, b) => categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category));
+          const approvedGoalsOnly = prevGoals.filter(goal => goal.isApproved);
+          const updatedGoals = [...approvedGoalsOnly, ...fallbackGoals];
+          return updatedGoals.sort((a, b) => categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category));
         });
       }
     } finally {
@@ -310,26 +316,34 @@ export default function Goals() {
       isRejected: false,
       isAIGenerated: false
     };
-    setMonthlyGoals(prevGoals => [...prevGoals, newGoalData].sort((a, b) => categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category)));
+    setMonthlyGoals(prevGoals => {
+      const existingIds = new Set(prevGoals.map(g => g.id));
+      if (existingIds.has(newGoalData.id)) return prevGoals;
+      const updatedGoals = [...prevGoals, newGoalData];
+      return updatedGoals.sort((a, b) => categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category));
+    });
     setNewGoal({ title: '', description: '', category: 'applications', current: 0, target: 1, deadline: '' });
     setShowAddForm(false);
     addStatusUpdate("Goal Added!", newGoalData.id);
   };
 
   const handleIncrementProgress = (goalId: string) => {
-    setMonthlyGoals(prevGoals =>
-      prevGoals.map(goal => {
+    setMonthlyGoals(prevGoals => {
+      return prevGoals.map(goal => {
         if (goal.id === goalId && !goal.isCompleted && goal.current < goal.target) {
           const newCurrent = goal.current + 1;
           const newProgress = calculateProgress(newCurrent, goal.target);
           const isCompleted = newCurrent >= goal.target;
-          if (isCompleted) addStatusUpdate(`Completed!`, goalId);
-          else addStatusUpdate(`Progress +1`, goalId);
+          if (isCompleted) {
+            addStatusUpdate(`Completed!`, goalId);
+          } else {
+            addStatusUpdate(`Progress +1`, goalId);
+          }
           return { ...goal, current: newCurrent, progress: newProgress, isCompleted };
         }
         return goal;
-      })
-    );
+      });
+    });
   };
 
   const handleDecrementProgress = (goalId: string) => {
@@ -401,10 +415,22 @@ export default function Goals() {
     return 'var(--accent-red)';
   };
 
+  const hasGlobalUpdate = statusUpdates.some(update => !update.goalId);
+
   return (
     <section className="goals-section reveal-element" aria-label="Goals and Milestones">
       <CardHeader
-        title="Goals & Milestones"
+        title={
+          <div className="header-title-wrapper">
+            <span className={hasGlobalUpdate ? 'pulsing' : ''}>Goals & Milestones</span>
+            {statusUpdates.filter(update => !update.goalId).map(update => (
+              <span key={update.id} className="global-status-text" role="status">
+                {update.message}
+                <div className="button-shine"></div>
+              </span>
+            ))}
+          </div>
+        }
         subtitle="Track your job search progress and achievements"
         accentColor="var(--accent-yellow)"
         variant="default"
@@ -430,14 +456,6 @@ export default function Goals() {
           </button>
         </div>
       </CardHeader>
-
-      <div className="global-status-bar" role="status">
-        {statusUpdates.filter(update => !update.goalId).map(update => (
-          <div key={update.id} className="global-status">
-            {update.message}
-          </div>
-        ))}
-      </div>
 
       <>
         {error && <div className="error-message" role="alert">{error}</div>}
@@ -545,7 +563,9 @@ export default function Goals() {
                     {getCategoryIcon(category)}
                   </div>
                   <h3 className="category-title">{getCategoryLabel(category)}</h3>
-                  <div className="category-count">{goals.length + (isFetchingNewGoals ? 1 : 0)}</div>
+                  <div className="category-count">
+                    {isFetchingNewGoals ? goals.length + 1 : goals.length}
+                  </div>
                 </div>
                 <div className="goals-list">
                   {goals.map(goal => (
@@ -605,8 +625,7 @@ export default function Goals() {
                                 onClick={(e) => { e.stopPropagation(); handleApproveGoal(goal.id); }}
                                 aria-label={`Approve ${goal.title}`}
                               >
-                                <CheckCircle size={14} className="icon" />
-                                <span className="label">Approve</span>
+                                <CheckCircle size={14} />
                               </button>
                               <button
                                 className="action-icon-btn reject"
@@ -614,8 +633,7 @@ export default function Goals() {
                                 onClick={(e) => { e.stopPropagation(); handleRejectGoal(goal.id); }}
                                 aria-label={`Reject ${goal.title}`}
                               >
-                                <XCircle size={14} className="icon" />
-                                <span className="label">Reject</span>
+                                <XCircle size={14} />
                               </button>
                             </>
                           )}
@@ -662,7 +680,7 @@ export default function Goals() {
                       </div>
                     </div>
                   ))}
-                  {isFetchingNewGoals && (
+                  {isFetchingNewGoals && categoryOrder.includes(category) && (
                     <div className="goal-card skeleton" aria-hidden="true">
                       <div className="skeleton-banner"></div>
                       <div className="goal-header">
@@ -719,15 +737,37 @@ export default function Goals() {
         .add-goal-btn:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(var(--accent-yellow-rgb), 0.3); }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes approvalFlash { 0% { border-color: var(--accent-success); box-shadow: 0 0 8px rgba(var(--accent-success-rgb), 0.5); } 100% { border-color: var(--accent-success); box-shadow: 0 0 0 rgba(var(--accent-success-rgb), 0); } }
+        @keyframes approvalFlash { 0% { border-color: var(--accent-success); } 100% { border-color: var(--accent-success); } }
         @keyframes progressPulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
-        @keyframes completionGlow { 0% { box-shadow: 0 0 12px rgba(var(--accent-success-rgb), 0.6); } 100% { box-shadow: 0 0 0 rgba(var(--accent-success-rgb), 0); } }
+        @keyframes completionGlow { 0% { opacity: 0.9; } 100% { opacity: 0.7; } }
         @keyframes pendingNudge { 0% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-2px); } 100% { transform: translateX(-50%) translateY(0); } }
         @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(150%); } }
         @keyframes bubbleFade { 0% { opacity: 0; transform: scale(0.8); } 20% { opacity: 1; transform: scale(1); } 80% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.8); } }
-        @keyframes statusBarFade { 0% { opacity: 0; height: 0; } 20% { opacity: 1; height: 24px; } 80% { opacity: 1; height: 24px; } 100% { opacity: 0; height: 0; } }
-        .global-status-bar { margin-bottom: 16px; min-height: 0; transition: all 0.2s ease; overflow: hidden; }
-        .global-status { padding: 4px 12px; background: rgba(var(--accent-yellow-rgb), 0.9); color: var(--text-primary); font-size: 14px; text-align: center; border-radius: var(--border-radius); animation: statusBarFade 2s ease-in-out forwards; }
+        @keyframes pulseUnderline { 0% { box-shadow: 0 2px 0 var(--accent-yellow); } 50% { box-shadow: 0 4px 0 var(--accent-yellow); } 100% { box-shadow: 0 2px 0 var(--accent-yellow); } }
+        @keyframes statusTextFade { 0% { opacity: 0; transform: translateX(10px); } 20% { opacity: 1; transform: translateX(0); } 80% { opacity: 1; transform: translateX(0); } 100% { opacity: 0; transform: translateX(-10px); } }
+        .header-title-wrapper { display: flex; align-items: center; gap: 8px; position: relative; }
+        .pulsing { position: relative; animation: pulseUnderline 1s ease-in-out infinite; }
+        .global-status-text {
+          font-size: 14px;
+          color: var(--text-secondary);
+          animation: statusTextFade 2s ease-in-out forwards;
+          margin-left: 8px;
+          position: relative;
+          overflow: hidden;
+          display: inline-block;
+        }
+        .global-status-text .button-shine {
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+          transform: skewX(-20deg);
+          animation: shimmer 1s ease-in-out forwards;
+          z-index: 0;
+          pointer-events: none;
+        }
         .error-message { padding: 12px 16px; background: rgba(var(--accent-red-rgb), 0.1); color: var(--accent-red); border-radius: var(--border-radius); border: 1px solid var(--accent-red); margin-bottom: 16px; font-size: 14px; animation: fadeIn 0.3s ease-in; }
         .add-goal-form { display: flex; flex-direction: column; gap: 12px; padding: 20px; background: var(--glass-card-bg); border-radius: var(--border-radius); border: 1px solid var(--border-thin); margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); animation: slideIn 0.3s ease-out; position: relative; z-index: 10; }
         .add-goal-form input, .add-goal-form select { padding: 10px; border-radius: var(--border-radius); border: 1px solid var(--border-thin); font-size: 14px; transition: border-color 0.2s ease; }
@@ -756,14 +796,23 @@ export default function Goals() {
         .category-title { font-size: 16px; font-weight: 600; color: var(--text-primary); margin: 0; flex: 1; }
         .category-count { background: var(--glass-bg); color: var(--text-secondary); font-size: 13px; font-weight: 500; padding: 2px 8px; border-radius: 12px; border: 1px solid var(--border-thin); }
         .goals-list { display: flex; flex-direction: column; gap: 16px; }
-        .goal-card { position: relative; background: var(--glass-card-bg); border-radius: var(--border-radius); border: 1px solid var(--border-thin); padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow); transition: transform 0.2s ease, box-shadow 0.2s ease; }
-        .goal-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: var(--border-hover); filter: brightness(100%); }
+        .goal-card {
+          position: relative;
+          background: transparent;
+          border: none;
+          padding: 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          transition: transform 0.2s ease, background 0.2s ease;
+        }
+        .goal-card:hover { transform: translateY(-2px); background: rgba(255, 255, 255, 0.05); }
         .goal-card:focus { outline: 2px solid var(--accent-yellow); outline-offset: 2px; }
         .goal-card.completed { opacity: 0.7; animation: completionGlow 0.8s ease-out; }
-        .goal-card.approved { border-left: 4px solid var(--accent-success); animation: approvalFlash 0.4s ease-out; filter: brightness(100%); }
-        .goal-card.pending { border-left: 4px solid var(--accent-cyan); filter: brightness(85%); box-shadow: 0 0 8px rgba(var(--accent-cyan-rgb), 0.3); }
-        .goal-card.skeleton { background: var(--hover-bg); border: 1px dashed var(--border-divider); position: relative; overflow: hidden; }
-        .goal-card.skeleton::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0) 100%); transform: translateX(-100%); animation: shimmer 1.5s infinite ease-in-out; z-index: 2; }
+        .goal-card.approved { border-left: 4px solid var(--accent-success); animation: approvalFlash 0.4s ease-out; }
+        .goal-card.pending { border-left: 4px solid var(--accent-cyan); }
+        .goal-card.skeleton { background: transparent; border: none; position: relative; overflow: hidden; }
+        .goal-card.skeleton::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0) 100%); transform: translateX(-100%); animation: shimmer 1.5s infinite ease-in-out; z-index: 2; }
         .pending-banner { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--accent-cyan); color: white; font-size: 12px; padding: 2px 8px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); transition: transform 0.2s ease; z-index: 3; }
         .pending-banner:hover { animation: pendingNudge 0.4s ease; }
         .status-updates { position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; gap: 4px; z-index: 4; }
@@ -796,13 +845,24 @@ export default function Goals() {
         .goal-deadline { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-tertiary); }
         .deadline-icon { color: var(--text-tertiary); }
         .goal-actions { display: flex; gap: 8px; }
-        .action-icon-btn { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--glass-bg); border: 1px solid var(--border-thin); color: var(--text-tertiary); cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease, width 0.2s ease, padding 0.2s ease, background 0.2s ease; position: relative; overflow: hidden; }
+        .action-icon-btn {
+          width: 26px;
+          height: 26px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          background: var(--glass-bg);
+          border: 1px solid var(--border-thin);
+          color: var(--text-tertiary);
+          cursor: pointer;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
         .action-icon-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .action-icon-btn .icon { transition: opacity 0.2s ease; }
-        .action-icon-btn .label { position: absolute; opacity: 0; font-size: 12px; font-weight: 500; transition: opacity 0.2s ease; }
-        .action-icon-btn:hover:not(:disabled) { transform: scale(1.1); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); width: auto; padding: 0 8px; }
-        .action-icon-btn:hover:not(:disabled) .icon { opacity: 0; }
-        .action-icon-btn:hover:not(:disabled) .label { opacity: 1; }
+        .action-icon-btn:hover:not(:disabled) {
+          transform: scale(1.1);
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
         .action-icon-btn.approve { background: rgba(var(--accent-success-rgb), 0.1); }
         .action-icon-btn.approve:hover:not(:disabled) { color: var(--accent-success); border-color: var(--accent-success); background: rgba(var(--accent-success-rgb), 0.2); }
         .action-icon-btn.reject { background: rgba(var(--accent-red-rgb), 0.1); }
@@ -825,6 +885,8 @@ export default function Goals() {
           .goals-grid { grid-template-columns: 1fr; }
           .add-goal-form { padding: 16px; }
           .pending-banner, .status-bubble { font-size: 10px; padding: 2px 6px; }
+          .header-title-wrapper { flex-direction: column; align-items: flex-start; gap: 4px; }
+          .global-status-text { margin-left: 0; }
         }
       `}</style>
     </section>
