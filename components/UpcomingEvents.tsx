@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Calendar, Plus, ChevronRight } from 'lucide-react';
-import ActionButton from '../components/dashboard/ActionButton';
+import ActionButton from './dashboard/ActionButton';
 
 interface Company {
   id: string;
@@ -96,14 +96,21 @@ export default function UpcomingEvents({
       </div>
 
       <div className="card-actions">
-        <button className="action-btn" onClick={onAddEvent}>
-          <Plus size={14} />
-          <span>Add Event</span>
-        </button>
-        <button className="action-btn view-all" onClick={onViewAll}>
-          <span>View All</span>
-          <ChevronRight size={14} />
-        </button>
+        <ActionButton 
+          label="Add Event" 
+          icon={Plus} 
+          variant="secondary" 
+          size="small" 
+          onClick={onAddEvent} 
+        />
+        <ActionButton 
+          label="View All" 
+          icon={ChevronRight} 
+          variant="ghost" 
+          size="small" 
+          onClick={onViewAll}
+          className="view-all" 
+        />
       </div>
 
       <style jsx>{`

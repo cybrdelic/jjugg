@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Sparkles, MoreHorizontal } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
+import ActionButton from './dashboard/ActionButton';
 
 interface CardHeaderProps {
     title: string | React.ReactNode; // Updated to accept ReactNode
@@ -106,15 +107,15 @@ const CardHeader: React.FC<CardHeaderProps> = ({
                             <span className="title-text">{title}</span>
                         )}
                         {isAiGenerated && (
-                            <button
-                                className="ai-badge"
+                            <ActionButton
+                                label="AI"
+                                icon={Sparkles}
+                                variant="secondary"
+                                size="small"
                                 onClick={handleAiRefresh}
-                                title="AI generated content - Click to refresh"
-                            >
-                                <Sparkles size={14} className="sparkle-icon" />
-                                <span className="ai-label">AI</span>
-                                <span className="ai-pulse"></span>
-                            </button>
+                                className="ai-badge-button"
+                                aria-label="AI generated content - Click to refresh"
+                            />
                         )}
                     </h2>
                     {subtitle && (
@@ -130,14 +131,15 @@ const CardHeader: React.FC<CardHeaderProps> = ({
                 <div className="header-right">
                     {children}
                     {onAction && (
-                        <button
-                            className="action-button"
+                        <ActionButton
+                            label=""
+                            icon={MoreHorizontal}
+                            variant="ghost"
+                            size="small"
                             onClick={handleAction}
                             aria-label={actionLabel || 'More actions'}
-                        >
-                            <MoreHorizontal size={18} />
-                            <span className="button-bg"></span>
-                        </button>
+                            className="card-header-action-button"
+                        />
                     )}
                 </div>
             </div>
@@ -388,37 +390,10 @@ const CardHeader: React.FC<CardHeaderProps> = ({
                     100% { opacity: 0; transform: translateX(-10px); }
                 }
 
-                .ai-badge {
-                    position: relative;
-                    display: flex;
-                    align-items: center;
-                    gap: 4px;
-                    background: ${variant === 'gradient'
-                    ? 'rgba(255, 255, 255, 0.2)'
-                    : 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(14, 165, 233, 0.1))'};
-                    border: 1px solid ${variant === 'gradient'
-                    ? 'rgba(255, 255, 255, 0.3)'
-                    : 'rgba(139, 92, 246, 0.15)'};
-                    border-radius: 12px;
-                    padding: 3px 8px;
-                    font-size: 0.75rem;
-                    cursor: pointer;
-                    transition: all var(--transition-normal) var(--easing-standard);
-                    overflow: hidden;
-                }
-
-                .ai-badge:hover {
-                    transform: translateY(-1px) scale(1.05);
-                    background: ${variant === 'gradient'
-                    ? 'rgba(255, 255, 255, 0.25)'
-                    : 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(14, 165, 233, 0.15))'};
-                    box-shadow: ${variant === 'gradient'
-                    ? '0 2px 8px rgba(0, 0, 0, 0.15)'
-                    : '0 2px 8px rgba(139, 92, 246, 0.15)'};
-                }
-
-                .ai-badge:active {
-                    transform: translateY(0) scale(0.98);
+                /* Old ai-badge styles replaced by the ActionButton ai-variant */
+                .ai-badge-button {
+                    margin-left: 8px;
+                    max-height: 24px;
                 }
 
                 .sparkle-icon {

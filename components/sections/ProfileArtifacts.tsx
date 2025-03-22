@@ -8,6 +8,7 @@ import {
   Code, Award, Star
 } from 'lucide-react';
 import CardHeader from '../CardHeader';
+import TabButton, { TabGroup } from '../TabButton';
 
 interface Resume {
   id: string;
@@ -211,29 +212,30 @@ export default function ProfileArtifacts() {
       </CardHeader>
 
       <div className="tabs-container reveal-element">
-        <div className="tabs">
-          <button
-            className={`tab ${activeTab === 'resumes' ? 'active' : ''}`}
-            onClick={() => setActiveTab('resumes')}
-          >
-            <FileText size={16} />
-            <span>Resumes</span>
-          </button>
-          <button
-            className={`tab ${activeTab === 'cover-letters' ? 'active' : ''}`}
-            onClick={() => setActiveTab('cover-letters')}
-          >
-            <Briefcase size={16} />
-            <span>Cover Letters</span>
-          </button>
-          <button
-            className={`tab ${activeTab === 'portfolio' ? 'active' : ''}`}
-            onClick={() => setActiveTab('portfolio')}
-          >
-            <Image size={16} />
-            <span>Portfolio</span>
-          </button>
-        </div>
+        <TabGroup 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab} 
+          className="tabs"
+        >
+          <TabButton
+            data-id="resumes"
+            label="Resumes"
+            icon={FileText}
+            accentColor="var(--accent-green)"
+          />
+          <TabButton
+            data-id="cover-letters"
+            label="Cover Letters"
+            icon={Briefcase}
+            accentColor="var(--accent-green)"
+          />
+          <TabButton
+            data-id="portfolio"
+            label="Portfolio"
+            icon={Image}
+            accentColor="var(--accent-green)"
+          />
+        </TabGroup>
       </div>
 
       <div className="content-container reveal-element">
@@ -538,31 +540,9 @@ export default function ProfileArtifacts() {
           display: flex;
           border-bottom: 1px solid var(--border-divider);
           margin-bottom: 24px;
-        }
-
-        .tab {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 12px 20px;
           background: transparent;
           border: none;
-          border-bottom: 2px solid transparent;
-          color: var(--text-secondary);
-          font-size: 15px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .tab:hover {
-          color: var(--text-primary);
-          background: var(--hover-bg);
-        }
-
-        .tab.active {
-          color: var(--accent-green);
-          border-bottom-color: var(--accent-green);
+          box-shadow: none;
         }
 
         .content-container {
@@ -737,12 +717,12 @@ export default function ProfileArtifacts() {
         }
 
         .add-artifact-card {
-          display: flex;
+          display: inline-flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
           gap: 12px;
-          padding: 24px;
+          padding: 16px 24px;
           border-radius: var(--border-radius);
           border: 1px dashed var(--border-divider);
           background: var(--hover-bg);
@@ -750,6 +730,8 @@ export default function ProfileArtifacts() {
           font-size: 15px;
           cursor: pointer;
           transition: all 0.2s ease;
+          align-self: flex-start;
+          margin-left: 16px;
         }
 
         .add-artifact-card:hover {

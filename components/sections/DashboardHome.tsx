@@ -10,6 +10,7 @@ import StatCard from '../dashboard/StatCard';
 import ActivityItem from '../dashboard/ActivityItem';
 import UpcomingEvent from '../dashboard/UpcomingEvent';
 import ActionButton from '../dashboard/ActionButton';
+import TabButton, { TabGroup } from '../TabButton';
 import ApplicationFunnel from '../ApplicationFunnel';
 import WeeklyActivity from '../WeeklyActivity';
 import ActionsTab from '../ActionsTab';
@@ -199,10 +200,34 @@ export default function DashboardHome() {
       </div>
 
       <div className="time-range-selector">
-        <button className={timeRange === '7d' ? 'active' : ''} onClick={() => setTimeRange('7d')}>7d</button>
-        <button className={timeRange === '30d' ? 'active' : ''} onClick={() => setTimeRange('30d')}>30d</button>
-        <button className={timeRange === '90d' ? 'active' : ''} onClick={() => setTimeRange('90d')}>90d</button>
-        <button className={timeRange === 'all' ? 'active' : ''} onClick={() => setTimeRange('all')}>All</button>
+        <ActionButton 
+          label="7d" 
+          icon={Clock} 
+          variant={timeRange === '7d' ? 'secondary' : 'ghost'} 
+          size="small" 
+          onClick={() => setTimeRange('7d')} 
+        />
+        <ActionButton 
+          label="30d" 
+          icon={Clock} 
+          variant={timeRange === '30d' ? 'secondary' : 'ghost'} 
+          size="small" 
+          onClick={() => setTimeRange('30d')} 
+        />
+        <ActionButton 
+          label="90d" 
+          icon={Clock} 
+          variant={timeRange === '90d' ? 'secondary' : 'ghost'} 
+          size="small" 
+          onClick={() => setTimeRange('90d')} 
+        />
+        <ActionButton 
+          label="All" 
+          icon={Clock} 
+          variant={timeRange === 'all' ? 'secondary' : 'ghost'} 
+          size="small" 
+          onClick={() => setTimeRange('all')} 
+        />
       </div>
 
       <div className="stats-summary">
@@ -391,18 +416,40 @@ export default function DashboardHome() {
       </div>
 
       <div className="dashboard-tabs">
-        <button className={`dashboard-tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
-          <BarChart2 size={16} /><span>Overview</span>
-        </button>
-        <button className={`dashboard-tab ${activeTab === 'actions' ? 'active' : ''}`} onClick={() => setActiveTab('actions')}>
-          <Zap size={16} /><span>Action Items</span>
-        </button>
-        <button className={`dashboard-tab ${activeTab === 'skills' ? 'active' : ''}`} onClick={() => setActiveTab('skills')}>
-          <Award size={16} /><span>Skills Analysis</span>
-        </button>
-        <button className={`dashboard-tab ${activeTab === 'activity' ? 'active' : ''}`} onClick={() => setActiveTab('activity')}>
-          <Activity size={16} /><span>Activity</span>
-        </button>
+        <TabGroup 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab} 
+          className="dashboard-tab-group"
+        >
+          <TabButton 
+            data-id="overview"
+            label="Overview" 
+            icon={BarChart2} 
+            size="medium" 
+            accentColor="var(--accent-blue)"
+          />
+          <TabButton 
+            data-id="actions"
+            label="Action Items" 
+            icon={Zap} 
+            size="medium"
+            accentColor="var(--accent-blue)"
+          />
+          <TabButton 
+            data-id="skills"
+            label="Skills Analysis" 
+            icon={Award} 
+            size="medium"
+            accentColor="var(--accent-blue)"
+          />
+          <TabButton 
+            data-id="activity"
+            label="Activity" 
+            icon={Activity} 
+            size="medium" 
+            accentColor="var(--accent-blue)"
+          />
+        </TabGroup>
       </div>
 
       {activeTab === 'overview' && (
@@ -430,8 +477,21 @@ export default function DashboardHome() {
               ))}
             </div>
             <div className="card-actions">
-              <button className="action-btn"><Plus size={14} /><span>Add Event</span></button>
-              <button className="action-btn view-all"><span>View All</span><ChevronRight size={14} /></button>
+              <ActionButton 
+                label="Add Event" 
+                icon={Plus} 
+                variant="secondary" 
+                size="small" 
+                onClick={() => console.log('Add event')}
+              />
+              <ActionButton 
+                label="View All" 
+                icon={ChevronRight} 
+                variant="ghost" 
+                size="small" 
+                onClick={() => console.log('View all events')}
+                className="view-all"
+              />
             </div>
           </div>
         </div>
@@ -525,10 +585,14 @@ export default function DashboardHome() {
         </div>
       )}
 
-      <button className="quick-actions-button">
-        <Zap size={20} className="zap-icon" />
-        <span className="button-tooltip">Quick Actions</span>
-      </button>
+      <ActionButton 
+        label="" 
+        icon={Zap} 
+        variant="primary" 
+        size="large" 
+        onClick={() => console.log('Quick actions')}
+        className="quick-actions-button"
+      />
 
       <style jsx>{`
         .dashboard-home {
@@ -884,32 +948,16 @@ export default function DashboardHome() {
         }
 
         .dashboard-tabs {
-          display: flex;
-          gap: 10px;
           margin-bottom: 20px;
           border-bottom: 1px solid var(--border-divider);
           padding-bottom: 10px;
         }
 
-        .dashboard-tab {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 10px 16px;
-          background: transparent;
+        .dashboard-tab-group {
           border: none;
-          border-radius: var(--border-radius);
-          color: var(--text-secondary);
-          font-size: 14px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s var(--easing-standard);
-          position: relative;
-        }
-
-        .dashboard-tab.active {
-          background: var(--active-bg);
-          color: var(--accent-blue);
+          box-shadow: none;
+          background: transparent;
+          margin-bottom: 8px;
         }
 
         .dashboard-grid {

@@ -53,9 +53,12 @@ const ActionButton: React.FC<ActionButtonProps> = ({
     ? colorVar.replace(')', '-rgb)') 
     : colorVar.replace('var(--accent-', 'var(--accent-').replace(')', '-rgb)');
   
+  // Special styling for AI badge button
+  const isAiBadge = className?.includes('ai-badge');
+  
   return (
     <button 
-      className={`action-button ${variant} ${size} ${isHovered ? 'hovered' : ''} ${isPressed ? 'pressed' : ''} ${disabled ? 'disabled' : ''} ${className}`}
+      className={`action-button ${variant} ${size} ${isHovered ? 'hovered' : ''} ${isPressed ? 'pressed' : ''} ${disabled ? 'disabled' : ''} ${isAiBadge ? 'ai-variant' : ''} ${className}`}
       onClick={!disabled ? onClick : undefined}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
@@ -66,8 +69,8 @@ const ActionButton: React.FC<ActionButtonProps> = ({
       onMouseUp={() => setIsPressed(false)}
       disabled={disabled}
       style={{
-        '--button-color': colorVar,
-        '--button-color-rgb': rgbVar,
+        '--button-color': isAiBadge ? 'var(--accent-purple)' : colorVar,
+        '--button-color-rgb': isAiBadge ? 'var(--accent-purple-rgb)' : rgbVar,
         '--button-height': buttonHeight
       } as React.CSSProperties}
     >
@@ -191,6 +194,42 @@ const ActionButton: React.FC<ActionButtonProps> = ({
         .button-icon {
           color: var(--primary, --secondary) ? 'white' : var(--button-color);
           transition: all 0.3s var(--easing-standard);
+        }
+        
+        /* AI variant */
+        .action-button.ai-variant {
+          background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(14, 165, 233, 0.1));
+          border: 1px solid rgba(139, 92, 246, 0.15);
+          overflow: hidden;
+        }
+        
+        .action-button.ai-variant .button-bg {
+          background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(14, 165, 233, 0.15));
+          box-shadow: 0 2px 8px rgba(139, 92, 246, 0.15);
+        }
+        
+        .action-button.ai-variant .button-icon {
+          color: var(--accent-purple);
+          animation: sparkle-pulse 2s infinite;
+        }
+        
+        .action-button.ai-variant .button-label {
+          color: var(--text-primary);
+          font-weight: 600;
+        }
+        
+        .action-button.ai-variant.hovered .button-bg {
+          background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(14, 165, 233, 0.2));
+          box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+        }
+        
+        .action-button.ai-variant.pressed .button-bg {
+          background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(14, 165, 233, 0.25));
+        }
+        
+        @keyframes sparkle-pulse {
+          0%, 100% { opacity: 0.8; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.1); filter: brightness(1.2); }
         }
         
         .button-label {

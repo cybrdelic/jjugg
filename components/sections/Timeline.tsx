@@ -8,6 +8,7 @@ import {
 import CardHeader from '../CardHeader';
 import confetti from 'canvas-confetti';
 import Modal from '../Modal';
+import TabButton, { TabGroup } from '../TabButton';
 
 interface TimelineActivity {
   id: string;
@@ -290,18 +291,22 @@ export default function Timeline() {
       </CardHeader>
 
       <div className="timeline-controls">
-        <div className="filter-tabs" role="tablist">
-          {['all', 'application', 'interview', 'email', 'call', 'note', 'status'].map(type => (
-            <button
-              key={type}
-              role="tab"
-              className={`filter-tab ${filter === type ? 'active' : ''}`}
-              onClick={() => setFilter(type as any)}
-              aria-selected={filter === type}
-            >
-              {type.charAt(0).toUpperCase() + type.slice(1)}
-            </button>
-          ))}
+        <div className="filter-container">
+          <TabGroup 
+            activeTab={filter} 
+            onTabChange={(tab) => setFilter(tab as any)} 
+            className="filter-tab-group"
+          >
+            {['all', 'application', 'interview', 'email', 'call', 'note', 'status'].map(type => (
+              <TabButton
+                key={type}
+                data-id={type}
+                label={type.charAt(0).toUpperCase() + type.slice(1)}
+                size="small"
+                accentColor="var(--accent-purple)"
+              />
+            ))}
+          </TabGroup>
         </div>
         <button
           className="sort-btn"
@@ -604,30 +609,17 @@ export default function Timeline() {
           align-items: center;
           margin: 16px 0;
         }
-        .filter-tabs {
+        .filter-container {
+          display: inline-flex;
+          align-items: center;
+        }
+        .filter-tab-group {
           display: flex;
           gap: 8px;
           flex-wrap: wrap;
-        }
-        .filter-tab {
-          padding: 6px 12px;
-          background: var(--hover-bg);
-          color: var(--text-secondary);
-          border: 1px solid var(--border-thin);
-          border-radius: var(--border-radius);
-          font-size: 13px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all var(--transition-normal) var(--easing-standard);
-        }
-        .filter-tab:hover {
-          background: var(--active-bg);
-          color: var(--text-primary);
-        }
-        .filter-tab.active {
-          background: var(--accent-purple);
-          color: var(--text-primary);
-          border-color: var(--accent-purple);
+          background: transparent;
+          border: none;
+          box-shadow: none;
         }
         .sort-btn {
           display: flex;

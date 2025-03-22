@@ -3,13 +3,15 @@
 import React, { useState, useEffect, ChangeEvent, KeyboardEvent } from 'react';
 import {
   Target, PlusCircle, ChevronDown, Calendar, TrendingUp,
-  MoreHorizontal, CheckCircle, ChevronRight, XCircle, Plus, Minus, Trash2, PieChart, Search
+  MoreHorizontal, CheckCircle, ChevronRight, XCircle, Plus, Minus, Trash2, PieChart, Search, CheckSquare, Sparkles
 } from 'lucide-react';
 import CardHeader from '../CardHeader';
 import OpenAI from 'openai';
 import confetti from 'canvas-confetti';
 import Modal from '../Modal';
 import Portal from '../Portal';
+import ActionButton from '../dashboard/ActionButton';
+import TabButton, { TabGroup } from '../TabButton';
 
 interface MonthlyGoal {
   id: string;
@@ -505,24 +507,25 @@ export default function Goals() {
         variant="default"
       >
         <div className="header-actions">
-          <button
-            className="refresh-goals-btn"
-            onClick={() => setShowContextModal(true)} // Open context modal instead of direct generation
-            title="Refresh AI-generated goals with context"
-            aria-label="Refresh goals with context"
+          <ActionButton
+            label="Refresh Goals"
+            icon={TrendingUp}
+            variant="secondary"
+            size="medium"
+            onClick={() => setShowContextModal(true)}
             disabled={isFetchingNewGoals}
-          >
-            <TrendingUp size={18} />
-            <span className="btn-text">Refresh Goals</span>
-          </button>
-          <button
-            className="add-goal-btn"
+            className="refresh-goals-btn"
+            aria-label="Refresh goals with context"
+          />
+          <ActionButton
+            label="Add Goal"
+            icon={PlusCircle}
+            variant="primary"
+            size="medium"
             onClick={() => setShowAddModal(true)}
+            className="add-goal-btn"
             aria-label="Add new goal"
-          >
-            <PlusCircle size={18} />
-            <span className="btn-text">Add Goal</span>
-          </button>
+          />
         </div>
       </CardHeader>
 
@@ -536,8 +539,24 @@ export default function Goals() {
           title="Add New Goal"
           footer={
             <div className="form-actions">
-              <button className="form-save-btn" onClick={handleAddGoal} aria-label="Save new goal">Save Goal</button>
-              <button className="form-cancel-btn" onClick={() => { setShowAddModal(false); setFormError(''); }} aria-label="Cancel">Cancel</button>
+              <ActionButton
+                label="Save Goal"
+                icon={CheckCircle}
+                variant="primary"
+                size="medium"
+                onClick={handleAddGoal}
+                className="form-save-btn"
+                aria-label="Save new goal"
+              />
+              <ActionButton
+                label="Cancel"
+                icon={XCircle}
+                variant="ghost"
+                size="medium"
+                onClick={() => { setShowAddModal(false); setFormError(''); }}
+                className="form-cancel-btn"
+                aria-label="Cancel"
+              />
             </div>
           }
         >
@@ -642,21 +661,25 @@ export default function Goals() {
           title="Provide Context for New Goals"
           footer={
             <div className="form-actions">
-              <button
-                className="form-save-btn"
+              <ActionButton
+                label="Generate Goals"
+                icon={TrendingUp}
+                variant="primary"
+                size="medium"
                 onClick={() => generateGoalsFromOpenAI()}
-                aria-label="Generate goals with context"
                 disabled={isFetchingNewGoals}
-              >
-                Generate Goals
-              </button>
-              <button
-                className="form-cancel-btn"
+                className="form-save-btn"
+                aria-label="Generate goals with context"
+              />
+              <ActionButton
+                label="Cancel"
+                icon={XCircle}
+                variant="ghost"
+                size="medium"
                 onClick={() => setShowContextModal(false)}
+                className="form-cancel-btn"
                 aria-label="Cancel"
-              >
-                Cancel
-              </button>
+              />
             </div>
           }
         >
@@ -679,47 +702,59 @@ export default function Goals() {
 
         {/* Search Bar and Controls */}
         <div className="goals-controls reveal-element">
-          <div className="search-bar">
-            <Search size={18} className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search goals..."
-              value={searchQuery}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-              aria-label="Search goals"
-            />
+          <div className="controls-top-row">
+            <div className="search-bar">
+              <Search size={18} className="search-icon" />
+              <input
+                type="text"
+                placeholder="Search goals..."
+                value={searchQuery}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+                aria-label="Search goals"
+              />
+            </div>
+            
+            <div className="view-options">
+              <ActionButton
+                label="Sort By"
+                icon={ChevronDown}
+                variant="ghost"
+                size="small"
+                onClick={() => alert('Sort functionality coming soon')}
+                className="sort-btn"
+                aria-label="Sort options (not implemented)"
+              />
+            </div>
           </div>
-          <div className="filter-tabs" role="tablist">
-            <button
-              role="tab"
-              className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
-              onClick={() => setFilter('all')}
-              aria-selected={filter === 'all'}
+          
+          <div className="filter-container">
+            <TabGroup
+              activeTab={filter}
+              onTabChange={setFilter}
+              className="filter-tab-group"
             >
-              All Goals
-            </button>
-            <button
-              role="tab"
-              className={`filter-tab ${filter === 'active' ? 'active' : ''}`}
-              onClick={() => setFilter('active')}
-              aria-selected={filter === 'active'}
-            >
-              Active
-            </button>
-            <button
-              role="tab"
-              className={`filter-tab ${filter === 'completed' ? 'active' : ''}`}
-              onClick={() => setFilter('completed')}
-              aria-selected={filter === 'completed'}
-            >
-              Completed
-            </button>
-          </div>
-          <div className="view-options">
-            <button className="sort-btn" aria-label="Sort options (not implemented)" onClick={() => alert('Sort functionality coming soon')}>
-              <span>Sort By</span>
-              <ChevronDown size={14} />
-            </button>
+              <TabButton
+                data-id="all"
+                label="All Goals"
+                icon={Target}
+                size="small"
+                accentColor="var(--accent-yellow)"
+              />
+              <TabButton
+                data-id="active"
+                label="Active"
+                icon={CheckCircle}
+                size="small"
+                accentColor="var(--accent-yellow)"
+              />
+              <TabButton
+                data-id="completed"
+                label="Completed"
+                icon={CheckSquare}
+                size="small"
+                accentColor="var(--accent-yellow)"
+              />
+            </TabGroup>
           </div>
         </div>
 
@@ -764,9 +799,15 @@ export default function Goals() {
                           ))}
                         </div>
                         {!goal.isApproved && !goal.isRejected && goal.isAIGenerated && (
-                          <div className="pending-banner" aria-label="AI suggested">
-                            AI Suggested
-                          </div>
+                          <ActionButton
+                            label="AI Suggested"
+                            icon={Sparkles}
+                            variant="ghost"
+                            size="small"
+                            onClick={(e) => { e.stopPropagation(); handleApproveGoal(goal.id); }}
+                            className="ai-badge-button pending-banner"
+                            aria-label="AI suggested goal - Click to approve"
+                          />
                         )}
                         <div className="goal-header">
                           <h4 className="goal-title">
@@ -775,9 +816,15 @@ export default function Goals() {
                             )}
                             {goal.title}
                           </h4>
-                          <button className="action-button" aria-label="More options" onClick={() => alert('More options coming soon')}>
-                            <MoreHorizontal size={16} />
-                          </button>
+                          <ActionButton
+                            label=""
+                            icon={MoreHorizontal}
+                            variant="ghost"
+                            size="small"
+                            onClick={(e) => { e.stopPropagation(); alert('More options coming soon'); }}
+                            className="action-button"
+                            aria-label="More options"
+                          />
                         </div>
                         {goal.description && <p className="goal-description">{goal.description}</p>}
                         <div className="goal-progress">
@@ -803,62 +850,68 @@ export default function Goals() {
                           <div className="goal-actions">
                             {!goal.isApproved && !goal.isRejected && (
                               <>
-                                <button
-                                  className="action-icon-btn approve"
-                                  title="Approve this goal"
+                                <ActionButton
+                                  label=""
+                                  icon={CheckCircle}
+                                  variant="secondary"
+                                  size="small"
                                   onClick={(e) => { e.stopPropagation(); handleApproveGoal(goal.id); }}
+                                  className="action-icon-btn approve"
                                   aria-label={`Approve ${goal.title}`}
-                                >
-                                  <CheckCircle size={14} />
-                                </button>
-                                <button
-                                  className="action-icon-btn reject"
-                                  title="Reject this goal"
+                                />
+                                <ActionButton
+                                  label=""
+                                  icon={XCircle}
+                                  variant="danger"
+                                  size="small"
                                   onClick={(e) => { e.stopPropagation(); handleRejectGoal(goal.id); }}
+                                  className="action-icon-btn reject"
                                   aria-label={`Reject ${goal.title}`}
-                                >
-                                  <XCircle size={14} />
-                                </button>
+                                />
                               </>
                             )}
                             {goal.isApproved && !goal.isCompleted ? (
                               <>
-                                <button
-                                  className="action-icon-btn"
-                                  title="Decrease progress"
+                                <ActionButton
+                                  label=""
+                                  icon={Minus}
+                                  variant="ghost"
+                                  size="small"
                                   onClick={(e) => { e.stopPropagation(); handleDecrementProgress(goal.id); }}
+                                  className="action-icon-btn"
                                   aria-label={`Decrease progress for ${goal.title}`}
                                   disabled={goal.current === 0}
-                                >
-                                  <Minus size={14} />
-                                </button>
-                                <button
-                                  className="action-icon-btn"
-                                  title="Increase progress"
+                                />
+                                <ActionButton
+                                  label=""
+                                  icon={Plus}
+                                  variant="ghost"
+                                  size="small"
                                   onClick={(e) => { e.stopPropagation(); handleIncrementProgress(goal.id); }}
+                                  className="action-icon-btn"
                                   aria-label={`Increase progress for ${goal.title}`}
                                   disabled={goal.current >= goal.target}
-                                >
-                                  <Plus size={14} />
-                                </button>
-                                <button
-                                  className="action-icon-btn"
-                                  title="Mark as complete"
+                                />
+                                <ActionButton
+                                  label=""
+                                  icon={CheckCircle}
+                                  variant="secondary"
+                                  size="small"
                                   onClick={(e) => { e.stopPropagation(); handleMarkComplete(goal.id); }}
+                                  className="action-icon-btn"
                                   aria-label={`Mark ${goal.title} as complete`}
-                                >
-                                  <CheckCircle size={14} />
-                                </button>
+                                />
                               </>
                             ) : goal.isCompleted && (
-                              <button
-                                className="action-icon-btn delete"
-                                title="Delete goal"
+                              <ActionButton
+                                label=""
+                                icon={Trash2}
+                                variant="danger"
+                                size="small"
                                 onClick={(e) => { e.stopPropagation(); handleDeleteGoal(goal.id); }}
+                                className="action-icon-btn delete"
                                 aria-label={`Delete ${goal.title}`}
-                              >
-                                <Trash2 size={14} />
-                              </button>
+                              />
                             )}
                           </div>
                         </div>
@@ -891,7 +944,7 @@ export default function Goals() {
                       aria-label={`Add new ${getCategoryLabel(category)} goal`}
                     >
                       <PlusCircle size={16} />
-                      <span>Add {getCategoryLabel(category)} Goal</span>
+                      <span>Add Goal</span>
                     </button>
                   </div>
                 )}
@@ -903,19 +956,27 @@ export default function Goals() {
               <Target size={48} className="empty-icon" aria-hidden="true" />
               <h3>No goals found</h3>
               <p>No goals match your current filter or search criteria</p>
-              <button className="reset-filter-btn" onClick={() => { setFilter('all'); setSearchQuery(''); }} aria-label="Reset filters and search">
-                Reset Filters
-              </button>
+              <ActionButton
+                label="Reset Filters"
+                icon={Target}
+                variant="primary"
+                size="medium"
+                onClick={() => { setFilter('all'); setSearchQuery(''); }}
+                className="reset-filter-btn"
+                aria-label="Reset filters and search"
+              />
             </div>
           )}
         </div>
-        <button
-          className="fab-add-goal"
+        <ActionButton
+          label=""
+          icon={PlusCircle}
+          variant="primary"
+          size="large"
           onClick={() => setShowAddModal(true)}
+          className="fab-add-goal"
           aria-label="Quick add new goal"
-        >
-          <PlusCircle size={24} />
-        </button>
+        />
       </>
 
       <style jsx>{`
@@ -1018,7 +1079,9 @@ export default function Goals() {
           background: var(--active-bg);
           border-color: var(--border-hover);
         }
-        .goals-controls { display: flex; flex-direction: column; gap: 16px; margin-bottom: 8px; }
+        .goals-controls { display: flex; flex-direction: column; gap: 16px; margin-bottom: 16px; }
+        .controls-top-row { display: flex; justify-content: space-between; width: 100%; }
+        .filter-container { display: inline-flex; align-items: center; }
         .search-bar {
           position: relative;
           display: flex;
@@ -1041,10 +1104,7 @@ export default function Goals() {
         }
         .search-bar input::placeholder { color: var(--text-tertiary); }
         .search-icon { color: var(--text-secondary); }
-        .filter-tabs { display: flex; background: var(--glass-bg); border-radius: var(--border-radius); padding: 4px; border: 1px solid var(--border-thin); box-shadow: var(--shadow-sharp); }
-        .filter-tab { padding: 8px 16px; border-radius: var(--border-radius-sm); border: none; background: transparent; color: var(--text-secondary); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; }
-        .filter-tab:hover { color: var(--text-primary); background: var(--hover-bg); transform: scale(1.05); }
-        .filter-tab.active { background: var(--active-bg); color: var(--accent-yellow); }
+        .filter-tab-group { background: transparent; border: none; box-shadow: none; }
         .view-options { display: flex; align-items: center; gap: 12px; align-self: flex-end; }
         .sort-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: var(--border-radius); border: 1px solid var(--border-thin); background: var(--glass-bg); color: var(--text-primary); font-size: 14px; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; }
         .sort-btn:hover { transform: scale(1.05); box-shadow: 0 2px 6px rgba(var(--accent-yellow-rgb), 0.15); border-color: var(--accent-yellow); }
@@ -1098,8 +1158,36 @@ export default function Goals() {
         .goal-card.pending { border-left: 4px solid var(--accent-cyan); }
         .goal-card.skeleton { background: transparent; border: none; position: relative; overflow: hidden; }
         .goal-card.skeleton::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0) 100%); transform: translateX(-100%); animation: shimmer 1.5s infinite ease-in-out; z-index: 2; }
-        .pending-banner { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--accent-cyan); color: white; font-size: 12px; padding: 2px 8px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); transition: transform 0.2s ease; z-index: 3; }
-        .pending-banner:hover { animation: pendingNudge 0.4s ease; }
+        .pending-banner { 
+          position: absolute; 
+          top: -12px; 
+          left: 50%; 
+          transform: translateX(-50%); 
+          font-size: 12px; 
+          z-index: 3; 
+          padding: 0;
+          background: none;
+          border: none;
+          box-shadow: none;
+        }
+        
+        .pending-banner.ai-badge-button {
+          max-height: 26px;
+          min-width: 110px;
+        }
+        
+        .pending-banner.ai-badge-button .button-label {
+          font-size: 11px !important;
+          white-space: nowrap;
+        }
+        
+        .pending-banner.ai-badge-button .button-content {
+          justify-content: center;
+        }
+        
+        .pending-banner:hover { 
+          transform: translateX(-50%) translateY(-2px); 
+        }
         .status-updates { position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; gap: 4px; z-index: 4; }
         .status-bubble { padding: 4px 8px; background: rgba(0, 0, 0, 0.7); color: white; font-size: 12px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); animation: bubbleFade 2s ease-in-out forwards; }
         .skeleton-banner { width: 80px; height: 16px; background: var(--border-thin); border-radius: 12px; position: relative; z-index: 3; }
@@ -1162,7 +1250,7 @@ export default function Goals() {
         .action-icon-btn.reject { background: rgba(var(--accent-red-rgb), 0.1); }
         .action-icon-btn.reject:hover:not(:disabled) { color: var(--accent-red); border-color: var(--accent-red); background: rgba(var(--accent-red-rgb), 0.2); }
         .action-icon-btn.delete:hover:not(:disabled) { color: var(--accent-red); border-color: var(--accent-red); }
-        .add-category-goal { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; border-radius: var(--border-radius); border: 1px dashed var(--border-divider); background: var(--hover-bg); color: var(--text-secondary); font-size: 14px; cursor: pointer; transition: transform 0.2s ease, background 0.2s ease; }
+        .add-category-goal { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 16px; border-radius: var(--border-radius); border: 1px dashed var(--border-divider); background: var(--hover-bg); color: var(--text-secondary); font-size: 14px; cursor: pointer; transition: transform 0.2s ease, background 0.2s ease; align-self: flex-start; }
         .add-category-goal:hover { transform: scale(1.05); background: var(--active-bg); color: var(--text-primary); border-color: var(--border-hover); }
         .empty-state { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 64px; text-align: center; color: var(--text-tertiary); gap: 16px; background: var(--glass-card-bg); border-radius: var(--border-radius); border: 1px solid var(--border-thin); animation: fadeIn 0.5s ease-in; }
         .empty-icon { opacity: 0.5; }
