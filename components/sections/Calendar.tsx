@@ -649,6 +649,20 @@ export default function Calendar() {
                                     {day && (
                                         <>
                                             <span className="day-number">{day.getDate()}</span>
+                                            <button 
+                                                className="add-day-event-btn" 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setNewEvent({
+                                                        ...newEvent,
+                                                        date: day
+                                                    });
+                                                    setIsAddEventModalOpen(true);
+                                                }}
+                                                aria-label="Add event to this day"
+                                            >
+                                                <Plus size={14} />
+                                            </button>
                                             <div className="events">
                                                 {getEventsForDay(day).slice(0, 3).map((event, idx) => (
                                                     <div
@@ -1419,6 +1433,35 @@ export default function Calendar() {
         .today .day-number {
           background: var(--accent-blue);
           color: white;
+        }
+        
+        .add-day-event-btn {
+          position: absolute;
+          top: 6px;
+          left: 6px;
+          width: 22px;
+          height: 22px;
+          background: var(--glass-bg);
+          border: 1px solid var(--border-thin);
+          border-radius: 50%;
+          color: var(--text-secondary);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          opacity: 0;
+          transition: all 0.2s ease;
+          padding: 0;
+        }
+        
+        .calendar-day:hover .add-day-event-btn {
+          opacity: 1;
+        }
+        
+        .add-day-event-btn:hover {
+          background: var(--accent-green);
+          color: white;
+          transform: scale(1.1);
         }
         
         .events {

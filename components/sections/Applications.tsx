@@ -3,7 +3,8 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import {
   PlusCircle, Grid3x3, ListFilter, SlidersHorizontal, Download, X, Clock,
   ArrowUp, ArrowDown, Calendar, User, Briefcase, CheckSquare, Users,
-  Edit2, Trash2, ChevronRight, Plus, Minus, Search, Loader2
+  Edit2, Trash2, ChevronRight, Plus, Minus, Search, Loader2, ArrowLeft, ArrowRight,
+  Smartphone, Monitor
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import CardHeader from '../CardHeader';
@@ -37,6 +38,19 @@ const getStageColor = (stage: ApplicationStage): string => {
   }
 };
 
+const getEventTypeColor = (type: string): string => {
+  switch(type.toLowerCase()) {
+    case 'phone': return 'var(--accent-blue)';
+    case 'video': return 'var(--accent-purple)';
+    case 'onsite': return 'var(--accent-green)';
+    case 'technical': return 'var(--accent-yellow)';
+    case 'final': return 'var(--accent-red)';
+    case 'screening': return 'var(--accent-purple)';
+    case 'interview': 
+    default: return 'var(--accent-blue)';
+  }
+};
+
 const getStageLabel = (stage: ApplicationStage): string =>
   stage.charAt(0).toUpperCase() + stage.slice(1);
 
@@ -66,7 +80,7 @@ export default function Applications() {
   const [isDetailModalVisible, setIsDetailModalVisible] = useState<boolean>(false);
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [visibleColumns, setVisibleColumns] = useState<string[]>([
-    'company', 'position', 'dateApplied', 'stage', 'nextInterview', 'tasks', 'contacts', 'location', 'actions'
+    'company', 'position', 'dateApplied', 'stage', 'tasks', 'location', 'salary', 'bonus'
   ]);
   const [isColumnMenuOpen, setIsColumnMenuOpen] = useState<boolean>(false);
   const [statusUpdates, setStatusUpdates] = useState<StatusUpdate[]>([]);
@@ -74,15 +88,27 @@ export default function Applications() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const [contextMenu, setContextMenu] = useState<{id: string, x: number, y: number} | null>(null);
+  const [isMobileView, setIsMobileView] = useState<boolean>(false);
   const tableRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   const ITEMS_PER_PAGE = 10;
 
+  // Check if viewport is mobile size
+  const checkMobileView = () => {
+    setIsMobileView(window.innerWidth <= 768);
+  };
+  
   useEffect(() => {
     console.log('Applications component mounted');
     setMounted(true);
     loadInitialApplications();
+    checkMobileView();
+    
+    // Add resize listener for responsive adjustments
+    window.addEventListener('resize', checkMobileView);
+    return () => window.removeEventListener('resize', checkMobileView);
   }, []);
 
   const filteredApplications = useMemo(() => {
@@ -241,13 +267,47 @@ export default function Applications() {
   const handleRowClick = (appId: string, e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
     if (
-      target.closest('.actions') ||
+      target.closest('.row-actions-menu') ||
       (isInputElement(e.target) && e.target.type === 'checkbox')
     ) {
       return;
     }
     handleOpenDetailModal(appId);
   };
+  
+  const handleContextMenu = (appId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    setContextMenu({
+      id: appId,
+      x: e.clientX,
+      y: e.clientY
+    });
+  };
+  
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (contextMenu) setContextMenu(null);
+    };
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (contextMenu) {
+        if (e.key === 'Escape') {
+          setContextMenu(null);
+        } else if (e.key === 'Tab') {
+          // Prevent focus from leaving the menu
+          e.preventDefault();
+        }
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [contextMenu]);
   const handleBulkDelete = () => {
     if (selectedRows.length === 0) return;
     if (confirm(`Are you sure you want to delete ${selectedRows.length} application(s)?`)) {
@@ -356,6 +416,13 @@ export default function Applications() {
               >
                 <Grid3x3 size={14} />
               </button>
+              <button
+                className={`control-btn responsive-toggle ${isMobileView ? 'active' : ''}`}
+                onClick={() => setIsMobileView(!isMobileView)}
+                title={isMobileView ? "Desktop View" : "Mobile View"}
+              >
+                {isMobileView ? <Monitor size={14} /> : <Smartphone size={14} />}
+              </button>
             </div>
             <div className="control-actions">
               <button
@@ -367,7 +434,7 @@ export default function Applications() {
               </button>
               {isColumnMenuOpen && (
                 <div className="column-menu">
-                  {['company', 'position', 'dateApplied', 'stage', 'nextInterview', 'tasks', 'contacts', 'location', 'actions'].map(col => (
+                  {['company', 'position', 'dateApplied', 'stage', 'tasks', 'location', 'salary', 'bonus'].map(col => (
                     <label key={col} className="column-item">
                       <input
                         type="checkbox"
@@ -383,7 +450,7 @@ export default function Applications() {
           </div>
 
           {viewMode === 'kanban' ? (
-            <div className="dashboard-grid kanban-grid">
+            <div className={`dashboard-grid kanban-grid ${isMobileView ? 'mobile-view' : ''}`}>
               {stagesOrder.map(stage => (
                 <KanbanColumn
                   key={stage}
@@ -504,14 +571,11 @@ export default function Applications() {
                         />
                       </div>
                     )}
-                    {visibleColumns.includes('nextInterview') && (
-                      <div className="header-cell"><span>Next Interview</span></div>
+                    {visibleColumns.includes('alert') && (
+                      <div className="header-cell"><span>Alerts</span></div>
                     )}
                     {visibleColumns.includes('tasks') && (
                       <div className="header-cell"><span>Tasks</span></div>
-                    )}
-                    {visibleColumns.includes('contacts') && (
-                      <div className="header-cell"><span>Contacts</span></div>
                     )}
                     {visibleColumns.includes('location') && (
                       <div className="header-cell">
@@ -525,8 +589,14 @@ export default function Applications() {
                         />
                       </div>
                     )}
-                    {visibleColumns.includes('actions') && (
-                      <div className="header-cell"><span>Actions</span></div>
+                    {visibleColumns.includes('salary') && (
+                      <div className="header-cell"><span>Salary</span></div>
+                    )}
+                    {visibleColumns.includes('bonus') && (
+                      <div className="header-cell"><span>Bonus</span></div>
+                    )}
+                    {visibleColumns.includes('benefits') && (
+                      <div className="header-cell"><span>Benefits</span></div>
                     )}
                   </div>
                   <div className="table-body">
@@ -545,9 +615,10 @@ export default function Applications() {
                         <div
                           key={app.id}
                           ref={index === visibleApplications.length - 1 ? lastRowRef : null}
-                          className={`table-row ${selectedRows.includes(app.id) ? 'selected' : ''} ${mounted ? 'animate-in' : ''}`}
+                          className={`table-row ${selectedRows.includes(app.id) ? 'selected' : ''} ${mounted ? 'animate-in' : ''} ${isMobileView ? 'mobile-view' : ''}`}
                           style={{ animationDelay: `${index * 0.05}s` }}
                           onClick={(e) => handleRowClick(app.id, e)}
+                          onContextMenu={(e) => handleContextMenu(app.id, e)}
                         >
                           <div className="status-updates">
                             {statusUpdates.filter(update => update.appId === app.id).map(update => (
@@ -555,132 +626,215 @@ export default function Applications() {
                             ))}
                           </div>
                           {visibleColumns.includes('company') && (
-                            <div className="cell">
-                              <input
-                                type="checkbox"
-                                checked={selectedRows.includes(app.id)}
-                                onChange={() => handleRowSelect(app.id)}
-                                onClick={e => e.stopPropagation()}
-                              />
-                              <span className="cell-value">{app.company.name}</span>
+                            <div className="cell" data-label="Company">
+                              <div className="checkbox-wrapper">
+                                <input
+                                  type="checkbox"
+                                  id={`checkbox-${app.id}`}
+                                  checked={selectedRows.includes(app.id)}
+                                  onChange={() => handleRowSelect(app.id)}
+                                  onClick={e => e.stopPropagation()}
+                                  className="custom-checkbox"
+                                />
+                                <label htmlFor={`checkbox-${app.id}`} className="checkbox-label"></label>
+                              </div>
+                              <div className="company-cell">
+                                {app.company.logo ? (
+                                  <img 
+                                    src={app.company.logo} 
+                                    alt={app.company.name} 
+                                    className="company-logo" 
+                                  />
+                                ) : (
+                                  <div 
+                                    className="company-logo-placeholder"
+                                    style={{ 
+                                      backgroundColor: `hsl(${app.company.name.charCodeAt(0) * 5}, 70%, 60%)` 
+                                    }}
+                                  >
+                                    {app.company.name.charAt(0).toUpperCase()}
+                                  </div>
+                                )}
+                                <span className="cell-value company-name">{app.company.name}</span>
+                              </div>
                             </div>
                           )}
                           {visibleColumns.includes('position') && (
-                            <div className="cell">
-                              <span className="cell-value">{app.position}</span>
-                              <span className="cell-tooltip">{app.jobDescription.substring(0, 50)}...</span>
+                            <div className="cell" data-label="Position">
+                              <div className="position-cell">
+                                <span className="cell-value position-title">{app.position}</span>
+                                <div className="position-description">
+                                  {app.jobDescription.substring(0, 80)}
+                                  {app.jobDescription.length > 80 && '...'}
+                                </div>
+                              </div>
                             </div>
                           )}
                           {visibleColumns.includes('dateApplied') && (
-                            <div className="cell">
+                            <div className="cell" data-label="Date Applied">
                               <Calendar size={14} className="cell-icon" />
                               <span className="cell-value">{formatDate(app.dateApplied)}</span>
                             </div>
                           )}
                           {visibleColumns.includes('stage') && (
-                            <div className="cell">
-                              <span
-                                className="stage-badge"
-                                style={{ backgroundColor: getStageColor(app.stage) }}
-                              >
-                                {getStageLabel(app.stage)}
-                              </span>
-                              <div
-                                className="progress-bar"
-                                style={{
-                                  width: `${calculateStageProgress(app.stage)}%`,
-                                  backgroundColor: getStageColor(app.stage)
-                                }}
-                              />
+                            <div className="cell" data-label="Stage">
+                              <div className="stage-container">
+                                <div
+                                  className={`stage-badge stage-${app.stage}`}
+                                  style={{ borderColor: getStageColor(app.stage) }}
+                                >
+                                  <div 
+                                    className="stage-indicator" 
+                                    style={{ backgroundColor: getStageColor(app.stage) }}
+                                  ></div>
+                                  <span className="stage-label">{getStageLabel(app.stage)}</span>
+                                </div>
+                                <div className="stage-progress-container">
+                                  <div className="stage-progress-background">
+                                    {stagesOrder.map((stage, idx) => (
+                                      <div 
+                                        key={stage} 
+                                        className={`stage-step ${stagesOrder.indexOf(app.stage) >= idx ? 'completed' : ''}`}
+                                        style={{ backgroundColor: stagesOrder.indexOf(app.stage) >= idx ? getStageColor(stage) : 'var(--border-thin)' }}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           )}
-                          {visibleColumns.includes('nextInterview') && (
-                            <div className="cell">
-                              {getNextInterview(app.interviews) ? (
-                                <>
-                                  <Clock size={14} className="cell-icon" />
-                                  <span className="cell-value">
-                                    {formatDate(getNextInterview(app.interviews)!.date)}
-                                  </span>
-                                  <span className="cell-subvalue">
-                                    {getNextInterview(app.interviews)!.type}
-                                  </span>
-                                </>
-                              ) : (
-                                <span className="cell-value muted">None</span>
-                              )}
-                            </div>
-                          )}
-                          {visibleColumns.includes('tasks') && (
-                            <div className="cell">
-                              <CheckSquare size={14} className="cell-icon" />
-                              <span className="cell-value">
-                                {(app.tasks || []).length} ({(app.tasks || []).filter(t => !t.completed).length} pending)
-                              </span>
-                            </div>
-                          )}
-                          {visibleColumns.includes('contacts') && (
-                            <div className="cell">
-                              <Users size={14} className="cell-icon" />
-                              <div className="contacts-container">
-                                {(app.contacts || []).slice(0, 2).map((contact, idx) => (
-                                  <span
-                                    key={contact.id}
-                                    className="contact-avatar"
-                                    style={{ zIndex: 2 - idx }}
-                                  >
-                                    {contact.name.charAt(0)}
-                                  </span>
-                                ))}
-                                {(app.contacts || []).length > 2 && (
-                                  <span className="contact-more">+{(app.contacts || []).length - 2}</span>
+                          {visibleColumns.includes('alert') && (
+                            <div className="cell" data-label="Alerts">
+                              <div className="alerts-cell">
+                                {getNextInterview(app.interviews) && (
+                                  <div className="alert-item interview-alert">
+                                    <Clock size={14} className="alert-icon" />
+                                    <span>{formatDate(getNextInterview(app.interviews)!.date)}</span>
+                                  </div>
+                                )}
+                                {(app.tasks || []).filter(t => !t.completed && t.dueDate && new Date(t.dueDate) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)).length > 0 && (
+                                  <div className="alert-item task-alert">
+                                    <CheckSquare size={14} className="alert-icon" />
+                                    <span>{(app.tasks || []).filter(t => !t.completed && t.dueDate && new Date(t.dueDate) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)).length} due soon</span>
+                                  </div>
+                                )}
+                                {app.stage === 'offer' && (
+                                  <div className="alert-item offer-alert">
+                                    <Briefcase size={14} className="alert-icon" />
+                                    <span>Offer pending</span>
+                                  </div>
                                 )}
                               </div>
                             </div>
                           )}
+                          {visibleColumns.includes('tasks') && (
+                            <div className="cell" data-label="Tasks">
+                              <div className="tasks-cell">
+                                <div className="tasks-count-container">
+                                  <CheckSquare size={14} className="cell-icon" />
+                                  <span className="cell-value">
+                                    {(app.tasks || []).length} total
+                                  </span>
+                                </div>
+                                <div className="tasks-progress-container">
+                                  <div className="tasks-progress-bar">
+                                    <div 
+                                      className="tasks-progress-fill" 
+                                      style={{ 
+                                        width: `${(app.tasks || []).length ? 
+                                          ((app.tasks || []).filter(t => t.completed).length / (app.tasks || []).length) * 100 : 0}%`,
+                                        backgroundColor: (app.tasks || []).filter(t => !t.completed).length > 0 ? 
+                                          'var(--accent-blue)' : 'var(--accent-green)'
+                                      }}
+                                    />
+                                  </div>
+                                  <span className="tasks-pending-count">
+                                    {(app.tasks || []).filter(t => !t.completed).length} pending
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                           {visibleColumns.includes('location') && (
-                            <div className="cell">
-                              <Briefcase size={14} className="cell-icon" />
-                              <span className="cell-value">{app.location}</span>
-                              {app.remote && <span className="remote-tag">Remote</span>}
+                            <div className="cell" data-label="Location">
+                              <div className="location-cell">
+                                <div className="location-info">
+                                  <Briefcase size={14} className="cell-icon" />
+                                  <span className="cell-value">
+                                    {app.location}
+                                    {app.remote && <span className="remote-indicator">• Remote</span>}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
                           )}
-                          {visibleColumns.includes('actions') && (
-                            <div className="cell actions">
+                          {visibleColumns.includes('salary') && (
+                            <div className="cell" data-label="Salary">
+                              <div className="compensation-cell">
+                                {app.salary ? (
+                                  <span className="comp-value">{app.salary}</span>
+                                ) : (
+                                  <span className="no-comp">Not specified</span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          {visibleColumns.includes('bonus') && (
+                            <div className="cell" data-label="Bonus">
+                              <div className="compensation-cell">
+                                {app.bonus ? (
+                                  <span className="comp-value bonus-value">{app.bonus}</span>
+                                ) : (
+                                  <span className="no-comp">None</span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          {visibleColumns.includes('benefits') && (
+                            <div className="cell" data-label="Benefits">
+                              <div className="compensation-cell">
+                                {app.benefits && app.benefits.length > 0 ? (
+                                  <div className="benefits-container">
+                                    <span className="benefits-count">{app.benefits.length}</span>
+                                    {isMobileView ? (
+                                      <div className="benefits-list">
+                                        {app.benefits.map((benefit, i) => (
+                                          <span key={i} className="benefit-tag">{benefit}</span>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <span className="benefits-value">
+                                        {app.benefits.slice(0, 1).join(', ')}
+                                        {app.benefits.length > 1 && <span className="more-indicator">+{app.benefits.length - 1}</span>}
+                                      </span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="no-comp">Not specified</span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          <div className="row-actions-menu" onClick={e => e.stopPropagation()}>
+                            <div className="row-stage-controls">
                               <button
-                                className="action-btn"
-                                onClick={(e) => { e.stopPropagation(); handleDecrementStage(app.id); }}
+                                className="stage-control-btn prev-stage"
+                                onClick={() => handleDecrementStage(app.id)}
                                 disabled={stagesOrder.indexOf(app.stage) === 0}
+                                title="Move to previous stage"
                               >
-                                <Minus size={14} />
+                                <ArrowLeft size={14} />
                               </button>
                               <button
-                                className="action-btn"
-                                onClick={(e) => { e.stopPropagation(); handleIncrementStage(app.id); }}
+                                className="stage-control-btn next-stage"
+                                onClick={() => handleIncrementStage(app.id)}
                                 disabled={stagesOrder.indexOf(app.stage) === stagesOrder.length - 1}
+                                title="Move to next stage"
                               >
-                                <Plus size={14} />
-                              </button>
-                              <button
-                                className="action-btn view"
-                                onClick={(e) => { e.stopPropagation(); handleOpenDetailModal(app.id); }}
-                              >
-                                <ChevronRight size={14} />
-                              </button>
-                              <button
-                                className="action-btn edit"
-                                onClick={(e) => { e.stopPropagation(); handleEditApplication(app.id); }}
-                              >
-                                <Edit2 size={14} />
-                              </button>
-                              <button
-                                className="action-btn delete"
-                                onClick={(e) => { e.stopPropagation(); handleDeleteApplication(app.id); }}
-                              >
-                                <Trash2 size={14} />
+                                <ArrowRight size={14} />
                               </button>
                             </div>
-                          )}
+                          </div>
                         </div>
                       ))
                     )}
@@ -726,6 +880,125 @@ export default function Applications() {
           onStageChange={(newStage) => handleStageChange(selectedAppData.id, newStage)}
         />
       )}
+      
+      {contextMenu && (
+        <div 
+          className="context-menu"
+          style={{ 
+            position: 'fixed',
+            top: `${contextMenu.y}px`,
+            left: `${contextMenu.x}px`
+          }}
+          role="menu"
+          aria-label="Application actions"
+          tabIndex={0}
+        >
+          <div 
+            className="context-menu-item" 
+            onClick={() => {
+              handleOpenDetailModal(contextMenu.id);
+              setContextMenu(null);
+            }}
+            role="menuitem"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                handleOpenDetailModal(contextMenu.id);
+                setContextMenu(null);
+              }
+            }}
+          >
+            <ChevronRight size={14} className="context-icon" />
+            <span>View Details</span>
+          </div>
+          <div 
+            className="context-menu-item" 
+            onClick={() => {
+              handleEditApplication(contextMenu.id);
+              setContextMenu(null);
+            }}
+            role="menuitem"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                handleEditApplication(contextMenu.id);
+                setContextMenu(null);
+              }
+            }}
+          >
+            <Edit2 size={14} className="context-icon" />
+            <span>Edit Application</span>
+          </div>
+          <div className="context-menu-divider"></div>
+          <div 
+            className="context-menu-item" 
+            onClick={() => {
+              const app = applicationData.find(a => a.id === contextMenu.id);
+              if (app && stagesOrder.indexOf(app.stage) > 0) {
+                handleDecrementStage(contextMenu.id);
+              }
+              setContextMenu(null);
+            }}
+            role="menuitem"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                const app = applicationData.find(a => a.id === contextMenu.id);
+                if (app && stagesOrder.indexOf(app.stage) > 0) {
+                  handleDecrementStage(contextMenu.id);
+                }
+                setContextMenu(null);
+              }
+            }}
+          >
+            <ArrowLeft size={14} className="context-icon" />
+            <span>Previous Stage</span>
+          </div>
+          <div 
+            className="context-menu-item" 
+            onClick={() => {
+              const app = applicationData.find(a => a.id === contextMenu.id);
+              if (app && stagesOrder.indexOf(app.stage) < stagesOrder.length - 1) {
+                handleIncrementStage(contextMenu.id);
+              }
+              setContextMenu(null);
+            }}
+            role="menuitem"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                const app = applicationData.find(a => a.id === contextMenu.id);
+                if (app && stagesOrder.indexOf(app.stage) < stagesOrder.length - 1) {
+                  handleIncrementStage(contextMenu.id);
+                }
+                setContextMenu(null);
+              }
+            }}
+          >
+            <ArrowRight size={14} className="context-icon" />
+            <span>Next Stage</span>
+          </div>
+          <div className="context-menu-divider"></div>
+          <div 
+            className="context-menu-item delete" 
+            onClick={() => {
+              handleDeleteApplication(contextMenu.id);
+              setContextMenu(null);
+            }}
+            role="menuitem"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                handleDeleteApplication(contextMenu.id);
+                setContextMenu(null);
+              }
+            }}
+          >
+            <Trash2 size={14} className="context-icon" />
+            <span>Delete</span>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         .applications-home {
@@ -736,6 +1009,7 @@ export default function Applications() {
           background: var(--background);
           border-radius: 8px;
           transition: all 0.3s ease;
+          --glass-bg-rgb: 255, 255, 255;
         }
 
         .applications-home.mounted {
@@ -748,20 +1022,36 @@ export default function Applications() {
           gap: 8px;
           align-items: center;
           flex-wrap: wrap;
+          margin-top: 8px;
+        }
+        
+        @media (max-width: 768px) {
+          .header-actions {
+            flex-direction: column;
+            align-items: stretch;
+          }
+          
+          .search-bar {
+            max-width: 100%;
+          }
         }
 
         .search-bar {
           display: flex;
           align-items: center;
           gap: 8px;
-          padding: 8px;
+          padding: 8px 12px;
           background: var(--glass-bg);
           border: 1px solid var(--border-thin);
           border-radius: 6px;
+          min-width: 250px;
+          flex-grow: 1;
+          max-width: 350px;
         }
 
         .search-icon {
           color: var(--text-secondary);
+          flex-shrink: 0;
         }
 
         .search-input {
@@ -769,13 +1059,13 @@ export default function Applications() {
           background: transparent;
           color: var(--text-primary);
           font-size: 14px;
-          width: 200px;
+          width: 100%;
           outline: none;
         }
 
         .filter-input {
-          width: 100px;
-          padding: 4px;
+          width: 100%;
+          padding: 4px 8px;
           font-size: 12px;
           border: 1px solid var(--border-thin);
           border-radius: 4px;
@@ -832,6 +1122,18 @@ export default function Applications() {
           color: white;
           border-color: var(--accent-blue);
         }
+        
+        .control-btn.responsive-toggle {
+          margin-left: 8px;
+          border-left: 1px solid var(--border-thin);
+          padding-left: 12px;
+        }
+        
+        @media (min-width: 768px) {
+          .control-btn.responsive-toggle {
+            display: none;
+          }
+        }
 
         .control-actions {
           margin-left: auto;
@@ -876,6 +1178,12 @@ export default function Applications() {
           overflow-x: auto;
           padding-bottom: 12px;
         }
+        
+        .kanban-grid.mobile-view {
+          grid-template-columns: 1fr;
+          overflow-y: auto;
+          max-height: calc(100vh - 200px);
+        }
 
         .table-grid {
           grid-template-columns: 1fr;
@@ -895,8 +1203,8 @@ export default function Applications() {
         }
 
         .table-header {
-          display: flex;
-          align-items: flex-start;
+          display: grid;
+          grid-template-columns: 2fr 2.5fr 1fr 1.2fr 1fr 1.5fr 1.2fr 1fr;
           padding: 10px 12px;
           border-bottom: 1px solid var(--border-divider);
           background: var(--glass-bg);
@@ -906,11 +1214,35 @@ export default function Applications() {
           font-size: 12px;
           font-weight: 600;
           color: var(--text-secondary);
+          width: 100%;
+        }
+        
+        @media (max-width: 1400px) {
+          .table-header {
+            grid-template-columns: 2fr 2.5fr 1fr 1.2fr 1fr 1.5fr 1.2fr 0;
+          }
+        }
+        
+        @media (max-width: 1200px) {
+          .table-header {
+            grid-template-columns: 2fr 2fr 1fr 1.2fr 1fr 1.5fr 0 0;
+          }
+        }
+        
+        @media (max-width: 992px) {
+          .table-header {
+            grid-template-columns: 2fr 2fr 1fr 1.2fr 0 0 0 0;
+          }
+        }
+        
+        @media (max-width: 768px) {
+          .table-header {
+            grid-template-columns: 2fr 2fr 1fr 1.2fr 0 0 0 0;
+          }
         }
 
         .header-cell {
-          flex: 1;
-          padding: 0 10px;
+          padding: 8px 10px;
           display: flex;
           flex-direction: column;
           gap: 4px;
@@ -937,16 +1269,57 @@ export default function Applications() {
         }
 
         .table-row {
-          display: flex;
+          display: grid;
+          grid-template-columns: 2fr 2.5fr 1fr 1.2fr 1fr 1.5fr 1.2fr 1fr;
+          width: 100%;
           align-items: center;
-          padding: 12px 0;
+          padding: 16px 14px;
           border-bottom: 1px solid var(--border-divider);
           background: var(--glass-bg);
-          transition: all 0.2s ease;
+          transition: all 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
           position: relative;
           opacity: 0;
           transform: translateY(10px);
           cursor: pointer;
+          border-radius: 10px;
+          margin: 6px 0;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+          overflow: hidden;
+        }
+        
+        @media (max-width: 1400px) {
+          .table-row {
+            grid-template-columns: 2fr 2.5fr 1fr 1.2fr 1fr 1.5fr 1.2fr 0;
+          }
+        }
+        
+        @media (max-width: 1200px) {
+          .table-row {
+            grid-template-columns: 2fr 2fr 1fr 1.2fr 1fr 1.5fr 0 0;
+          }
+        }
+        
+        @media (max-width: 992px) {
+          .table-row {
+            grid-template-columns: 2fr 2fr 1fr 1.2fr 0 0 0 0;
+          }
+        }
+        
+        @media (max-width: 768px) {
+          .table-row {
+            grid-template-columns: 2fr 2fr 1fr 1.2fr 0 0 0 0;
+          }
+        }
+        
+        .table-row::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 4px;
+          height: 100%;
+          background: transparent;
+          transition: all 0.2s ease;
         }
 
         .table-row:last-child {
@@ -954,17 +1327,130 @@ export default function Applications() {
         }
 
         .table-row.animate-in {
-          animation: rowEnter 0.4s ease-out forwards;
+          animation: rowEnter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
         }
 
         .table-row:hover {
           background: var(--hover-bg);
+          box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+          transform: translateY(-3px) scale(1.01);
+        }
+        
+        .table-row:hover::before {
+          background: var(--accent-blue);
         }
 
         .table-row.selected {
+          background: rgba(var(--accent-blue-rgb), 0.08);
+          box-shadow: 0 6px 15px rgba(var(--accent-blue-rgb), 0.15);
+          border: 1px solid rgba(var(--accent-blue-rgb), 0.2);
+        }
+        
+        .table-row.selected::before {
+          background: var(--accent-blue);
+        }
+        
+        /* Mobile view styles */
+        .table-row.mobile-view {
+          display: flex;
+          flex-direction: column;
+          padding: 16px;
+          gap: 10px;
+        }
+        
+        .table-row.mobile-view > div:nth-child(1) { order: 1; } /* Company */
+        .table-row.mobile-view > div:nth-child(2) { order: 2; } /* Position */
+        .table-row.mobile-view > div:nth-child(4) { order: 3; } /* Stage */
+        .table-row.mobile-view > div:nth-child(7) { order: 4; } /* Salary */
+        .table-row.mobile-view > div:nth-child(8) { order: 5; } /* Bonus */
+        .table-row.mobile-view > div:nth-child(6) { order: 6; } /* Location */
+        .table-row.mobile-view > div:nth-child(5) { order: 7; } /* Tasks */
+        .table-row.mobile-view > div:nth-child(3) { order: 8; } /* Date Applied */
+        
+        .table-row.mobile-view .cell {
+          padding: 10px;
+          width: 100%;
+          background: rgba(var(--glass-bg-rgb), 0.5);
+          border-radius: 8px;
+          border: 1px solid var(--border-thin);
+          display: flex;
+          flex-direction: column;
+        }
+        
+        .table-row.mobile-view .cell::before {
+          content: attr(data-label);
+          font-weight: 600;
+          font-size: 13px;
+          color: var(--text-secondary);
+          margin-bottom: 8px;
+          display: block;
+          border-bottom: 1px solid var(--border-thin);
+          padding-bottom: 4px;
+        }
+        
+        .table-row.mobile-view .company-cell {
+          width: 100%;
+          display: flex;
+          flex-direction: row;
+          margin-top: 8px;
+          align-items: center;
+        }
+        
+        .table-row.mobile-view .position-cell {
+          width: 100%;
+        }
+        
+        .table-row.mobile-view .checkbox-wrapper {
+          position: absolute;
+          top: 16px;
+          left: 16px;
+        }
+        
+        .table-row.mobile-view .position-title {
+          font-size: 16px;
+          margin-bottom: 8px;
+        }
+        
+        .table-row.mobile-view .stage-container {
+          align-items: center;
+        }
+        
+        .table-row.mobile-view .compensation-cell {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          gap: 10px;
+        }
+        
+        .table-row.mobile-view .alerts-cell {
+          flex-direction: row;
+          flex-wrap: wrap;
+        }
+        
+        .table-row.mobile-view .alert-item {
+          margin-right: 8px;
+        }
+        
+        .table-row.mobile-view .benefits-container {
+          display: flex;
+          flex-direction: column;
+          width: 100%;
+        }
+        
+        .table-row.mobile-view .benefits-list {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          margin-top: 8px;
+        }
+        
+        .table-row.mobile-view .benefit-tag {
           background: rgba(var(--accent-blue-rgb), 0.1);
-          border-left: 2px solid var(--accent-blue);
-          padding-left: 10px;
+          color: var(--accent-blue);
+          padding: 4px 8px;
+          border-radius: 16px;
+          font-size: 12px;
+          display: inline-block;
         }
 
         .status-updates {
@@ -987,8 +1473,7 @@ export default function Applications() {
         }
 
         .cell {
-          flex: 1;
-          padding: 0 10px;
+          padding: 8px 10px;
           display: flex;
           align-items: center;
           gap: 8px;
@@ -997,6 +1482,7 @@ export default function Applications() {
           position: relative;
           justify-content: flex-start;
           text-align: left;
+          overflow: hidden;
         }
 
         .cell-icon {
@@ -1004,17 +1490,121 @@ export default function Applications() {
           flex-shrink: 0;
         }
 
+        .checkbox-wrapper {
+          position: relative;
+          width: 18px;
+          height: 18px;
+          margin-right: 12px;
+        }
+        
+        .custom-checkbox {
+          position: absolute;
+          opacity: 0;
+          width: 0;
+          height: 0;
+        }
+        
+        .checkbox-label {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 18px;
+          height: 18px;
+          background: var(--glass-bg);
+          border: 1px solid var(--border-thin);
+          border-radius: 4px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        
+        .custom-checkbox:checked + .checkbox-label {
+          background: var(--accent-blue);
+          border-color: var(--accent-blue);
+        }
+        
+        .custom-checkbox:checked + .checkbox-label::after {
+          content: '';
+          position: absolute;
+          top: 4px;
+          left: 6px;
+          width: 5px;
+          height: 8px;
+          border: solid white;
+          border-width: 0 2px 2px 0;
+          transform: rotate(45deg);
+        }
+        
+        .company-cell {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        
+        .company-logo {
+          width: 28px;
+          height: 28px;
+          border-radius: 6px;
+          object-fit: cover;
+          border: 1px solid var(--border-thin);
+        }
+        
+        .company-logo-placeholder {
+          width: 28px;
+          height: 28px;
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-weight: 600;
+          font-size: 14px;
+        }
+        
+        .company-name {
+          font-weight: 600;
+          letter-spacing: -0.2px;
+        }
+        
+        .position-cell {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          width: 100%;
+        }
+        
+        .position-title {
+          font-weight: 600;
+          color: var(--text-primary);
+          max-width: 100%;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        
+        .position-description {
+          font-size: 12px;
+          color: var(--text-tertiary);
+          line-height: 1.3;
+          max-height: 32px;
+          overflow: hidden;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+        }
+
         .cell-value {
           font-weight: 500;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+          max-width: 100%;
         }
 
         .cell-subvalue {
           font-size: 12px;
           color: var(--text-tertiary);
           margin-left: 4px;
+          white-space: nowrap;
         }
 
         .cell-value.muted {
@@ -1022,43 +1612,347 @@ export default function Applications() {
           font-style: italic;
         }
 
+        .stage-container {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          width: 100%;
+        }
+
         .stage-badge {
-          padding: 4px 10px;
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: 600;
-          color: white;
-        }
-
-        .progress-bar {
-          height: 4px;
-          border-radius: 2px;
-          transition: width 0.5s ease-in-out;
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          opacity: 0.8;
-        }
-
-        .remote-tag {
-          margin-left: 6px;
-          padding: 2px 6px;
-          background: var(--accent-green);
-          color: white;
-          border-radius: 10px;
-          font-size: 10px;
-          font-weight: 600;
-        }
-
-        .contacts-container {
           display: flex;
           align-items: center;
+          gap: 8px;
+          padding: 6px 10px;
+          border-radius: 6px;
+          border: 1px solid transparent;
+          background: var(--glass-bg);
+          min-width: 120px;
+          transition: all 0.2s ease;
+        }
+        
+        .stage-indicator {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          flex-shrink: 0;
+        }
+        
+        .stage-label {
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--text-primary);
+        }
+        
+        .stage-offer .stage-label {
+          color: var(--accent-green);
+        }
+        
+        .stage-rejected .stage-label {
+          color: var(--accent-red);
+        }
+        
+        .table-row:hover .stage-badge {
+          background: rgba(var(--accent-blue-rgb), 0.05);
+          transform: translateY(-1px);
+        }
+
+        .stage-progress-container {
+          width: 100%;
+          margin-top: 2px;
+        }
+
+        .stage-progress-background {
+          display: flex;
+          width: 100%;
+          height: 6px;
+          border-radius: 3px;
+          overflow: hidden;
+          background: var(--glass-bg);
           gap: 4px;
         }
 
+        .stage-step {
+          flex: 1;
+          height: 100%;
+          transition: all 0.3s ease;
+        }
+
+        .stage-step.completed {
+          box-shadow: 0 0 4px rgba(0,0,0,0.2);
+        }
+        
+        .interview-cell {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          width: 100%;
+        }
+        
+        .interview-date-container {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        
+        .interview-type-tag {
+          font-size: 11px;
+          padding: 2px 8px;
+          border-radius: 4px;
+          color: white;
+          font-weight: 500;
+          display: inline-block;
+          max-width: fit-content;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .no-interview {
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+          width: 100%;
+          height: 100%;
+        }
+        
+        .tasks-cell {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          width: 100%;
+        }
+        
+        .tasks-count-container {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        
+        .tasks-progress-container {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          width: 100%;
+        }
+        
+        .tasks-progress-bar {
+          height: 6px;
+          background: var(--glass-bg);
+          border-radius: 3px;
+          flex-grow: 1;
+          overflow: hidden;
+          border: 1px solid var(--border-thin);
+        }
+        
+        .tasks-progress-fill {
+          height: 100%;
+          transition: width 0.3s ease;
+        }
+        
+        .tasks-pending-count {
+          font-size: 11px;
+          color: var(--text-secondary);
+          white-space: nowrap;
+        }
+
+        .alerts-cell {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          width: 100%;
+        }
+        
+        .alert-item {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 5px 10px;
+          border-radius: 6px;
+          font-size: 12px;
+          max-width: 100%;
+          margin-bottom: 4px;
+          transition: all 0.2s ease;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+          animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateX(10px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .alert-icon {
+          flex-shrink: 0;
+        }
+        
+        .interview-alert {
+          background: rgba(var(--accent-blue-rgb), 0.1);
+          color: var(--accent-blue);
+          border-left: 2px solid var(--accent-blue);
+        }
+        
+        .interview-alert:hover {
+          background: rgba(var(--accent-blue-rgb), 0.15);
+          transform: translateX(-2px);
+        }
+        
+        .task-alert {
+          background: rgba(var(--accent-red-rgb), 0.1);
+          color: var(--accent-red);
+          border-left: 2px solid var(--accent-red);
+        }
+        
+        .task-alert:hover {
+          background: rgba(var(--accent-red-rgb), 0.15);
+          transform: translateX(-2px);
+        }
+        
+        .offer-alert {
+          background: rgba(var(--accent-green-rgb), 0.1);
+          color: var(--accent-green);
+          font-weight: 600;
+          border-left: 2px solid var(--accent-green);
+          animation: pulseAlert 2s infinite;
+        }
+        
+        .offer-alert:hover {
+          background: rgba(var(--accent-green-rgb), 0.15);
+          transform: translateX(-2px);
+        }
+        
+        @keyframes pulseAlert {
+          0% { box-shadow: 0 0 0 0 rgba(var(--accent-green-rgb), 0.2); }
+          70% { box-shadow: 0 0 0 5px rgba(var(--accent-green-rgb), 0); }
+          100% { box-shadow: 0 0 0 0 rgba(var(--accent-green-rgb), 0); }
+        }
+        
+        .location-cell {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          width: 100%;
+        }
+        
+        .location-info {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        
+        .remote-indicator {
+          color: var(--accent-green);
+          margin-left: 6px;
+          font-weight: 500;
+          font-size: 13px;
+        }
+        
+        .compensation-cell {
+          display: flex;
+          flex-direction: column;
+          width: 100%;
+          gap: 2px;
+        }
+        
+        .comp-value {
+          font-weight: 600;
+          color: var(--text-primary);
+          font-size: 14px;
+          padding: 3px 6px;
+          background: rgba(var(--accent-blue-rgb), 0.075);
+          border-radius: 4px;
+          max-width: fit-content;
+          transition: all 0.2s ease;
+        }
+        
+        .table-row:hover .comp-value {
+          background: rgba(var(--accent-blue-rgb), 0.1);
+        }
+        
+        .bonus-value {
+          color: var(--accent-green);
+          background: rgba(var(--accent-green-rgb), 0.075);
+        }
+        
+        .table-row:hover .bonus-value {
+          background: rgba(var(--accent-green-rgb), 0.1);
+        }
+        
+        .no-comp {
+          font-size: 12px;
+          color: var(--text-tertiary);
+          font-style: italic;
+        }
+        
+        .benefits-container {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+        
+        .benefits-count {
+          font-size: 12px;
+          color: var(--text-secondary);
+          padding: 1px 5px;
+          background: var(--glass-bg);
+          border-radius: 10px;
+          max-width: fit-content;
+        }
+        
+        .benefits-value {
+          font-size: 12px;
+          color: var(--text-primary);
+          width: 100%;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        
+        .more-indicator {
+          margin-left: 4px;
+          color: var(--text-tertiary);
+          font-size: 11px;
+        }
+        
+        @keyframes pulse {
+          0% {
+            box-shadow: 0 0 0 0 rgba(var(--accent-green-rgb), 0.4);
+          }
+          70% {
+            box-shadow: 0 0 0 4px rgba(var(--accent-green-rgb), 0);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(var(--accent-green-rgb), 0);
+          }
+        }
+
+        .contacts-cell {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          width: 100%;
+        }
+        
+        .contacts-header {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        
+        .contact-avatars-container {
+          display: flex;
+          align-items: center;
+          padding-left: 8px;
+          height: 28px;
+        }
+        
+        .no-contacts {
+          font-size: 12px;
+          color: var(--text-tertiary);
+          font-style: italic;
+        }
+
         .contact-avatar {
-          width: 20px;
-          height: 20px;
+          width: 28px;
+          height: 28px;
           border-radius: 50%;
           background: var(--accent-purple);
           color: white;
@@ -1068,35 +1962,57 @@ export default function Applications() {
           font-size: 10px;
           font-weight: 600;
           position: relative;
-          margin-left: -8px;
-          border: 1px solid var(--glass-bg);
+          border: 2px solid var(--glass-bg);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-
-        .contact-avatar:first-child {
-          margin-left: 0;
+        
+        .contact-avatar:hover {
+          transform: translateY(-2px) scale(1.05) !important;
+          box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+          z-index: 10 !important;
         }
 
         .contact-more {
-          font-size: 12px;
-          color: var(--text-tertiary);
-          padding: 0 4px;
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          background: var(--glass-bg);
+          color: var(--text-secondary);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 10px;
+          font-weight: 600;
+          position: relative;
+          border: 2px solid var(--glass-bg);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        .actions {
-          justify-content: flex-end;
-          gap: 6px;
+        .row-actions-menu {
+          position: absolute;
+          top: 0;
+          right: 8px;
+          height: 100%;
+          display: flex;
+          align-items: center;
           opacity: 0;
-          transition: opacity 0.2s ease;
+          transition: all 0.2s ease;
         }
-
-        .table-row:hover .actions {
+        
+        .table-row:hover .row-actions-menu {
           opacity: 1;
         }
-
-        .action-btn {
-          width: 34px;
-          height: 34px;
-          border-radius: 6px;
+        
+        .row-stage-controls {
+          display: flex;
+          gap: 4px;
+        }
+        
+        .stage-control-btn {
+          width: 24px;
+          height: 24px;
+          border-radius: 4px;
           background: var(--glass-bg);
           border: 1px solid var(--border-thin);
           color: var(--text-secondary);
@@ -1105,31 +2021,82 @@ export default function Applications() {
           justify-content: center;
           cursor: pointer;
           transition: all 0.2s ease;
+          padding: 0;
         }
-
-        .action-btn:hover {
+        
+        .stage-control-btn:hover:not(:disabled) {
           background: var(--hover-bg);
           color: var(--text-primary);
+          transform: scale(1.1);
         }
-
-        .action-btn:disabled {
-          opacity: 0.4;
+        
+        .stage-control-btn:disabled {
+          opacity: 0.3;
           cursor: not-allowed;
         }
-
-        .action-btn.view {
+        
+        .prev-stage:hover:not(:disabled) {
           background: rgba(var(--accent-blue-rgb), 0.1);
           color: var(--accent-blue);
         }
-
-        .action-btn.edit {
-          background: rgba(var(--accent-blue-rgb), 0.1);
-          color: var(--accent-blue);
+        
+        .next-stage:hover:not(:disabled) {
+          background: rgba(var(--accent-green-rgb), 0.1);
+          color: var(--accent-green);
         }
 
-        .action-btn.delete {
-          background: rgba(var(--accent-red-rgb), 0.1);
+        .context-menu {
+          background: var(--glass-bg);
+          border: 1px solid var(--border-thin);
+          border-radius: 8px;
+          box-shadow: var(--shadow);
+          min-width: 180px;
+          z-index: 1000;
+          animation: fadeIn 0.2s ease;
+          backdrop-filter: blur(10px);
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .context-menu-item {
+          padding: 10px 12px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          color: var(--text-primary);
+          border-radius: 4px;
+          margin: 2px;
+        }
+        
+        .context-menu-item:hover {
+          background: var(--hover-bg);
+        }
+        
+        .context-icon {
+          color: var(--text-secondary);
+        }
+        
+        .context-menu-item.delete {
           color: var(--accent-red);
+        }
+        
+        .context-menu-item.delete:hover {
+          background: rgba(var(--accent-red-rgb), 0.1);
+        }
+        
+        .context-menu-item.delete .context-icon {
+          color: var(--accent-red);
+        }
+        
+        .context-menu-divider {
+          height: 1px;
+          background: var(--border-thin);
+          margin: 4px 0;
         }
 
         .empty-state {

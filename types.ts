@@ -116,6 +116,8 @@ export interface Application {
   stage: ApplicationStage; // Current stage of the application
   jobDescription: string; // Description of the job
   salary: string; // Salary range or amount
+  bonus?: string; // Optional bonus information
+  benefits?: string[]; // Optional array of benefits
   location: string; // Job location
   remote: boolean; // Whether the job is remote
   notes: string; // General notes about the application
