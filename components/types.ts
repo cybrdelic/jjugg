@@ -10,7 +10,8 @@ export type SectionKey =
     | 'interviews-section'
     | 'profile-artifacts-section'
     | 'goals-section'
-    | 'timeline-section';
+    | 'timeline-section'
+    | 'calendar-section';
 
 export interface NavItem {
     key: SectionKey;
@@ -46,3 +47,97 @@ export interface SidebarSectionType {
     isAiGenerated?: boolean; // Whether this section is AI-generated
     icon?: JSX.Element; // Optional section icon
 }
+
+// types.ts
+
+// Define the possible stages of a job application
+export type ApplicationStage = 'applied' | 'screening' | 'interview' | 'offer' | 'rejected';
+
+// Interface for a company where a job is available
+export interface Company {
+    id: string;
+    name: string;
+    logo: string;
+    industry: string;
+    website?: string; // Optional website URL
+    description?: string; // Optional company description
+    headquarters?: string; // Optional headquarters location
+    size?: string; // Optional company size (e.g., "100-500 employees")
+    founded?: string; // Optional founding year
+}
+
+// Interface for a contact person associated with a company or application
+export interface Contact {
+    id: string;
+    name: string;
+    role: string; // e.g., "Recruiter", "Hiring Manager"
+    email: string;
+    phone?: string; // Optional phone number
+    linkedin?: string; // Optional LinkedIn profile URL
+    notes?: string; // Optional additional notes
+}
+
+// Interface for an interview event tied to an application
+export interface InterviewEvent {
+    id: string;
+    type: 'phone' | 'video' | 'onsite' | 'technical' | 'other'; // Type of interview
+    date: Date; // Date of the interview
+    duration: number; // Duration in minutes
+    with?: string; // Optional: Person conducting the interview
+    location?: string; // Optional: Location or link for the interview
+    notes?: string; // Optional: Notes about the interview
+    completed: boolean; // Whether the interview has been completed
+    feedback?: string; // Optional: Feedback received after the interview
+}
+
+// Interface for a task related to an application
+export interface Task {
+    id: string;
+    title: string; // Task title (e.g., "Follow up with recruiter")
+    completed: boolean; // Whether the task is completed
+    dueDate?: Date; // Optional due date for the task
+    priority: 'low' | 'medium' | 'high'; // Task priority
+}
+
+// Interface for a note taken during the application process
+export interface Note {
+    id: string;
+    content: string; // Content of the note
+    createdAt: Date; // Date the note was created
+    type?: 'general' | 'interview' | 'research' | 'followup'; // Optional note type
+}
+
+// Interface for a document linked to an application (e.g., resume, cover letter)
+export interface Document {
+    id: string;
+    name: string; // Name of the document
+    type: 'resume' | 'cover-letter' | 'portfolio' | 'other'; // Type of document
+    url: string; // URL or path to the document
+    createdAt: Date; // Date the document was uploaded or created
+}
+
+// Interface for a job application, tying together all related entities
+export interface Application {
+    id: string;
+    position: string; // Job position (e.g., "Software Engineer")
+    company: Company; // Company offering the job
+    dateApplied: Date; // Date the application was submitted
+    stage: ApplicationStage; // Current stage of the application
+    jobDescription: string; // Description of the job
+    salary: string; // Salary range or amount
+    location: string; // Job location
+    remote: boolean; // Whether the job is remote
+    notes: string; // General notes about the application
+    contacts: Contact[]; // Array of contacts related to this application
+    interviews?: InterviewEvent[]; // Optional array of interviews
+    tasks?: Task[]; // Optional array of tasks
+    documents?: Document[]; // Optional array of documents
+    allNotes?: Note[]; // Optional array of notes
+}
+
+// Interface for a status update, which can be tied to a specific application or be general
+export interface StatusUpdate {
+    id: string;
+    message: string; // Update message (e.g., "Moved to interview stage")
+    appId: string | null; // ID of the application this update relates to, or null for general updates
+}debugger

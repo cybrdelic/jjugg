@@ -6,7 +6,7 @@ import NavItem from './NavItem';
 import SidebarSection from './SidebarSection';
 import ResizeHandle from './ResizeHandle';
 import ThemeSwitcher from './ThemeSwitcher';
-import { Menu, ChevronLeft, Github, MailIcon } from 'lucide-react';
+import { Menu, ChevronLeft, Calendar, Mail } from 'lucide-react';
 
 interface GlassSidebarProps {
   items: NavItemType[];
@@ -32,60 +32,34 @@ export default function GlassSidebar({
   const { currentTheme, toggleColorTheme } = useTheme();
   const sidebarRef = useRef<HTMLDivElement>(null);
   const [expandedWidth, setExpandedWidth] = useState(width);
-  const [sections, setSections] = useState<Record<string, NavItemType[]>>({
-    main: items
-  });
+  const [sections, setSections] = useState<Record<string, NavItemType[]>>({ main: items });
+  const [hoveredHeaderButton, setHoveredHeaderButton] = useState(false);
+  const [hoveredAvatar, setHoveredAvatar] = useState(false);
 
   // Handle sidebar collapse/expand
   const toggleSidebar = () => {
     if (isCollapsed) {
-      onResize(expandedWidth); // Expand to previous width
+      onResize(expandedWidth);
     } else {
-      onResize(70); // Collapse to 70px
+      onResize(70);
     }
   };
 
-  // Update the width when expandedWidth changes and sidebar is not collapsed
+  // Update width when expandedWidth changes
   useEffect(() => {
     if (!isCollapsed) {
       onResize(expandedWidth);
     }
   }, [expandedWidth, isCollapsed, onResize]);
 
-  // Group items into sections for the sidebar
+  // Group items into sections
   useEffect(() => {
-    const categorizedItems: Record<string, NavItemType[]> = {
-      main: []
-    };
-
-    items.forEach(item => {
-      // Logic to categorize items could be extended here
-      categorizedItems.main.push(item);
-    });
-
-    setSections(categorizedItems);
+    setSections({ main: items });
   }, [items]);
 
-  // Contextual menu for nav items
-  const handleContextMenu = (e: React.MouseEvent, item: NavItemType) => {
-    e.preventDefault();
-    // Implement context menu functionality
-  };
-
-  const [hoveredHeaderButton, setHoveredHeaderButton] = useState(false);
-  const [hoveredAvatar, setHoveredAvatar] = useState(false);
-
-  // Animated background particles for visual polish
-  const renderBackgroundParticles = () => {
-    return (
-      <div className="sidebar-bg-particles">
-        <div className="particle p1"></div>
-        <div className="particle p2"></div>
-        <div className="particle p3"></div>
-        <div className="particle p4"></div>
-        <div className="particle p5"></div>
-      </div>
-    );
+  // Navigate to calendar section
+  const handleCalendarClick = () => {
+    setCurrentSection('calendar-section');
   };
 
   return (
@@ -94,16 +68,16 @@ export default function GlassSidebar({
       className={`glass-sidebar ${isCollapsed ? 'collapsed' : ''}`}
       style={{ width: isCollapsed ? '70px' : `${width}px` }}
     >
-      {/* Animated background effects */}
-      {currentTheme.animation !== 'minimal' && renderBackgroundParticles()}
-
-      {/* Glass effect overlay */}
       <div className="glass-overlay"></div>
-
-      {/* Top accent line */}
+      <div className="sidebar-bg-particles">
+        <span className="particle p1"></span>
+        <span className="particle p2"></span>
+        <span className="particle p3"></span>
+        <span className="particle p4"></span>
+        <span className="particle p5"></span>
+      </div>
       <div className="top-accent-line"></div>
 
-      {/* ResizeHandle component for adjusting sidebar width */}
       {!isCollapsed && (
         <ResizeHandle
           setExpandedWidth={setExpandedWidth}
@@ -113,7 +87,6 @@ export default function GlassSidebar({
         />
       )}
 
-      {/* Header with enhanced animations */}
       <div className="sidebar-header">
         <div className="logo">
           <span className="logo-text">{isCollapsed ? 'J' : 'jjugg'}</span>
@@ -135,7 +108,6 @@ export default function GlassSidebar({
         </button>
       </div>
 
-      {/* User Profile with enhanced interactions */}
       <div
         className={`user-profile ${hoveredAvatar ? 'hovered' : ''}`}
         onMouseEnter={() => setHoveredAvatar(true)}
@@ -143,15 +115,9 @@ export default function GlassSidebar({
       >
         <div className="avatar">
           {userAvatar ? (
-            <img
-              src={userAvatar}
-              alt={`${userName}'s avatar`}
-              className="avatar-img"
-            />
+            <img src={userAvatar} alt={`${userName}'s avatar`} className="avatar-img" />
           ) : (
-            <div className="avatar-placeholder">
-              {userName.charAt(0)}
-            </div>
+            <div className="avatar-placeholder">{userName.charAt(0)}</div>
           )}
           {hoveredAvatar && <div className="avatar-highlight"></div>}
         </div>
@@ -159,6 +125,13 @@ export default function GlassSidebar({
           <div className="user-info">
             <div className="user-name">
               {userName}
+              <button
+                onClick={handleCalendarClick}
+                className="calendar-btn"
+                aria-label="View calendar"
+              >
+                <Calendar size={16} />
+              </button>
               <div className="name-underline"></div>
             </div>
             <div className="user-status">
@@ -182,7 +155,6 @@ export default function GlassSidebar({
         )}
       </div>
 
-      {/* Navigation with enhanced scrollbar */}
       <div className="nav-scroll scrollbar-thin">
         {Object.entries(sections).map(([sectionId, sectionItems]) => (
           <SidebarSection
@@ -196,19 +168,18 @@ export default function GlassSidebar({
             isCollapsed={isCollapsed}
             currentSection={currentSection}
             setCurrentSection={setCurrentSection}
-            onContextMenu={handleContextMenu}
+            onContextMenu={(e, item) => e.preventDefault()}
           />
         ))}
       </div>
 
-      {/* Footer with shadow effect */}
       <div className="sidebar-footer">
         <div className="footer-content">
           <ThemeSwitcher />
-          <a href="/">
-            <MailIcon />
-            <div>Sign in With Gmail</div>
-          </a>
+          <button className="signin-btn">
+            <Mail size={16} />
+            {!isCollapsed && <span>Sign in with Gmail</span>}
+          </button>
         </div>
         <div className="footer-shadow"></div>
       </div>
@@ -216,63 +187,31 @@ export default function GlassSidebar({
       <style jsx>{`
         .glass-sidebar {
           height: 100vh;
-          background: var(--glass-sidebar-bg);
-          backdrop-filter: blur(var(--blur-amount));
-          -webkit-backdrop-filter: blur(var(--blur-amount));
           border-right: 1px solid var(--border-thin);
-          box-shadow: var(--shadow);
           display: flex;
           flex-direction: column;
           position: fixed;
           z-index: var(--z-sidebar);
           transition: all var(--transition-normal) var(--easing-decelerate);
           overflow: hidden;
+          background: var(--glass-sidebar-bg);
         }
 
-        /* Glass overlay for enhanced depth */
         .glass-overlay {
           position: absolute;
           top: 0;
           left: 0;
           width: 100%;
           height: 100%;
-          background: linear-gradient(
-            135deg,
-            rgba(255, 255, 255, 0.03),
-            transparent 40%,
-            rgba(255, 255, 255, 0.02) 80%
-          );
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), transparent 40%, rgba(255, 255, 255, 0.02) 80%);
           pointer-events: none;
           z-index: -1;
         }
 
         .dark .glass-overlay {
-          background: linear-gradient(
-            135deg,
-            rgba(255, 255, 255, 0.04),
-            transparent 30%,
-            rgba(255, 255, 255, 0.01) 70%
-          );
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent 30%, rgba(255, 255, 255, 0.01) 70%);
         }
 
-        /* Accent line at the top of sidebar */
-        .top-accent-line {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 2px;
-          background: linear-gradient(
-            to right,
-            var(--accent-primary),
-            var(--accent-secondary),
-            transparent
-          );
-          opacity: 0.6;
-          z-index: 1;
-        }
-
-        /* Animated background particles */
         .sidebar-bg-particles {
           position: absolute;
           top: 0;
@@ -289,65 +228,24 @@ export default function GlassSidebar({
           border-radius: 50%;
           background: var(--accent-primary);
           opacity: 0;
-          z-index: -1;
         }
 
-        .p1 {
-          width: 20px;
-          height: 20px;
-          top: 20%;
-          left: 30%;
-          filter: blur(10px);
-          animation: float-around 25s ease-in-out infinite;
-          animation-delay: 0s;
-          background: var(--accent-primary);
+        .p1 { width: 20px; height: 20px; top: 20%; left: 30%; filter: blur(10px); animation: float-around 25s ease-in-out infinite; }
+        .p2 { width: 30px; height: 30px; bottom: 30%; right: 20%; filter: blur(15px); animation: float-around 30s ease-in-out infinite 5s; background: var(--accent-secondary); }
+        .p3 { width: 10px; height: 10px; top: 70%; left: 15%; filter: blur(8px); animation: float-around 20s ease-in-out infinite 2s; }
+        .p4 { width: 15px; height: 15px; top: 10%; right: 10%; filter: blur(10px); animation: float-around 28s ease-in-out infinite 8s; background: var(--accent-secondary); }
+        .p5 { width: 25px; height: 25px; bottom: 10%; left: 40%; filter: blur(12px); animation: float-around 32s ease-in-out infinite 12s; }
+
+        .top-accent-line {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary), transparent);
+          opacity: 0.6;
         }
 
-        .p2 {
-          width: 30px;
-          height: 30px;
-          bottom: 30%;
-          right: 20%;
-          filter: blur(15px);
-          animation: float-around 30s ease-in-out infinite;
-          animation-delay: 5s;
-          background: var(--accent-secondary);
-        }
-
-        .p3 {
-          width: 10px;
-          height: 10px;
-          top: 70%;
-          left: 15%;
-          filter: blur(8px);
-          animation: float-around 20s ease-in-out infinite;
-          animation-delay: 2s;
-          background: var(--accent-primary);
-        }
-
-        .p4 {
-          width: 15px;
-          height: 15px;
-          top: 10%;
-          right: 10%;
-          filter: blur(10px);
-          animation: float-around 28s ease-in-out infinite;
-          animation-delay: 8s;
-          background: var(--accent-secondary);
-        }
-
-        .p5 {
-          width: 25px;
-          height: 25px;
-          bottom: 10%;
-          left: 40%;
-          filter: blur(12px);
-          animation: float-around 32s ease-in-out infinite;
-          animation-delay: 12s;
-          background: var(--accent-primary);
-        }
-
-        /* Sidebar header with enhanced styling */
         .sidebar-header {
           display: flex;
           justify-content: space-between;
@@ -358,7 +256,6 @@ export default function GlassSidebar({
           z-index: 2;
         }
 
-        /* Logo with glow effect */
         .logo {
           position: relative;
           background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
@@ -367,19 +264,13 @@ export default function GlassSidebar({
           font-weight: 700;
           font-size: ${isCollapsed ? '20px' : '24px'};
           color: white;
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-          transition: all var(--transition-normal) var(--easing-standard);
           overflow: hidden;
+          transition: all var(--transition-normal);
         }
 
         .logo:hover {
           transform: translateY(-1px);
           box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-        }
-
-        .logo-text {
-          position: relative;
-          z-index: 1;
         }
 
         .logo-glow {
@@ -388,18 +279,12 @@ export default function GlassSidebar({
           left: -50%;
           width: 150%;
           height: 100%;
-          background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(255, 255, 255, 0.4),
-            transparent
-          );
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
           transform: skewX(-20deg);
           animation: logo-shine 6s infinite;
           opacity: 0;
         }
 
-        /* Toggle button with hover effects */
         .toggle-btn {
           position: relative;
           background: none;
@@ -408,12 +293,7 @@ export default function GlassSidebar({
           cursor: pointer;
           padding: 8px;
           border-radius: var(--border-radius-sm);
-          transition: all var(--transition-fast) var(--easing-standard);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          overflow: hidden;
-          z-index: 1;
+          transition: all var(--transition-fast);
         }
 
         .btn-background {
@@ -424,7 +304,7 @@ export default function GlassSidebar({
           bottom: 0;
           background: var(--hover-bg);
           opacity: 0;
-          transition: opacity var(--transition-fast) var(--easing-standard);
+          transition: opacity var(--transition-fast);
           border-radius: var(--border-radius-sm);
           z-index: -1;
         }
@@ -438,27 +318,21 @@ export default function GlassSidebar({
           color: var(--accent-primary);
         }
 
-        .dark .toggle-btn:hover {
-          text-shadow: 0 0 8px rgba(var(--accent-primary-rgb), 0.5);
-        }
-
         .toggle-icon {
-          transition: transform var(--transition-normal) var(--easing-standard);
+          transition: transform var(--transition-normal);
         }
 
         .toggle-icon.open {
           transform: rotate(180deg);
         }
 
-        /* Enhanced user profile section */
         .user-profile {
           display: flex;
           align-items: center;
           gap: 12px;
           padding: 16px 18px;
           border-bottom: 1px solid var(--border-divider);
-          position: relative;
-          transition: background-color var(--transition-normal) var(--easing-standard);
+          transition: background-color var(--transition-normal);
           cursor: pointer;
         }
 
@@ -466,14 +340,12 @@ export default function GlassSidebar({
           background-color: var(--hover-bg);
         }
 
-        /* Avatar with glow/highlight effects */
         .avatar {
           position: relative;
           width: 40px;
           height: 40px;
           border-radius: 50%;
           overflow: hidden;
-          flex-shrink: 0;
           background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary));
           display: flex;
           align-items: center;
@@ -483,8 +355,7 @@ export default function GlassSidebar({
           font-size: 18px;
           box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
           border: 2px solid var(--glass-bg);
-          transition: all var(--transition-normal) var(--easing-standard);
-          z-index: 1;
+          transition: all var(--transition-normal);
         }
 
         .user-profile.hovered .avatar {
@@ -500,12 +371,7 @@ export default function GlassSidebar({
           right: -2px;
           bottom: -2px;
           border-radius: 50%;
-          background: conic-gradient(
-            from 0deg,
-            var(--accent-primary),
-            var(--accent-secondary),
-            var(--accent-primary)
-          );
+          background: conic-gradient(from 0deg, var(--accent-primary), var(--accent-secondary), var(--accent-primary));
           z-index: -1;
           animation: rotate 3s linear infinite;
         }
@@ -517,30 +383,39 @@ export default function GlassSidebar({
         }
 
         .avatar-placeholder {
+          width: 100%;
+          height: 100%;
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 100%;
-          height: 100%;
-          text-transform: uppercase;
         }
 
-        /* User info with animations */
         .user-info {
-          overflow: hidden;
           flex: 1;
           min-width: 0;
         }
 
         .user-name {
-          position: relative;
+          display: flex;
+          align-items: center;
+          gap: 8px;
           font-weight: 600;
           color: var(--text-primary);
           margin-bottom: 4px;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          padding-bottom: 2px;
+          position: relative;
+        }
+
+        .calendar-btn {
+          background: none;
+          border: none;
+          color: var(--text-tertiary);
+          cursor: pointer;
+          padding: 4px;
+          transition: color var(--transition-fast);
+        }
+
+        .calendar-btn:hover {
+          color: var(--accent-teal);
         }
 
         .name-underline {
@@ -550,14 +425,13 @@ export default function GlassSidebar({
           width: 0;
           height: 1px;
           background-color: var(--accent-primary);
-          transition: width var(--transition-normal) var(--easing-standard);
+          transition: width var(--transition-normal);
         }
 
         .user-profile.hovered .name-underline {
           width: 100%;
         }
 
-        /* Status indicator with pulse animation */
         .user-status {
           display: flex;
           align-items: center;
@@ -566,17 +440,11 @@ export default function GlassSidebar({
           color: var(--text-tertiary);
         }
 
-        .status-dot {
+        .status-dot.online {
           position: relative;
           width: 8px;
           height: 8px;
           border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .status-dot.online {
           background-color: var(--accent-success);
         }
 
@@ -587,10 +455,9 @@ export default function GlassSidebar({
           border-radius: 50%;
           background-color: var(--accent-success);
           opacity: 0.6;
-          animation: status-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+          animation: status-pulse 2s infinite;
         }
 
-        /* User tooltip in collapsed mode */
         .avatar-tooltip {
           position: absolute;
           left: 60px;
@@ -598,14 +465,11 @@ export default function GlassSidebar({
           transform: translateY(-50%);
           background-color: var(--tooltip-bg);
           border-radius: var(--border-radius);
-          box-shadow: var(--shadow);
           padding: 10px 14px;
-          z-index: 100;
-          pointer-events: none;
-          animation: fade-in 0.2s var(--easing-standard);
-          backdrop-filter: blur(var(--blur-amount));
-          -webkit-backdrop-filter: blur(var(--blur-amount));
+          box-shadow: var(--shadow);
+          animation: fade-in 0.2s;
           border: 1px solid var(--border-thin);
+          backdrop-filter: blur(var(--blur-amount));
         }
 
         .avatar-tooltip::before {
@@ -625,7 +489,6 @@ export default function GlassSidebar({
           font-weight: 600;
           color: var(--text-primary);
           margin-bottom: 4px;
-          white-space: nowrap;
         }
 
         .tooltip-status {
@@ -643,25 +506,16 @@ export default function GlassSidebar({
           background-color: var(--accent-success);
         }
 
-        /* Navigation scrollable area */
         .nav-scroll {
           flex-grow: 1;
           overflow-y: auto;
           padding: 16px;
           margin-right: -8px;
           padding-right: 8px;
-          position: relative;
-          z-index: 1;
         }
 
-        /* Shimmering scrollbar track effect */
         .nav-scroll::-webkit-scrollbar-track {
-          background: linear-gradient(
-            to bottom,
-            transparent,
-            rgba(var(--accent-primary-rgb), 0.05),
-            transparent
-          );
+          background: linear-gradient(to bottom, transparent, rgba(var(--accent-primary-rgb), 0.05), transparent);
           border-radius: 4px;
         }
 
@@ -675,21 +529,40 @@ export default function GlassSidebar({
           box-shadow: 0 0 8px rgba(var(--accent-primary-rgb), 0.4);
         }
 
-        /* Footer with enhanced styling */
         .sidebar-footer {
-          position: relative;
           padding: 16px 18px;
           border-top: 1px solid var(--border-divider);
           display: flex;
-          align-items: center;
           justify-content: ${isCollapsed ? 'center' : 'space-between'};
-          z-index: 2;
+          align-items: center;
+          position: relative;
         }
 
         .footer-content {
-          position: relative;
-          z-index: 1;
+          display: flex;
+          gap: 12px;
+          align-items: center;
           width: 100%;
+          justify-content: ${isCollapsed ? 'center' : 'space-between'};
+          z-index: 1;
+        }
+
+        .signin-btn {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          background: var(--glass-bg);
+          border: 1px solid var(--border-thin);
+          border-radius: var(--border-radius-sm);
+          padding: 6px 12px;
+          color: var(--text-primary);
+          cursor: pointer;
+          transition: all var(--transition-fast);
+        }
+
+        .signin-btn:hover {
+          background: var(--hover-bg);
+          border-color: var(--accent-primary);
         }
 
         .footer-shadow {
@@ -702,52 +575,22 @@ export default function GlassSidebar({
           pointer-events: none;
         }
 
-        /* Animation keyframes */
         @keyframes float-around {
-          0%, 100% {
-            opacity: 0.5;
-            transform: translate(0, 0);
-          }
-          25% {
-            opacity: 0.7;
-            transform: translate(10px, -20px);
-          }
-          50% {
-            opacity: 0.5;
-            transform: translate(20px, 0);
-          }
-          75% {
-            opacity: 0.7;
-            transform: translate(0, -10px);
-          }
+          0%, 100% { opacity: 0.5; transform: translate(0, 0); }
+          25% { opacity: 0.7; transform: translate(10px, -20px); }
+          50% { opacity: 0.5; transform: translate(20px, 0); }
+          75% { opacity: 0.7; transform: translate(0, -10px); }
         }
 
         @keyframes logo-shine {
-          0%, 100% {
-            opacity: 0;
-            left: -50%;
-          }
-          50% {
-            opacity: 0.5;
-          }
-          60% {
-            opacity: 0.5;
-            left: 100%;
-          }
-          61% {
-            opacity: 0;
-          }
+          0%, 100% { opacity: 0; left: -50%; }
+          50% { opacity: 0.5; }
+          60% { opacity: 0.5; left: 100%; }
         }
 
         @keyframes status-pulse {
-          0%, 100% {
-            transform: scale(1);
-            opacity: 0.6;
-          }
-          50% {
-            transform: scale(1.8);
-            opacity: 0;
-          }
+          0%, 100% { transform: scale(1); opacity: 0.6; }
+          50% { transform: scale(1.8); opacity: 0; }
         }
 
         @keyframes rotate {
@@ -756,39 +599,14 @@ export default function GlassSidebar({
         }
 
         @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(-50%) translateX(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(-50%) translateX(0);
-          }
+          from { opacity: 0; transform: translateY(-50%) translateX(-10px); }
+          to { opacity: 1; transform: translateY(-50%) translateX(0); }
         }
 
-        /* Media queries for responsive design */
         @media (max-width: 1024px) {
           .glass-sidebar {
             transform: ${isCollapsed ? 'translateX(-100%)' : 'translateX(0)'};
-            transition: transform var(--transition-normal) var(--easing-standard), width var(--transition-normal) var(--easing-decelerate);
-          }
-        }
-
-        @media (max-width: 768px) {
-          .sidebar-header {
-            padding: 14px;
-          }
-
-          .user-profile {
-            padding: 14px;
-          }
-
-          .nav-scroll {
-            padding: 14px 12px;
-          }
-
-          .sidebar-footer {
-            padding: 14px;
+            transition: transform var(--transition-normal), width var(--transition-normal);
           }
         }
       `}</style>

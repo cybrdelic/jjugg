@@ -10,66 +10,8 @@ import {
 } from 'lucide-react';
 import ActionButton from '../dashboard/ActionButton';
 import SideDrawer from '../SideDrawer';
+import { ApplicationStage, Company, Contact, InterviewEvent, Note, Task, Document } from '../types';
 
-// Reuse the same interfaces from ApplicationDetailModal
-interface Company {
-  id: string;
-  name: string;
-  logo: string;
-  industry: string;
-  website?: string;
-  description?: string;
-  headquarters?: string;
-  size?: string;
-  founded?: string;
-}
-
-interface Contact {
-  id: string;
-  name: string;
-  role: string;
-  email: string;
-  phone?: string;
-  linkedin?: string;
-  notes?: string;
-}
-
-interface InterviewEvent {
-  id: string;
-  type: 'phone' | 'video' | 'onsite' | 'technical' | 'other';
-  date: Date;
-  duration: number; // in minutes
-  with?: string;
-  location?: string;
-  notes?: string;
-  completed: boolean;
-  feedback?: string;
-}
-
-type ApplicationStage = 'applied' | 'screening' | 'interview' | 'offer' | 'rejected';
-
-interface Task {
-  id: string;
-  title: string;
-  completed: boolean;
-  dueDate?: Date;
-  priority: 'low' | 'medium' | 'high';
-}
-
-interface Note {
-  id: string;
-  content: string;
-  createdAt: Date;
-  type?: 'general' | 'interview' | 'research' | 'followup';
-}
-
-interface Document {
-  id: string;
-  name: string;
-  type: 'resume' | 'cover-letter' | 'portfolio' | 'other';
-  url: string;
-  createdAt: Date;
-}
 
 interface ApplicationDetailDrawerProps {
   id: string;

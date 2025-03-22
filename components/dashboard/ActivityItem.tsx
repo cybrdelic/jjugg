@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { LucideIcon, FileText, Users, CheckCircle, Target, Activity, Bell, TrendingUp } from 'lucide-react';
 
-export type ActivityType = 'application' | 'interview' | 'offer' | 'rejected' | 'assessment' | 'screening' | 'task' | 'email';
+export type ActivityType = 'application' | 'interview' | 'offer' | 'rejected' | 'assessment' | 'screening' | 'task' | 'email' | 'network';
 
 interface ActivityItemProps {
   id: string;
@@ -30,35 +30,35 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  
+
   // Format date
   const formatDate = (date: Date) => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const dateToCheck = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    
+
     if (dateToCheck.getTime() === today.getTime()) {
       // If it's today, show the time
       return `Today at ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
     }
-    
+
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
     if (dateToCheck.getTime() === yesterday.getTime()) {
       return 'Yesterday';
     }
-    
+
     // Check if it's within the last 7 days
     const oneWeekAgo = new Date(today);
     oneWeekAgo.setDate(today.getDate() - 7);
-    
+
     if (dateToCheck >= oneWeekAgo) {
       return date.toLocaleDateString('en-US', { weekday: 'long' });
     }
-    
+
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
-  
+
   // Get activity icon based on type
   const getActivityIcon = (type: ActivityType): React.ReactElement => {
     switch (type) {
@@ -82,7 +82,7 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
         return <Activity size={18} className="activity-icon" />;
     }
   };
-  
+
   // Get color class based on type
   const getTypeColorVar = (type: ActivityType): string => {
     switch (type) {
@@ -97,12 +97,12 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
       default: return 'var(--text-secondary)';
     }
   };
-  
+
   const typeColor = getTypeColorVar(type);
   const icon = getActivityIcon(type);
-  
+
   return (
-    <div 
+    <div
       className={`timeline-item ${isHovered ? 'hovered' : ''} ${isExpanded ? 'expanded' : ''}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -122,13 +122,13 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
         </div>
         {!isLast && <div className="timeline-connector"></div>}
       </div>
-      
+
       <div className="timeline-content">
         <div className="timeline-header">
           <h4 className="timeline-title">{title}</h4>
           <span className="timeline-time">{formatDate(timestamp)}</span>
         </div>
-        
+
         <div className="timeline-details">
           <div className="company-info">
             <span className="company-logo">
@@ -143,7 +143,7 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
           <p className={`timeline-description ${isExpanded ? 'expanded' : ''}`}>{details}</p>
         </div>
       </div>
-      
+
       <style jsx>{`
         .timeline-item {
           display: flex;
@@ -154,19 +154,19 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
           cursor: pointer;
           position: relative;
         }
-        
+
         .timeline-item.hovered {
           background: var(--hover-bg);
           transform: translateX(3px);
         }
-        
+
         .timeline-icon-wrapper {
           display: flex;
           flex-direction: column;
           align-items: center;
           position: relative;
         }
-        
+
         .timeline-icon {
           display: flex;
           align-items: center;
@@ -181,13 +181,13 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
           transition: all 0.3s var(--easing-standard);
           flex-shrink: 0;
         }
-        
+
         .timeline-item.hovered .timeline-icon {
           transform: scale(1.1);
           background-color: rgba(var(--type-color-rgb), 0.2);
           box-shadow: 0 0 0 4px rgba(var(--type-color-rgb), 0.1);
         }
-        
+
         .icon-glow {
           position: absolute;
           top: 50%;
@@ -204,13 +204,13 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
           opacity: 0;
           transition: all 0.5s var(--easing-standard);
         }
-        
+
         .timeline-item.hovered .icon-glow {
           width: 46px;
           height: 46px;
           opacity: 0.3;
         }
-        
+
         .timeline-connector {
           position: absolute;
           top: 36px;
@@ -224,12 +224,12 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
           );
           z-index: 1;
         }
-        
+
         .timeline-content {
           flex: 1;
           min-width: 0;
         }
-        
+
         .timeline-header {
           display: flex;
           justify-content: space-between;
@@ -237,7 +237,7 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
           gap: 8px;
           margin-bottom: 8px;
         }
-        
+
         .timeline-title {
           margin: 0;
           font-size: 16px;
@@ -245,11 +245,11 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
           color: var(--text-primary);
           transition: color 0.3s var(--easing-standard);
         }
-        
+
         .timeline-item.hovered .timeline-title {
           color: var(--type-color);
         }
-        
+
         .timeline-time {
           font-size: 12px;
           color: var(--text-tertiary);
@@ -259,24 +259,24 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
           border-radius: 10px;
           background: transparent;
         }
-        
+
         .timeline-item.hovered .timeline-time {
           background-color: rgba(var(--type-color-rgb), 0.1);
           color: var(--type-color);
         }
-        
+
         .timeline-details {
           display: flex;
           flex-direction: column;
           gap: 8px;
         }
-        
+
         .company-info {
           display: flex;
           align-items: center;
           gap: 8px;
         }
-        
+
         .company-logo {
           width: 28px;
           height: 28px;
@@ -291,29 +291,29 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
           transition: all 0.3s var(--easing-standard);
           overflow: hidden;
         }
-        
+
         .company-logo img {
           width: 100%;
           height: 100%;
           object-fit: cover;
         }
-        
+
         .timeline-item.hovered .company-logo {
           transform: scale(1.1) rotate(3deg);
           box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
         }
-        
+
         .company-name {
           font-size: 14px;
           color: var(--text-secondary);
           font-weight: 500;
           transition: color 0.3s var(--easing-standard);
         }
-        
+
         .timeline-item.hovered .company-name {
           color: var(--text-primary);
         }
-        
+
         .timeline-description {
           margin: 0;
           font-size: 14px;
@@ -325,15 +325,15 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
         }
-        
+
         .timeline-description.expanded {
           -webkit-line-clamp: unset;
         }
-        
+
         .timeline-item.hovered .timeline-description {
           color: var(--text-secondary);
         }
-        
+
         .timeline-item.expanded {
           background: var(--hover-bg);
         }

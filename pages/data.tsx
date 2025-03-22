@@ -1,28 +1,9 @@
+import { Application, ApplicationStage, Company } from "@/components/types";
 import React from "react";
-type ApplicationStage = 'applied' | 'screening' | 'interview' | 'offer' | 'rejected';
+
 type ActivityType = 'application' | 'interview' | 'email' | 'viewed' | 'assessment' | 'offer' | 'screening' | 'rejected';
 type EventType = 'Interview' | 'Task' | 'Deadline';
 
-interface Company {
-    id: string;
-    name: string;
-    logo: string;
-    industry: string;
-}
-
-interface Application {
-    id: string;
-    position: string;
-    company: Company;
-    dateApplied: Date;
-    stage: ApplicationStage;
-    jobDescription: string;
-    salary: string;
-    location: string;
-    remote: boolean;
-    notes: string;
-    contacts: { name: string; role: string; email: string }[];
-}
 interface Activity {
     id: string;
     type: ActivityType;
@@ -63,7 +44,6 @@ interface MonthlyGoal {
     target: number;
     progress: number;
 }
-
 
 // **Mock Data**
 export const userProfile = {
@@ -110,7 +90,7 @@ export const applications: Application[] = [
         location: 'Mountain View, CA',
         remote: false,
         notes: 'Had a great initial call with the recruiter',
-        contacts: [{ name: 'Sarah Johnson', role: 'Recruiter', email: 'sarah.j@google.com' }],
+        contacts: [{ id: 'contact-app1-0', name: 'Sarah Johnson', role: 'Recruiter', email: 'sarah.j@google.com' }],
     },
     {
         id: 'app2',
@@ -149,7 +129,7 @@ export const applications: Application[] = [
         location: 'Seattle, WA',
         remote: true,
         notes: 'Received offer, negotiating terms',
-        contacts: [{ name: 'Mike Brown', role: 'Hiring Manager', email: 'mike.b@amazon.com' }],
+        contacts: [{ id: 'contact-app4-0', name: 'Mike Brown', role: 'Hiring Manager', email: 'mike.b@amazon.com' }],
     },
     {
         id: 'app5',
@@ -201,7 +181,7 @@ export const applications: Application[] = [
         location: 'San Francisco, CA',
         remote: true,
         notes: 'Applied through referral',
-        contacts: [{ name: 'Lisa Chen', role: 'Engineer', email: 'lisa.c@airbnb.com' }],
+        contacts: [{ id: 'contact-app8-0', name: 'Lisa Chen', role: 'Engineer', email: 'lisa.c@airbnb.com' }],
     },
     {
         id: 'app9',
@@ -253,7 +233,7 @@ export const applications: Application[] = [
         location: 'San Jose, CA',
         remote: false,
         notes: 'Portfolio review scheduled',
-        contacts: [{ name: 'Emily Davis', role: 'Design Manager', email: 'emily.d@adobe.com' }],
+        contacts: [{ id: 'contact-app12-0', name: 'Emily Davis', role: 'Design Manager', email: 'emily.d@adobe.com' }],
     },
     {
         id: 'app13',
@@ -266,7 +246,7 @@ export const applications: Application[] = [
         location: 'San Francisco, CA',
         remote: true,
         notes: 'Technical interview next week',
-        contacts: [{ name: 'David Lee', role: 'Engineering Lead', email: 'david.l@salesforce.com' }],
+        contacts: [{ id: 'contact-app13-0', name: 'David Lee', role: 'Engineering Lead', email: 'david.l@salesforce.com' }],
     },
 ];
 
@@ -491,5 +471,5 @@ export default function getData() {
     return (
         <div>
         </div>
-    )
+    );
 }
