@@ -4,13 +4,15 @@ import {
   PlusCircle, Grid3x3, ListFilter, SlidersHorizontal, Download, X, Clock,
   ArrowUp, ArrowDown, Calendar, User, Briefcase, CheckSquare, Users,
   Edit2, Trash2, ChevronRight, Plus, Minus, Search, Loader2, ArrowLeft, ArrowRight,
-  Smartphone, Monitor
+  Smartphone, Monitor, Maximize2, Minimize2 
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import CardHeader from '../CardHeader';
 import ApplicationCard from '../applications/ApplicationCard';
 import KanbanColumn from '../applications/KanbanColumn';
 import ActionButton from '../dashboard/ActionButton';
+import Tooltip from '../Tooltip';
+import Portal from '../Portal';
 import ApplicationDetailDrawer from '../applications/ApplicationDetailDrawer';
 import { applications as mockApplications, companies as mockCompanies } from '../../pages/data';
 import { Application, ApplicationStage, InterviewEvent, StatusUpdate } from '@/types';
@@ -90,6 +92,7 @@ export default function Applications() {
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [contextMenu, setContextMenu] = useState<{id: string, x: number, y: number} | null>(null);
   const [isMobileView, setIsMobileView] = useState<boolean>(false);
+  const [isAutosizeEnabled, setIsAutosizeEnabled] = useState<boolean>(false);
   const tableRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
@@ -402,36 +405,51 @@ export default function Applications() {
         <div className="table-container">
           <div className="dashboard-controls">
             <div className="view-toggle">
-              <button
-                className={`control-btn ${viewMode === 'table' ? 'active' : ''}`}
-                onClick={() => setViewMode('table')}
-                title="List View"
-              >
-                <ListFilter size={14} />
-              </button>
-              <button
-                className={`control-btn ${viewMode === 'kanban' ? 'active' : ''}`}
-                onClick={() => setViewMode('kanban')}
-                title="Kanban View"
-              >
-                <Grid3x3 size={14} />
-              </button>
-              <button
-                className={`control-btn responsive-toggle ${isMobileView ? 'active' : ''}`}
-                onClick={() => setIsMobileView(!isMobileView)}
-                title={isMobileView ? "Desktop View" : "Mobile View"}
-              >
-                {isMobileView ? <Monitor size={14} /> : <Smartphone size={14} />}
-              </button>
+              <Tooltip content="List View" placement="bottom">
+                <button
+                  className={`control-btn ${viewMode === 'table' ? 'active' : ''}`}
+                  onClick={() => setViewMode('table')}
+                >
+                  <ListFilter size={14} />
+                </button>
+              </Tooltip>
+              <Tooltip content="Kanban View" placement="bottom">
+                <button
+                  className={`control-btn ${viewMode === 'kanban' ? 'active' : ''}`}
+                  onClick={() => setViewMode('kanban')}
+                >
+                  <Grid3x3 size={14} />
+                </button>
+              </Tooltip>
+              <Tooltip content={isMobileView ? "Switch to Desktop View" : "Switch to Mobile View"} placement="bottom">
+                <button
+                  className={`control-btn responsive-toggle ${isMobileView ? 'active' : ''}`}
+                  onClick={() => setIsMobileView(!isMobileView)}
+                >
+                  {isMobileView ? <Monitor size={14} /> : <Smartphone size={14} />}
+                </button>
+              </Tooltip>
+              <Tooltip content={isAutosizeEnabled ? "Switch to Fixed Columns" : "Switch to Auto Column Widths"} placement="bottom">
+                <button
+                  className={`control-btn autosize-toggle ${isAutosizeEnabled ? 'active' : ''}`}
+                  onClick={() => setIsAutosizeEnabled(!isAutosizeEnabled)}
+                >
+                  {isAutosizeEnabled ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                </button>
+              </Tooltip>
             </div>
             <div className="control-actions">
-              <button
-                className="control-btn"
-                onClick={() => setIsColumnMenuOpen(!isColumnMenuOpen)}
-                title="Customize Columns"
+              <Tooltip
+                content="Customize Columns"
+                placement="bottom"
               >
-                <SlidersHorizontal size={14} />
-              </button>
+                <button
+                  className="control-btn"
+                  onClick={() => setIsColumnMenuOpen(!isColumnMenuOpen)}
+                >
+                  <SlidersHorizontal size={14} />
+                </button>
+              </Tooltip>
               {isColumnMenuOpen && (
                 <div className="column-menu">
                   {['company', 'position', 'dateApplied', 'stage', 'tasks', 'location', 'salary', 'bonus'].map(col => (
@@ -498,7 +516,7 @@ export default function Applications() {
             <div className="dashboard-grid table-grid">
               <div className="dashboard-card table-card" ref={tableRef}>
                 <div className="table-wrapper">
-                  <div className="table-header">
+                  <div className={`table-header ${isAutosizeEnabled ? 'autosize' : ''}`}>
                     {visibleColumns.includes('company') && (
                       <div className={`header-cell ${sortConfig.column === 'company.name' ? 'sorted' : ''}`}>
                         <span
@@ -615,7 +633,7 @@ export default function Applications() {
                         <div
                           key={app.id}
                           ref={index === visibleApplications.length - 1 ? lastRowRef : null}
-                          className={`table-row ${selectedRows.includes(app.id) ? 'selected' : ''} ${mounted ? 'animate-in' : ''} ${isMobileView ? 'mobile-view' : ''}`}
+                          className={`table-row ${selectedRows.includes(app.id) ? 'selected' : ''} ${mounted ? 'animate-in' : ''} ${isMobileView ? 'mobile-view' : ''} ${isAutosizeEnabled ? 'autosize' : ''}`}
                           style={{ animationDelay: `${index * 0.05}s` }}
                           onClick={(e) => handleRowClick(app.id, e)}
                           onContextMenu={(e) => handleContextMenu(app.id, e)}
@@ -655,14 +673,35 @@ export default function Applications() {
                                     {app.company.name.charAt(0).toUpperCase()}
                                   </div>
                                 )}
-                                <span className="cell-value company-name">{app.company.name}</span>
+                                <Tooltip 
+                                  content={
+                                    <div className="company-tooltip">
+                                      <h4>{app.company.name}</h4>
+                                      {app.company.industry && <p>Industry: {app.company.industry}</p>}
+                                      {app.company.website && <p>Website: {app.company.website}</p>}
+                                    </div>
+                                  }
+                                  placement="bottom"
+                                >
+                                  <span className="cell-value company-name">{app.company.name}</span>
+                                </Tooltip>
                               </div>
                             </div>
                           )}
                           {visibleColumns.includes('position') && (
                             <div className="cell" data-label="Position">
                               <div className="position-cell">
-                                <span className="cell-value position-title">{app.position}</span>
+                                <Tooltip
+                                  content={
+                                    <div className="position-tooltip">
+                                      <h4>{app.position}</h4>
+                                      <p>{app.jobDescription}</p>
+                                    </div>
+                                  }
+                                  placement="bottom"
+                                >
+                                  <span className="cell-value position-title">{app.position}</span>
+                                </Tooltip>
                                 <div className="position-description">
                                   {app.jobDescription.substring(0, 80)}
                                   {app.jobDescription.length > 80 && '...'}
@@ -679,16 +718,21 @@ export default function Applications() {
                           {visibleColumns.includes('stage') && (
                             <div className="cell" data-label="Stage">
                               <div className="stage-container">
-                                <div
-                                  className={`stage-badge stage-${app.stage}`}
-                                  style={{ borderColor: getStageColor(app.stage) }}
+                                <Tooltip
+                                  content={`Current application stage: ${getStageLabel(app.stage)}`}
+                                  placement="top"
                                 >
-                                  <div 
-                                    className="stage-indicator" 
-                                    style={{ backgroundColor: getStageColor(app.stage) }}
-                                  ></div>
-                                  <span className="stage-label">{getStageLabel(app.stage)}</span>
-                                </div>
+                                  <div
+                                    className={`stage-badge stage-${app.stage}`}
+                                    style={{ borderColor: getStageColor(app.stage) }}
+                                  >
+                                    <div 
+                                      className="stage-indicator" 
+                                      style={{ backgroundColor: getStageColor(app.stage) }}
+                                    ></div>
+                                    <span className="stage-label">{getStageLabel(app.stage)}</span>
+                                  </div>
+                                </Tooltip>
                                 <div className="stage-progress-container">
                                   <div className="stage-progress-background">
                                     {stagesOrder.map((stage, idx) => (
@@ -803,10 +847,24 @@ export default function Applications() {
                                         ))}
                                       </div>
                                     ) : (
-                                      <span className="benefits-value">
-                                        {app.benefits.slice(0, 1).join(', ')}
-                                        {app.benefits.length > 1 && <span className="more-indicator">+{app.benefits.length - 1}</span>}
-                                      </span>
+                                      <Tooltip
+                                        content={
+                                          <div className="benefits-tooltip">
+                                            <h4>Benefits</h4>
+                                            <ul>
+                                              {app.benefits.map((benefit, i) => (
+                                                <li key={i}>{benefit}</li>
+                                              ))}
+                                            </ul>
+                                          </div>
+                                        }
+                                        placement="left"
+                                      >
+                                        <span className="benefits-value">
+                                          {app.benefits.slice(0, 1).join(', ')}
+                                          {app.benefits.length > 1 && <span className="more-indicator">+{app.benefits.length - 1}</span>}
+                                        </span>
+                                      </Tooltip>
                                     )}
                                   </div>
                                 ) : (
@@ -1129,6 +1187,10 @@ export default function Applications() {
           padding-left: 12px;
         }
         
+        .control-btn.autosize-toggle {
+          margin-left: 4px;
+        }
+        
         @media (min-width: 768px) {
           .control-btn.responsive-toggle {
             display: none;
@@ -1204,7 +1266,7 @@ export default function Applications() {
 
         .table-header {
           display: grid;
-          grid-template-columns: 2fr 2.5fr 1fr 1.2fr 1fr 1.5fr 1.2fr 1fr;
+          grid-template-columns: 1.5fr 2fr 1fr 1.2fr 1fr 1.5fr 1.2fr 1fr;
           padding: 10px 12px;
           border-bottom: 1px solid var(--border-divider);
           background: var(--glass-bg);
@@ -1215,6 +1277,11 @@ export default function Applications() {
           font-weight: 600;
           color: var(--text-secondary);
           width: 100%;
+          transition: all 0.3s ease;
+        }
+        
+        .table-header.autosize {
+          grid-template-columns: auto auto auto auto auto auto auto auto;
         }
         
         @media (max-width: 1400px) {
@@ -1270,7 +1337,7 @@ export default function Applications() {
 
         .table-row {
           display: grid;
-          grid-template-columns: 2fr 2.5fr 1fr 1.2fr 1fr 1.5fr 1.2fr 1fr;
+          grid-template-columns: 1.5fr 2fr 1fr 1.2fr 1fr 1.5fr 1.2fr 1fr;
           width: 100%;
           align-items: center;
           padding: 16px 14px;
@@ -1285,6 +1352,10 @@ export default function Applications() {
           margin: 6px 0;
           box-shadow: 0 2px 6px rgba(0,0,0,0.08);
           overflow: hidden;
+        }
+        
+        .table-row.autosize {
+          grid-template-columns: auto auto auto auto auto auto auto auto;
         }
         
         @media (max-width: 1400px) {
@@ -1590,6 +1661,37 @@ export default function Applications() {
           display: -webkit-box;
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
+        }
+        
+        /* Tooltip styles */
+        .company-tooltip h4,
+        .position-tooltip h4,
+        .benefits-tooltip h4 {
+          margin: 0 0 8px 0;
+          color: var(--accent-blue);
+          font-size: 15px;
+        }
+        
+        .company-tooltip p,
+        .position-tooltip p {
+          margin: 4px 0;
+          font-size: 13px;
+        }
+        
+        .position-tooltip p {
+          max-width: 400px;
+          white-space: normal;
+          line-height: 1.4;
+        }
+        
+        .benefits-tooltip ul {
+          margin: 0;
+          padding: 0 0 0 18px;
+        }
+        
+        .benefits-tooltip li {
+          margin-bottom: 4px;
+          font-size: 13px;
         }
 
         .cell-value {
