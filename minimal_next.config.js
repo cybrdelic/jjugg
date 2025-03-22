@@ -1,11 +1,6 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
+module.exports = {
   reactStrictMode: true,
-  experimental: {
-    // Disable experimental features
-    optimizeCss: false
-  },
-  trailingSlash: false,
   typescript: {
     ignoreBuildErrors: true
   },
@@ -13,5 +8,3 @@ const nextConfig = {
     ignoreDuringBuilds: true
   }
 }
-
-module.exports = nextConfig

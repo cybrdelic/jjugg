@@ -12,7 +12,7 @@ import KanbanColumn from '../applications/KanbanColumn';
 import ActionButton from '../dashboard/ActionButton';
 import ApplicationDetailDrawer from '../applications/ApplicationDetailDrawer';
 import { applications as mockApplications, companies as mockCompanies } from '../../pages/data';
-import { Application, ApplicationStage, InterviewEvent, StatusUpdate } from '../types';
+import { Application, ApplicationStage, InterviewEvent, StatusUpdate } from '@/types';
 
 // Helper Functions
 const formatDate = (date: Date): string =>

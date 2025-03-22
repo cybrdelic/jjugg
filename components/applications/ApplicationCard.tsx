@@ -5,15 +5,7 @@ import {
   Calendar, MoreVertical, MapPin, Building, 
   DollarSign, Globe, Clock, Edit, Trash2, ExternalLink
 } from 'lucide-react';
-
-interface Company {
-  id: string;
-  name: string;
-  logo: string;
-  industry: string;
-}
-
-type ApplicationStage = 'applied' | 'screening' | 'interview' | 'offer' | 'rejected';
+import { Company, ApplicationStage } from '@/types';
 
 interface ApplicationCardProps {
   id: string;

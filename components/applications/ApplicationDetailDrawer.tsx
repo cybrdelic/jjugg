@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import ActionButton from '../dashboard/ActionButton';
 import SideDrawer from '../SideDrawer';
-import { ApplicationStage, Company, Contact, InterviewEvent, Note, Task, Document } from '../types';
+import { ApplicationStage, Company, Contact, InterviewEvent, Note, Task, Document } from '@/types';
 
 
 interface ApplicationDetailDrawerProps {

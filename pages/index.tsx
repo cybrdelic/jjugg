@@ -1,10 +1,10 @@
 'use client';
-import { JSX, useState, useEffect } from 'react';
+import React, { JSX, useState, useEffect, Suspense } from 'react';
 import GlassSidebar from '../components/GlassSidebar';
 import { useTheme } from '@/contexts/ThemeContext';
-import { SectionKey, NavItemType } from '@/components/types';
+import type { SectionKey, NavItemType } from '@/types';
 import {
-  House, FileText, Bell, Users, User, Target, Clock, Menu, ChevronLeft
+  House, FileText, Bell, Users, User, Target, Clock, Menu, ChevronLeft, Calendar as CalendarIcon
 } from 'lucide-react';
 import ProfileArtifacts from '@/components/sections/ProfileArtifacts';
 import Interviews from '@/components/sections/Interviews';
@@ -17,21 +17,28 @@ import Calendar from '@/components/sections/Calendar';
 
 // Section Components
 const DashboardHomeSection = (): JSX.Element => <DashboardHome />;
-const ApplicationsSection = (): JSX.Element => require('../components/sections/Applications').default();
+// Use dynamic import with React.lazy for Applications component
+const ApplicationsLazy = React.lazy(() => import('../components/sections/Applications'));
+
+const ApplicationsSection = (): JSX.Element => {
+  return (
+    <Suspense fallback={<div>Loading Applications...</div>}>
+      <ApplicationsLazy />
+    </Suspense>
+  );
+};
 const RemindersSection = (): JSX.Element => <Reminders />;
 const AnalyticsSection = (): JSX.Element => (
-  <section className="glass-card">
+  <div className="glass-card">
     <h1 className="text-primary">Analytics</h1>
     <p className="text-secondary">Analytics data here...</p>
-  </section>
+  </div>
 );
 const InterviewsSection = (): JSX.Element => <Interviews />;
 const ProfileArtifactsSection = (): JSX.Element => <ProfileArtifacts />;
 const GoalsSection = (): JSX.Element => <Goals />;
 const TimelineSection = (): JSX.Element => <Timeline />;
-const CalendarSection = (): JSX.Element => (
-  <Calendar />
-);
+const CalendarSection = (): JSX.Element => <Calendar />;
 
 const sections: Record<SectionKey, () => JSX.Element> = {
   'dashboard-home': DashboardHomeSection,
@@ -60,6 +67,7 @@ export default function Home(): JSX.Element {
     { id: 'profile-artifacts-section', key: 'profile-artifacts-section', label: 'Profile', icon: <User className="w-5 h-5" />, color: 'var(--accent-green)' },
     { id: 'goals-section', key: 'goals-section', label: 'Goals', icon: <Target className="w-5 h-5" />, color: 'var(--accent-yellow)' },
     { id: 'timeline-section', key: 'timeline-section', label: 'Timeline', icon: <Clock className="w-5 h-5" />, color: 'var(--accent-red)', badge: { count: activities.length } },
+    { id: 'calendar-section', key: 'calendar-section', label: 'Calendar', icon: <CalendarIcon className="w-5 h-5" />, color: 'var(--accent-blue-light)', badge: { count: upcomingEvents.length } },
   ];
 
   useEffect(() => {

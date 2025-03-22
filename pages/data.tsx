@@ -1,4 +1,4 @@
-import { Application, ApplicationStage, Company } from "@/components/types";
+import type { Application, ApplicationStage, Company } from "@/types";
 import React from "react";
 
 type ActivityType = 'application' | 'interview' | 'email' | 'viewed' | 'assessment' | 'offer' | 'screening' | 'rejected';
