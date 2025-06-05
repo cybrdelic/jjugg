@@ -34,7 +34,7 @@ const Modal: React.FC<ModalProps> = ({
   };
 
   return (
-    <Portal>
+    <Portal zIndex={2000}>
       <div className="modal-overlay" onClick={handleOverlayClick}>
         <div className="modal-content" style={{ maxWidth: width }} onClick={e => e.stopPropagation()}>
           {(title || onClose) && (
@@ -64,7 +64,7 @@ const Modal: React.FC<ModalProps> = ({
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    z-index: 1000;
+                    /* z-index is now handled by Portal component */
                     animation: fadeIn 0.3s ease-in;
                 }
 

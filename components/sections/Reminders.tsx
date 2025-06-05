@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Bell, Calendar, Clock, PlusCircle, CheckCircle, Trash2, MoreHorizontal, AlertCircle, X } from 'lucide-react';
 import CardHeader from '../CardHeader';
+import EnhancedDropdown from '../EnhancedDropdown';
 
 interface Company {
   id: string;
@@ -156,9 +157,96 @@ const getPriorityColor = (priority: ReminderPriority): string => {
 export default function Reminders() {
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [localReminders, setLocalReminders] = useState<Reminder[]>(reminders);
+  const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Form state for new reminder with default values
+  const [newReminder, setNewReminder] = useState({
+    title: '',
+    description: '',
+    dueDate: new Date().toISOString().split('T')[0], // Default to today's date in YYYY-MM-DD format
+    dueTime: new Date().toTimeString().slice(0, 5), // Default to current time in HH:MM format
+    priority: 'medium' as ReminderPriority,
+    relatedApplicationId: ''
+  });
+  
+  // Reset form to initial state
+  const resetForm = () => {
+    setNewReminder({
+      title: '',
+      description: '',
+      dueDate: new Date().toISOString().split('T')[0], // Default to today's date in YYYY-MM-DD format
+      dueTime: new Date().toTimeString().slice(0, 5), // Default to current time in HH:MM format
+      priority: 'medium' as ReminderPriority,
+      relatedApplicationId: ''
+    });
+    setFormErrors({});
+  };
+  
+  // Validate form fields
+  const validateForm = (): boolean => {
+    const errors: {[key: string]: string} = {};
+    
+    if (!newReminder.title.trim()) {
+      errors.title = 'Title is required';
+    }
+    
+    if (!newReminder.dueDate) {
+      errors.dueDate = 'Due date is required';
+    }
+    
+    if (!newReminder.dueTime) {
+      errors.dueTime = 'Due time is required';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+  
+  // Handle form submission
+  const handleSubmitReminder = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    // Create combined date from date and time inputs
+    const [year, month, day] = newReminder.dueDate.split('-').map(Number);
+    const [hours, minutes] = newReminder.dueTime.split(':').map(Number);
+    const dueDateTime = new Date(year, month - 1, day, hours, minutes);
+    
+    // Create a new reminder object
+    const reminder: Reminder = {
+      id: `rem${Date.now()}`, // Generate a unique ID
+      title: newReminder.title,
+      description: newReminder.description || undefined,
+      dueDate: dueDateTime,
+      priority: newReminder.priority,
+      status: 'pending',
+      relatedApplication: newReminder.relatedApplicationId 
+        ? applications.find(app => app.id === newReminder.relatedApplicationId)
+        : undefined
+    };
+    
+    // In a real app, we would call an API here
+    // For demo purposes, we'll just update the local state
+    setTimeout(() => {
+      setLocalReminders(prevReminders => [...prevReminders, reminder]);
+      setIsSubmitting(false);
+      resetForm();
+      setShowAddForm(false);
+      
+      // Show success toast/notification (implementation would depend on your UI library)
+      console.log('Reminder created successfully!', reminder);
+    }, 500); // Simulate API delay
+  };
   
   // Filter reminders based on status
-  const filteredReminders = reminders.filter(reminder => {
+  const filteredReminders = localReminders.filter(reminder => {
     return filter === 'all' || reminder.status === filter;
   });
   
@@ -193,15 +281,29 @@ export default function Reminders() {
   
   // Toggle reminder status
   const toggleReminderStatus = (id: string) => {
-    // This would normally update the state in a real implementation
-    console.log(`Toggle status for reminder: ${id}`);
+    setLocalReminders(prevReminders => 
+      prevReminders.map(reminder => 
+        reminder.id === id 
+          ? { ...reminder, status: reminder.status === 'completed' ? 'pending' : 'completed' }
+          : reminder
+      )
+    );
+  };
+  
+  // Delete reminder
+  const deleteReminder = (id: string) => {
+    if (confirm('Are you sure you want to delete this reminder?')) {
+      setLocalReminders(prevReminders => 
+        prevReminders.filter(reminder => reminder.id !== id)
+      );
+    }
   };
 
   return (
     <section className="reminders-section reveal-element">
       <CardHeader
         title="Reminders"
-        subtitle={`Track tasks and deadlines (${reminders.filter(r => r.status === 'pending').length} pending)`}
+        subtitle={`Track tasks and deadlines (${localReminders.filter(r => r.status === 'pending').length} pending)`}
         accentColor="var(--accent-orange)"
         variant="default"
       >
@@ -301,7 +403,17 @@ export default function Reminders() {
                     </div>
                     
                     <div className="reminder-actions">
-                      <button className="action-btn edit">
+                      <button 
+                        className="action-btn delete"
+                        onClick={() => deleteReminder(reminder.id)}
+                        aria-label="Delete reminder"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                      <button 
+                        className="action-btn edit"
+                        aria-label="More options"
+                      >
                         <MoreHorizontal size={16} />
                       </button>
                     </div>
@@ -332,69 +444,126 @@ export default function Reminders() {
             <h3>Add Reminder</h3>
             <button 
               className="close-btn"
-              onClick={() => setShowAddForm(false)}
+              onClick={() => {
+                setShowAddForm(false);
+                resetForm();
+              }}
               aria-label="Close form"
             >
               <X size={18} />
             </button>
           </div>
           
-          <div className="form-content">
-            <div className="form-group">
+          <form onSubmit={handleSubmitReminder} className="form-content">
+            <div className={`form-group ${formErrors.title ? 'has-error' : ''}`}>
               <label htmlFor="title">Title</label>
-              <input type="text" id="title" placeholder="Reminder title..." />
+              <input 
+                type="text" 
+                id="title" 
+                placeholder="Reminder title..." 
+                value={newReminder.title}
+                onChange={(e) => setNewReminder({...newReminder, title: e.target.value})}
+              />
+              {formErrors.title && (
+                <div className="error-message">{formErrors.title}</div>
+              )}
             </div>
             
             <div className="form-group">
               <label htmlFor="description">Description (optional)</label>
-              <textarea id="description" placeholder="Add more details..." rows={3} />
+              <textarea 
+                id="description" 
+                placeholder="Add more details..." 
+                rows={3} 
+                value={newReminder.description}
+                onChange={(e) => setNewReminder({...newReminder, description: e.target.value})}
+              />
             </div>
             
             <div className="form-row">
-              <div className="form-group half">
+              <div className={`form-group half ${formErrors.dueDate ? 'has-error' : ''}`}>
                 <label htmlFor="dueDate">Due Date</label>
-                <input type="date" id="dueDate" />
+                <div className="date-input-wrapper">
+                  <Calendar size={16} className="date-input-icon" />
+                  <input 
+                    type="date" 
+                    id="dueDate" 
+                    value={newReminder.dueDate}
+                    onChange={(e) => setNewReminder({...newReminder, dueDate: e.target.value})}
+                    min={new Date().toISOString().split('T')[0]} // Prevent selecting dates in the past
+                  />
+                </div>
+                {formErrors.dueDate && (
+                  <div className="error-message">{formErrors.dueDate}</div>
+                )}
               </div>
               
-              <div className="form-group half">
+              <div className={`form-group half ${formErrors.dueTime ? 'has-error' : ''}`}>
                 <label htmlFor="dueTime">Time</label>
-                <input type="time" id="dueTime" />
+                <div className="date-input-wrapper">
+                  <Clock size={16} className="date-input-icon" />
+                  <input 
+                    type="time" 
+                    id="dueTime" 
+                    value={newReminder.dueTime}
+                    onChange={(e) => setNewReminder({...newReminder, dueTime: e.target.value})}
+                  />
+                </div>
+                {formErrors.dueTime && (
+                  <div className="error-message">{formErrors.dueTime}</div>
+                )}
               </div>
             </div>
             
             <div className="form-group">
               <label htmlFor="priority">Priority</label>
-              <select id="priority">
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
+              <EnhancedDropdown
+                options={[
+                  { value: 'low', label: 'Low' },
+                  { value: 'medium', label: 'Medium' },
+                  { value: 'high', label: 'High' }
+                ]}
+                value={newReminder.priority}
+                onChange={(value) => setNewReminder({...newReminder, priority: value as ReminderPriority})}
+                size="medium"
+              />
             </div>
             
             <div className="form-group">
               <label htmlFor="application">Related Application (optional)</label>
-              <select id="application">
-                <option value="">None</option>
-                {applications.map(app => (
-                  <option key={app.id} value={app.id}>
-                    {app.company.name} - {app.position}
-                  </option>
-                ))}
-              </select>
+              <EnhancedDropdown
+                options={applications.map(app => ({
+                  value: app.id,
+                  label: `${app.company.name} - ${app.position}`
+                }))}
+                value={newReminder.relatedApplicationId}
+                placeholder="None"
+                onChange={(value) => setNewReminder({...newReminder, relatedApplicationId: value})}
+                size="medium"
+                searchable
+              />
             </div>
             
             <div className="form-actions">
               <button 
+                type="button"
                 className="cancel-btn"
-                onClick={() => setShowAddForm(false)}
+                onClick={() => {
+                  setShowAddForm(false);
+                  resetForm();
+                }}
               >
                 Cancel
               </button>
-              <button className="save-btn">
-                Save Reminder
+              <button 
+                type="submit" 
+                className={`save-btn ${isSubmitting ? 'loading' : ''}`}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Saving...' : 'Save Reminder'}
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 
@@ -791,8 +960,6 @@ export default function Reminders() {
         }
         
         input[type="text"],
-        input[type="date"],
-        input[type="time"],
         textarea,
         select {
           padding: 10px 12px;
@@ -804,6 +971,47 @@ export default function Reminders() {
           transition: all 0.2s ease;
           outline: none;
           width: 100%;
+        }
+        
+        .date-input-wrapper {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+        
+        .date-input-icon {
+          position: absolute;
+          left: 10px;
+          color: var(--text-tertiary);
+          pointer-events: none;
+        }
+        
+        input[type="date"],
+        input[type="time"] {
+          padding: 10px 12px 10px 36px;
+          border-radius: var(--border-radius);
+          border: 1px solid var(--border-thin);
+          background: var(--glass-bg);
+          color: var(--text-primary);
+          font-size: 14px;
+          transition: all 0.2s ease;
+          outline: none;
+          width: 100%;
+          -webkit-appearance: none;
+          -moz-appearance: none;
+          appearance: none;
+        }
+        
+        /* Calendar icon styling for date inputs */
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator {
+          background: transparent;
+          color: var(--text-tertiary);
+          position: absolute;
+          right: 10px;
+          width: 20px;
+          height: 20px;
+          cursor: pointer;
         }
         
         input:focus,
@@ -863,6 +1071,46 @@ export default function Reminders() {
           to {
             transform: translateY(0);
             opacity: 1;
+          }
+        }
+        
+        /* Form error styles */
+        .form-group.has-error input,
+        .form-group.has-error textarea {
+          border-color: var(--accent-red);
+          box-shadow: 0 0 0 1px rgba(var(--accent-red-rgb), 0.2);
+        }
+        
+        .error-message {
+          color: var(--accent-red);
+          font-size: 12px;
+          margin-top: 4px;
+          font-weight: 500;
+        }
+        
+        /* Loading state */
+        .save-btn.loading {
+          position: relative;
+          color: transparent;
+        }
+        
+        .save-btn.loading::after {
+          content: "";
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 16px;
+          height: 16px;
+          margin: -8px 0 0 -8px;
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-top-color: white;
+          border-radius: 50%;
+          animation: spinner 0.6s linear infinite;
+        }
+        
+        @keyframes spinner {
+          to {
+            transform: rotate(360deg);
           }
         }
         

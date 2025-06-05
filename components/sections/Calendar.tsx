@@ -4,6 +4,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin, Briefcase, Info, Plus, Search, Filter, X, ArrowLeft, ArrowRight, Check, Circle } from 'lucide-react';
 import Modal from '../Modal';
 import CardHeader from '../CardHeader';
+import TabButton, { TabGroup } from '../TabButton';
+import Pill, { PillGroup } from '../Pill';
+import EnhancedDropdown from '../EnhancedDropdown';
 import { upcomingEvents, applications } from '@/pages/data';
 import type { Application, Company } from '@/types';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -311,20 +314,27 @@ export default function Calendar() {
                                             </span>
                                         </div>
                                         <div className="event-meta">
-                                            <span className={`event-type ${event.type.toLowerCase()}`}>
-                                                {event.type}
-                                            </span>
+                                            <Pill
+                                                label={event.type}
+                                                size="small"
+                                                color={getEventTypeColor(event.type)}
+                                                className={`event-type-pill ${event.type.toLowerCase()}`}
+                                            />
                                             {event.company && (
-                                                <span className="event-company">
-                                                    <Briefcase size={12} />
-                                                    {event.company.name}
-                                                </span>
+                                                <Pill
+                                                    label={event.company.name}
+                                                    icon={Briefcase}
+                                                    size="small"
+                                                    className="event-company-pill"
+                                                />
                                             )}
                                             {event.location && (
-                                                <span className="event-location">
-                                                    <MapPin size={12} />
-                                                    {event.location}
-                                                </span>
+                                                <Pill
+                                                    label={event.location}
+                                                    icon={MapPin}
+                                                    size="small"
+                                                    className="event-location-pill"
+                                                />
                                             )}
                                         </div>
                                     </div>
@@ -530,24 +540,27 @@ export default function Calendar() {
             
             <div className="calendar-controls">
                 <div className="view-controls">
-                    <button 
-                        className={`view-btn ${view === 'month' ? 'active' : ''}`}
-                        onClick={() => setView('month')}
+                    <TabGroup 
+                        activeTab={view} 
+                        onTabChange={(tab) => setView(tab as CalendarView)}
+                        className="view-tab-group"
                     >
-                        Month
-                    </button>
-                    <button 
-                        className={`view-btn ${view === 'week' ? 'active' : ''}`}
-                        onClick={() => setView('week')}
-                    >
-                        Week
-                    </button>
-                    <button 
-                        className={`view-btn ${view === 'agenda' ? 'active' : ''}`}
-                        onClick={() => setView('agenda')}
-                    >
-                        Agenda
-                    </button>
+                        <TabButton 
+                            label="Month" 
+                            data-id="month"
+                            accentColor="var(--accent-blue)"
+                        />
+                        <TabButton 
+                            label="Week" 
+                            data-id="week"
+                            accentColor="var(--accent-blue)"
+                        />
+                        <TabButton 
+                            label="Agenda" 
+                            data-id="agenda"
+                            accentColor="var(--accent-blue)"
+                        />
+                    </TabGroup>
                 </div>
                 
                 <div className="calendar-header">
@@ -605,30 +618,32 @@ export default function Calendar() {
                     </div>
                     
                     <div className="filter-buttons">
-                        <button 
-                            className={`filter-btn ${filterType === null ? 'active' : ''}`} 
-                            onClick={() => setFilterType(null)}
+                        <PillGroup 
+                            activePill={filterType || "all"}
+                            onPillChange={(pill) => setFilterType(pill === "all" ? null : pill)}
+                            className="event-type-filter"
                         >
-                            All
-                        </button>
-                        <button 
-                            className={`filter-btn interview ${filterType === 'Interview' ? 'active' : ''}`} 
-                            onClick={() => setFilterType(filterType === 'Interview' ? null : 'Interview')}
-                        >
-                            Interviews
-                        </button>
-                        <button 
-                            className={`filter-btn task ${filterType === 'Task' ? 'active' : ''}`} 
-                            onClick={() => setFilterType(filterType === 'Task' ? null : 'Task')}
-                        >
-                            Tasks
-                        </button>
-                        <button 
-                            className={`filter-btn assessment ${filterType === 'Assessment' ? 'active' : ''}`} 
-                            onClick={() => setFilterType(filterType === 'Assessment' ? null : 'Assessment')}
-                        >
-                            Assessments
-                        </button>
+                            <Pill
+                                label="All"
+                                data-id="all"
+                                color="var(--accent-blue)"
+                            />
+                            <Pill
+                                label="Interviews"
+                                data-id="Interview"
+                                color="var(--accent-green)"
+                            />
+                            <Pill
+                                label="Tasks"
+                                data-id="Task"
+                                color="var(--accent-blue)"
+                            />
+                            <Pill
+                                label="Assessments"
+                                data-id="Assessment"
+                                color="var(--accent-yellow)"
+                            />
+                        </PillGroup>
                     </div>
                 </div>
             </div>
@@ -894,16 +909,20 @@ export default function Calendar() {
                                                     </div>
                                                     <div className="day-event-meta">
                                                         {event.location && (
-                                                            <span className="event-location">
-                                                                <MapPin size={14} />
-                                                                {event.location}
-                                                            </span>
+                                                            <Pill
+                                                                label={event.location}
+                                                                icon={MapPin}
+                                                                size="small"
+                                                                className="event-location-pill"
+                                                            />
                                                         )}
                                                         {event.company && (
-                                                            <span className="event-company">
-                                                                <Briefcase size={14} />
-                                                                {event.company.name}
-                                                            </span>
+                                                            <Pill
+                                                                label={event.company.name}
+                                                                icon={Briefcase}
+                                                                size="small"
+                                                                className="event-company-pill"
+                                                            />
                                                         )}
                                                     </div>
                                                 </div>
@@ -935,12 +954,12 @@ export default function Calendar() {
                 >
                     <div className="event-details">
                         <div className="event-info">
-                            <div 
-                                className="event-type-badge"
-                                style={{ backgroundColor: getEventTypeColor(selectedEvent.type) }}
-                            >
-                                {selectedEvent.type}
-                            </div>
+                            <Pill
+                                label={selectedEvent.type}
+                                color={getEventTypeColor(selectedEvent.type)}
+                                active={true}
+                                className="event-type-pill"
+                            />
                             
                             <div className="event-info-item">
                                 <CalendarIcon size={16} />
@@ -956,16 +975,18 @@ export default function Calendar() {
                                 </div>
                             )}
                             {selectedEvent.location && (
-                                <div className="event-info-item">
-                                    <MapPin size={16} />
-                                    <span>{selectedEvent.location}</span>
-                                </div>
+                                <Pill
+                                    label={selectedEvent.location}
+                                    icon={MapPin}
+                                    className="event-location-pill"
+                                />
                             )}
                             {selectedEvent.company && (
-                                <div className="event-info-item">
-                                    <Briefcase size={16} />
-                                    <span>{selectedEvent.company.name}</span>
-                                </div>
+                                <Pill
+                                    label={selectedEvent.company.name}
+                                    icon={Briefcase}
+                                    className="event-company-pill"
+                                />
                             )}
                             
                             <div className="event-completion">
@@ -1036,17 +1057,18 @@ export default function Calendar() {
                     
                     <div className="form-group">
                         <label htmlFor="type">Type</label>
-                        <select
-                            id="type"
-                            value={newEvent.type}
-                            onChange={(e) => setNewEvent({...newEvent, type: e.target.value as any})}
-                        >
-                            <option value="Task">Task</option>
-                            <option value="Interview">Interview</option>
-                            <option value="Deadline">Deadline</option>
-                            <option value="Reminder">Reminder</option>
-                            <option value="Assessment">Assessment</option>
-                        </select>
+                        <EnhancedDropdown
+                            options={[
+                                { value: 'Task', label: 'Task' },
+                                { value: 'Interview', label: 'Interview' },
+                                { value: 'Deadline', label: 'Deadline' },
+                                { value: 'Reminder', label: 'Reminder' },
+                                { value: 'Assessment', label: 'Assessment' }
+                            ]}
+                            value={newEvent.type as string}
+                            onChange={(value) => setNewEvent({...newEvent, type: value as any})}
+                            placeholder="Select event type"
+                        />
                     </div>
                     
                     <div className="form-row">
@@ -1101,15 +1123,16 @@ export default function Calendar() {
                     
                     <div className="form-group">
                         <label htmlFor="priority">Priority</label>
-                        <select
-                            id="priority"
-                            value={newEvent.priority}
-                            onChange={(e) => setNewEvent({...newEvent, priority: e.target.value as any})}
-                        >
-                            <option value="low">Low</option>
-                            <option value="medium">Medium</option>
-                            <option value="high">High</option>
-                        </select>
+                        <EnhancedDropdown
+                            options={[
+                                { value: 'low', label: 'Low' },
+                                { value: 'medium', label: 'Medium' },
+                                { value: 'high', label: 'High' }
+                            ]}
+                            value={newEvent.priority as string}
+                            onChange={(value) => setNewEvent({...newEvent, priority: value as any})}
+                            placeholder="Select priority"
+                        />
                     </div>
                     
                     <div className="form-group">
@@ -1142,6 +1165,23 @@ export default function Calendar() {
             </Modal>
 
             <style jsx>{`
+        /* Pill Styles Override */
+        :global(.event-type-pill) {
+          text-transform: capitalize;
+        }
+        
+        :global(.event-company-pill),
+        :global(.event-location-pill) {
+          max-width: 150px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        
+        :global(.event-meta .pill) {
+          margin-right: 4px;
+          margin-bottom: 4px;
+        }
+        
         /* Base Calendar Section Styles */
         .calendar-section {
           display: flex;

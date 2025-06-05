@@ -12,6 +12,7 @@ import Modal from '../Modal';
 import Portal from '../Portal';
 import ActionButton from '../dashboard/ActionButton';
 import TabButton, { TabGroup } from '../TabButton';
+import EnhancedDropdown from '../EnhancedDropdown';
 
 interface MonthlyGoal {
   id: string;
@@ -587,16 +588,16 @@ export default function Goals() {
             </div>
             <div className="form-group">
               <label htmlFor="category">Category</label>
-              <select
-                id="category"
+              <EnhancedDropdown
+                options={categoryOrder.map(cat => ({
+                  value: cat,
+                  label: getCategoryLabel(cat)
+                }))}
                 value={newGoal.category}
-                onChange={(e: ChangeEvent<HTMLSelectElement>) => setNewGoal({ ...newGoal, category: e.target.value as MonthlyGoal['category'] })}
+                onChange={(value) => setNewGoal({ ...newGoal, category: value as MonthlyGoal['category'] })}
+                placeholder="Select goal category"
                 aria-label="Goal category"
-              >
-                {categoryOrder.map(cat => (
-                  <option key={cat} value={cat}>{getCategoryLabel(cat)}</option>
-                ))}
-              </select>
+              />
             </div>
             <div className="form-group inline-group">
               <div>
@@ -639,16 +640,17 @@ export default function Goals() {
             </div>
             <div className="form-group">
               <label htmlFor="priority">Priority</label>
-              <select
-                id="priority"
+              <EnhancedDropdown
+                options={[
+                  { value: 'high', label: 'High' },
+                  { value: 'medium', label: 'Medium' },
+                  { value: 'low', label: 'Low' },
+                ]}
                 value={newGoal.priority}
-                onChange={(e: ChangeEvent<HTMLSelectElement>) => setNewGoal({ ...newGoal, priority: e.target.value as MonthlyGoal['priority'] ?? 'low' })}
+                onChange={(value) => setNewGoal({ ...newGoal, priority: value as MonthlyGoal['priority'] ?? 'low' })}
+                placeholder="Select priority"
                 aria-label="Goal priority"
-              >
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
+              />
             </div>
             {formError && <span className="form-error" role="alert">{formError}</span>}
           </div>

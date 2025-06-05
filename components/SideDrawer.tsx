@@ -57,7 +57,7 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
   }
 
   return (
-    <Portal>
+    <Portal zIndex={2000}>
       <div
         className={`side-drawer-container ${mounted ? 'visible' : ''} ${isClosing ? 'closing' : ''}`}
         onClick={handleBackdropClick}
@@ -87,7 +87,7 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
+            /* z-index is now handled by Portal component */
             display: flex;
             visibility: hidden;
             opacity: 0;

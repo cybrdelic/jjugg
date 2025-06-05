@@ -15,6 +15,7 @@ import ApplicationFunnel from '../ApplicationFunnel';
 import WeeklyActivity from '../WeeklyActivity';
 import ActionsTab from '../ActionsTab';
 import SkillsTab from '../SkillsTab'; // Import the new SkillsTab component
+import EnhancedDropdown from '../EnhancedDropdown';
 
 // Types
 interface Company {
@@ -88,6 +89,7 @@ export default function DashboardHome() {
   const [activeTab, setActiveTab] = useState('overview');
   const [activeInsight, setActiveInsight] = useState('response-rate');
   const [timeRange, setTimeRange] = useState('30d');
+  const [activityFilter, setActivityFilter] = useState('all');
 
   useEffect(() => {
     setMounted(true);
@@ -511,12 +513,18 @@ export default function DashboardHome() {
             <div className="card-header">
               <h3 className="card-title">Activity Feed</h3>
               <div className="filters">
-                <select className="filter-select">
-                  <option value="all">All Activities</option>
-                  <option value="applications">Applications</option>
-                  <option value="interviews">Interviews</option>
-                  <option value="networking">Networking</option>
-                </select>
+                <EnhancedDropdown
+                  options={[
+                    { value: 'all', label: 'All Activities' },
+                    { value: 'applications', label: 'Applications' },
+                    { value: 'interviews', label: 'Interviews' },
+                    { value: 'networking', label: 'Networking' }
+                  ]}
+                  value={activityFilter}
+                  onChange={(value) => setActivityFilter(value)}
+                  size="small"
+                  width={150}
+                />
               </div>
             </div>
             <div className="activity-timeline">

@@ -2,6 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { useTheme, BackgroundType, BackgroundPattern, BackgroundAnimation, BackgroundBlend, BackgroundMedia } from '@/contexts/ThemeContext';
 import { Layers, Image, Video, FileText, Grid, CloudRain, Cpu, Upload, Trash, Sliders, Check, X } from 'lucide-react';
+import EnhancedDropdown from './EnhancedDropdown';
 
 /**
  * Background Customizer Component
@@ -310,16 +311,12 @@ const BackgroundCustomizer: React.FC = () => {
                                 <div className="option-row">
                                     <label>
                                         <span>Blend Mode</span>
-                                        <select
+                                        <EnhancedDropdown
+                                            options={blendOptions}
                                             value={background.blendMode}
-                                            onChange={(e) => updateBackgroundSetting('blendMode', e.target.value as BackgroundBlend)}
-                                        >
-                                            {blendOptions.map(option => (
-                                                <option key={option.value} value={option.value}>
-                                                    {option.label}
-                                                </option>
-                                            ))}
-                                        </select>
+                                            onChange={(value) => updateBackgroundSetting('blendMode', value as BackgroundBlend)}
+                                            size="small"
+                                        />
                                     </label>
                                 </div>
                             </>

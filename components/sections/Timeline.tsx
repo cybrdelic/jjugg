@@ -9,6 +9,7 @@ import CardHeader from '../CardHeader';
 import confetti from 'canvas-confetti';
 import Modal from '../Modal';
 import TabButton, { TabGroup } from '../TabButton';
+import EnhancedDropdown from '../EnhancedDropdown';
 
 interface TimelineActivity {
   id: string;
@@ -461,14 +462,15 @@ export default function Timeline() {
           </div>
           <div className="form-group">
             <label>Type</label>
-            <select
+            <EnhancedDropdown
+              options={['application', 'interview', 'email', 'call', 'note', 'status'].map(type => ({
+                value: type,
+                label: type.charAt(0).toUpperCase() + type.slice(1)
+              }))}
               value={newActivity.type}
-              onChange={e => setNewActivity({ ...newActivity, type: e.target.value as TimelineActivity['type'] })}
-            >
-              {['application', 'interview', 'email', 'call', 'note', 'status'].map(type => (
-                <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
-              ))}
-            </select>
+              onChange={(value) => setNewActivity({ ...newActivity, type: value as TimelineActivity['type'] })}
+              placeholder="Select activity type"
+            />
           </div>
           <div className="form-group">
             <label>Details</label>
@@ -490,14 +492,16 @@ export default function Timeline() {
           </div>
           <div className="form-group">
             <label>Priority</label>
-            <select
+            <EnhancedDropdown
+              options={[
+                { value: 'high', label: 'High' },
+                { value: 'medium', label: 'Medium' },
+                { value: 'low', label: 'Low' }
+              ]}
               value={newActivity.priority}
-              onChange={e => setNewActivity({ ...newActivity, priority: e.target.value as TimelineActivity['priority'] })}
-            >
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-            </select>
+              onChange={(value) => setNewActivity({ ...newActivity, priority: value as TimelineActivity['priority'] })}
+              placeholder="Select priority"
+            />
           </div>
           <div className="form-group">
             <label>Next Steps</label>

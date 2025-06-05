@@ -2,8 +2,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTheme, ThemeName, ThemeSettings, ColorTheme, AccentColor, FontFamily, BorderRadius, Animation, GlassEffect, BackgroundType, BackgroundPattern, BackgroundAnimation } from '@/contexts/ThemeContext';
 import { Sun, Moon, Palette, Check, ChevronDown, RefreshCw, Layers, Grid, CloudRain, Image } from 'lucide-react';
-import Dropdown from './Dropdown';
+import SideDrawer from './SideDrawer';
 import BackgroundCustomizer from './BackgroundCustomizer';
+import EnhancedDropdown from './EnhancedDropdown';
 
 const ThemeSwitcher: React.FC = () => {
   const { currentTheme, themeName, availableThemes, setThemeName, updateThemeSetting, toggleColorTheme } = useTheme();
@@ -64,198 +65,189 @@ const ThemeSwitcher: React.FC = () => {
     heavy: 'Heavy',
   };
 
-  // Dropdown trigger
-  const triggerButton = (
-    <button
-      className="theme-toggle-btn"
-      aria-expanded={isOpen}
-      aria-label="Toggle theme menu"
-      onClick={() => setIsOpen(!isOpen)}
-    >
-      <Palette size={20} />
-      <span>Theme</span>
-      <ChevronDown size={16} className={`chevron ${isOpen ? 'rotate' : ''}`} />
-    </button>
-  );
-
   return (
     <div className="theme-switcher-container">
-      <Dropdown
-        trigger={triggerButton}
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        placement="bottom-start"
-        width={activeTab === 'background' ? 480 : 300}
-        className="theme-dropdown"
+      <button
+        className="theme-toggle-btn"
+        aria-expanded={isOpen}
+        aria-label="Toggle theme menu"
+        onClick={() => setIsOpen(true)}
       >
-        <div className="theme-tabs">
-          <button
-            className={`tab-btn ${activeTab === 'presets' ? 'active' : ''}`}
-            onClick={() => setActiveTab('presets')}
-          >
-            Presets
-          </button>
-          <button
-            className={`tab-btn ${activeTab === 'customize' ? 'active' : ''}`}
-            onClick={() => setActiveTab('customize')}
-          >
-            Style
-          </button>
-          <button
-            className={`tab-btn ${activeTab === 'background' ? 'active' : ''}`}
-            onClick={() => setActiveTab('background')}
-          >
-            Background
-          </button>
-        </div>
+        <Palette size={20} />
+        <span>Theme</span>
+        <ChevronDown size={16} className={`chevron ${isOpen ? 'rotate' : ''}`} />
+      </button>
 
-        {activeTab === 'presets' && (
-          <div className="theme-presets">
-            {availableThemes.filter(theme => theme.name !== 'custom').map((theme) => (
-              <button
-                key={theme.name}
-                className={`theme-preset-btn ${themeName === theme.name ? 'active' : ''}`}
-                onClick={() => {
-                  setThemeName(theme.name);
-                }}
-              >
-                <div className={`theme-preview accent-${theme.settings.accentColor} ${theme.settings.colorTheme} radius-${theme.settings.borderRadius}`}>
-                  <div className="preview-sidebar"></div>
-                  <div className="preview-content">
-                    <div className="preview-card"></div>
-                    <div className="preview-card"></div>
-                  </div>
-                  <div className="preview-accent" style={{ background: `var(--accent-${theme.settings.accentColor})` }}></div>
+      <SideDrawer
+        isVisible={isOpen}
+        onClose={() => setIsOpen(false)}
+        position="right"
+        width={activeTab === 'background' ? '480px' : '400px'}
+      >
+        <div className="theme-drawer-content">
+          <h2 className="theme-title">Theme Settings</h2>
 
-                  {/* Background preview indicator */}
-                  <div className={`preview-bg-type preview-bg-${theme.settings.background.type}`}>
-                    {theme.settings.background.pattern !== 'none' && (
-                      <div className={`preview-pattern preview-pattern-${theme.settings.background.pattern}`}></div>
-                    )}
-                  </div>
-                </div>
-                <div className="theme-name">
-                  {theme.label}
-                  {themeName === theme.name && <Check size={14} className="check-icon" />}
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {activeTab === 'customize' && (
-          <div className="theme-customize">
-            <div className="theme-option">
-              <label>Mode</label>
-              <div className="toggle-group">
-                <button
-                  className={`toggle-btn ${currentTheme.colorTheme === 'light' ? 'active' : ''}`}
-                  onClick={() => updateThemeSetting('colorTheme', 'light')}
-                >
-                  <Sun size={14} />
-                  <span>Light</span>
-                </button>
-                <button
-                  className={`toggle-btn ${currentTheme.colorTheme === 'dark' ? 'active' : ''}`}
-                  onClick={() => updateThemeSetting('colorTheme', 'dark')}
-                >
-                  <Moon size={14} />
-                  <span>Dark</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="theme-option">
-              <label>Accent Color</label>
-              <div className="color-swatches">
-                {accentColors.map(color => (
-                  <button
-                    key={color}
-                    className={`color-swatch ${color} ${currentTheme.accentColor === color ? 'active' : ''}`}
-                    style={{ backgroundColor: `var(--accent-${color})` }}
-                    onClick={() => updateThemeSetting('accentColor', color)}
-                    title={accentColorLabels[color]}
-                    aria-label={`Set accent color to ${accentColorLabels[color]}`}
-                  >
-                    {currentTheme.accentColor === color && <Check size={12} />}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="theme-option">
-              <label>Font Family</label>
-              <select
-                className="select-dropdown"
-                value={currentTheme.fontFamily}
-                onChange={(e) => updateThemeSetting('fontFamily', e.target.value as FontFamily)}
-              >
-                {fontFamilies.map(font => (
-                  <option key={font} value={font} className={`font-${font}`}>
-                    {fontFamilyLabels[font]}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="theme-option">
-              <label>Border Radius</label>
-              <select
-                className="select-dropdown"
-                value={currentTheme.borderRadius}
-                onChange={(e) => updateThemeSetting('borderRadius', e.target.value as BorderRadius)}
-              >
-                {borderRadii.map(radius => (
-                  <option key={radius} value={radius}>
-                    {borderRadiusLabels[radius]}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="theme-option">
-              <label>Animation Level</label>
-              <select
-                className="select-dropdown"
-                value={currentTheme.animation}
-                onChange={(e) => updateThemeSetting('animation', e.target.value as Animation)}
-              >
-                {animations.map(anim => (
-                  <option key={anim} value={anim}>
-                    {animationLabels[anim]}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="theme-option">
-              <label>Glass Effect</label>
-              <select
-                className="select-dropdown"
-                value={currentTheme.glassEffect}
-                onChange={(e) => updateThemeSetting('glassEffect', e.target.value as GlassEffect)}
-              >
-                {glassEffects.map(effect => (
-                  <option key={effect} value={effect}>
-                    {glassEffectLabels[effect]}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <button className="reset-btn" onClick={() => setThemeName('default')}>
-              <RefreshCw size={14} />
-              <span>Reset to Default</span>
+          <div className="theme-tabs">
+            <button
+              className={`tab-btn ${activeTab === 'presets' ? 'active' : ''}`}
+              onClick={() => setActiveTab('presets')}
+            >
+              Presets
+            </button>
+            <button
+              className={`tab-btn ${activeTab === 'customize' ? 'active' : ''}`}
+              onClick={() => setActiveTab('customize')}
+            >
+              Style
+            </button>
+            <button
+              className={`tab-btn ${activeTab === 'background' ? 'active' : ''}`}
+              onClick={() => setActiveTab('background')}
+            >
+              Background
             </button>
           </div>
-        )}
 
-        {activeTab === 'background' && (
-          <div className="background-tab">
-            <BackgroundCustomizer />
-          </div>
-        )}
-      </Dropdown>
+          {activeTab === 'presets' && (
+            <div className="theme-presets">
+              {availableThemes.filter(theme => theme.name !== 'custom').map((theme) => (
+                <button
+                  key={theme.name}
+                  className={`theme-preset-btn ${themeName === theme.name ? 'active' : ''}`}
+                  onClick={() => {
+                    setThemeName(theme.name);
+                  }}
+                >
+                  <div className={`theme-preview accent-${theme.settings.accentColor} ${theme.settings.colorTheme} radius-${theme.settings.borderRadius}`}>
+                    <div className="preview-sidebar"></div>
+                    <div className="preview-content">
+                      <div className="preview-card"></div>
+                      <div className="preview-card"></div>
+                    </div>
+                    <div className="preview-accent" style={{ background: `var(--accent-${theme.settings.accentColor})` }}></div>
+
+                    {/* Background preview indicator */}
+                    <div className={`preview-bg-type preview-bg-${theme.settings.background.type}`}>
+                      {theme.settings.background.pattern !== 'none' && (
+                        <div className={`preview-pattern preview-pattern-${theme.settings.background.pattern}`}></div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="theme-name">
+                    {theme.label}
+                    {themeName === theme.name && <Check size={14} className="check-icon" />}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {activeTab === 'customize' && (
+            <div className="theme-customize">
+              <div className="theme-option">
+                <label>Mode</label>
+                <div className="toggle-group">
+                  <button
+                    className={`toggle-btn ${currentTheme.colorTheme === 'light' ? 'active' : ''}`}
+                    onClick={() => updateThemeSetting('colorTheme', 'light')}
+                  >
+                    <Sun size={14} />
+                    <span>Light</span>
+                  </button>
+                  <button
+                    className={`toggle-btn ${currentTheme.colorTheme === 'dark' ? 'active' : ''}`}
+                    onClick={() => updateThemeSetting('colorTheme', 'dark')}
+                  >
+                    <Moon size={14} />
+                    <span>Dark</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="theme-option">
+                <label>Accent Color</label>
+                <div className="color-swatches">
+                  {accentColors.map(color => (
+                    <button
+                      key={color}
+                      className={`color-swatch ${color} ${currentTheme.accentColor === color ? 'active' : ''}`}
+                      style={{ backgroundColor: `var(--accent-${color})` }}
+                      onClick={() => updateThemeSetting('accentColor', color)}
+                      title={accentColorLabels[color]}
+                      aria-label={`Set accent color to ${accentColorLabels[color]}`}
+                    >
+                      {currentTheme.accentColor === color && <Check size={12} />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="theme-option">
+                <label>Font Family</label>
+                <EnhancedDropdown
+                  options={fontFamilies.map(font => ({
+                    value: font,
+                    label: fontFamilyLabels[font]
+                  }))}
+                  value={currentTheme.fontFamily}
+                  onChange={(value) => updateThemeSetting('fontFamily', value as FontFamily)}
+                  placeholder="Select font family"
+                />
+              </div>
+
+              <div className="theme-option">
+                <label>Border Radius</label>
+                <EnhancedDropdown
+                  options={borderRadii.map(radius => ({
+                    value: radius,
+                    label: borderRadiusLabels[radius]
+                  }))}
+                  value={currentTheme.borderRadius}
+                  onChange={(value) => updateThemeSetting('borderRadius', value as BorderRadius)}
+                  placeholder="Select border radius"
+                />
+              </div>
+
+              <div className="theme-option">
+                <label>Animation Level</label>
+                <EnhancedDropdown
+                  options={animations.map(anim => ({
+                    value: anim,
+                    label: animationLabels[anim]
+                  }))}
+                  value={currentTheme.animation}
+                  onChange={(value) => updateThemeSetting('animation', value as Animation)}
+                  placeholder="Select animation level"
+                />
+              </div>
+
+              <div className="theme-option">
+                <label>Glass Effect</label>
+                <EnhancedDropdown
+                  options={glassEffects.map(effect => ({
+                    value: effect,
+                    label: glassEffectLabels[effect]
+                  }))}
+                  value={currentTheme.glassEffect}
+                  onChange={(value) => updateThemeSetting('glassEffect', value as GlassEffect)}
+                  placeholder="Select glass effect"
+                />
+              </div>
+
+              <button className="reset-btn" onClick={() => setThemeName('default')}>
+                <RefreshCw size={14} />
+                <span>Reset to Default</span>
+              </button>
+            </div>
+          )}
+
+          {activeTab === 'background' && (
+            <div className="background-tab">
+              <BackgroundCustomizer />
+            </div>
+          )}
+        </div>
+      </SideDrawer>
 
       <style jsx>{`
         .theme-switcher-container {
@@ -293,16 +285,31 @@ const ThemeSwitcher: React.FC = () => {
 
         .background-tab {
           padding: 0;
-          max-height: 70vh;
+          flex: 1;
           overflow-y: auto;
         }
       `}</style>
 
       {/* Global styles for the dropdown content */}
       <style jsx global>{`
+        .theme-drawer-content {
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          padding-top: 30px;
+        }
+
+        .theme-title {
+          font-size: 20px;
+          font-weight: 600;
+          margin: 0 0 20px 0;
+          color: var(--text-primary);
+        }
+
         .theme-tabs {
           display: flex;
           border-bottom: 1px solid var(--border-thin);
+          margin-bottom: 20px;
         }
 
         .tab-btn {
@@ -341,9 +348,9 @@ const ThemeSwitcher: React.FC = () => {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
           gap: 16px;
-          padding: 16px;
-          max-height: 400px;
+          padding: 0 0 16px 0;
           overflow-y: auto;
+          flex: 1;
         }
 
         .theme-preset-btn {
@@ -554,10 +561,12 @@ const ThemeSwitcher: React.FC = () => {
         }
 
         .theme-customize {
-          padding: 16px;
+          padding: 0;
           display: flex;
           flex-direction: column;
           gap: 16px;
+          flex: 1;
+          overflow-y: auto;
         }
 
         .theme-option {
@@ -747,11 +756,6 @@ const ThemeSwitcher: React.FC = () => {
 
         /* Responsive styles for smaller screens */
         @media (max-width: 480px) {
-          .theme-dropdown {
-            max-width: 90vw !important;
-            left: 5vw !important;
-          }
-
           .theme-presets {
             grid-template-columns: repeat(2, 1fr);
           }
@@ -759,6 +763,14 @@ const ThemeSwitcher: React.FC = () => {
           .theme-tabs .tab-btn {
             padding: 10px 6px;
             font-size: 0.8rem;
+          }
+
+          .theme-customize {
+            padding: 0 0 60px 0; /* Add padding at bottom for smaller screens */
+          }
+
+          .theme-drawer-content {
+            padding-bottom: 60px;
           }
         }
       `}</style>

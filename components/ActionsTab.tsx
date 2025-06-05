@@ -6,6 +6,7 @@ import {
     Rocket, Mail, Clock, CheckSquare, UserPlus, ExternalLink, Calendar
 } from 'lucide-react';
 import ActionButton from '../components/dashboard/ActionButton';
+import EnhancedDropdown from './EnhancedDropdown';
 
 // Types (can be moved to a shared types file if reused elsewhere)
 interface Company {
@@ -43,14 +44,20 @@ export default function ActionsTab({ recommendedActions }: ActionsTabProps) {
                 <div className="card-header">
                     <h3 className="card-title">Priority Action Items</h3>
                     <div className="filters">
-                        <select className="filter-select">
-                            <option value="all">All Types</option>
-                            <option value="follow-up">Follow-up</option>
-                            <option value="application">Applications</option>
-                            <option value="preparation">Preparation</option>
-                            <option value="networking">Networking</option>
-                            <option value="skill">Skills</option>
-                        </select>
+                        <EnhancedDropdown
+                            options={[
+                                { value: 'all', label: 'All Types' },
+                                { value: 'follow-up', label: 'Follow-up' },
+                                { value: 'application', label: 'Applications' },
+                                { value: 'preparation', label: 'Preparation' },
+                                { value: 'networking', label: 'Networking' },
+                                { value: 'skill', label: 'Skills' }
+                            ]}
+                            value="all"
+                            onChange={(value) => console.log('Filter changed:', value)}
+                            placeholder="Filter by type"
+                            width={180}
+                        />
                     </div>
                 </div>
                 <div className="action-items-list">

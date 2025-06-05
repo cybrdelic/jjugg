@@ -4,6 +4,7 @@ import React from 'react';
 import { TrendingUp, Briefcase, Award, Plus } from 'lucide-react';
 import ActionButton from './dashboard/ActionButton';
 import GoalCard from './dashboard/GoalCard';
+import EnhancedDropdown from './EnhancedDropdown';
 
 // Types
 interface MonthlyGoal {
@@ -35,11 +36,17 @@ export default function SkillsTab({ skillGaps, goals }: SkillsTabProps) {
                 <div className="card-header">
                     <h3 className="card-title">Skills Gap Analysis</h3>
                     <div className="filters">
-                        <select className="filter-select">
-                            <option value="gap">Biggest Gaps</option>
-                            <option value="demand">Highest Demand</option>
-                            <option value="proficiency">Highest Proficiency</option>
-                        </select>
+                        <EnhancedDropdown
+                            options={[
+                                { value: 'gap', label: 'Biggest Gaps' },
+                                { value: 'demand', label: 'Highest Demand' },
+                                { value: 'proficiency', label: 'Highest Proficiency' }
+                            ]}
+                            value="gap"
+                            onChange={(value) => console.log('Filter changed:', value)}
+                            placeholder="Sort by"
+                            width={180}
+                        />
                     </div>
                 </div>
                 <div className="skills-gap-list">
