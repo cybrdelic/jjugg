@@ -11,6 +11,7 @@ import {
 import ActionButton from '../dashboard/ActionButton';
 import SideDrawer from '../SideDrawer';
 import { ApplicationStage, Company, Contact, InterviewEvent, Note, Task, Document } from '@/types';
+import { useFeatureFlags } from '@/contexts/FeatureFlagContext';
 
 
 interface ApplicationDetailDrawerProps {
@@ -57,6 +58,7 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
   onStageChange
 }) => {
   const [selectedTab, setSelectedTab] = useState<'overview' | 'timeline' | 'contacts' | 'documents' | 'notes'>('overview');
+  const { ENABLE_ADVANCED_APPLICATION_FEATURES } = useFeatureFlags();
 
   // Format date
   const formatDate = (date: Date): string => {
@@ -414,7 +416,7 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
                     label="Add Event"
                     icon={Calendar}
                     variant="secondary"
-                    onClick={() => console.log('Add new timeline event')}
+                    onClick={() => ENABLE_ADVANCED_APPLICATION_FEATURES ? console.log('Add new timeline event') : alert('This feature is not available in the current version')}
                   />
                 </div>
               </div>

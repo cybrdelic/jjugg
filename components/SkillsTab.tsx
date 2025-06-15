@@ -5,137 +5,140 @@ import { TrendingUp, Briefcase, Award, Plus } from 'lucide-react';
 import ActionButton from './dashboard/ActionButton';
 import GoalCard from './dashboard/GoalCard';
 import EnhancedDropdown from './EnhancedDropdown';
+import { useFeatureFlags } from '@/contexts/FeatureFlagContext';
 
 // Types
 interface MonthlyGoal {
-    id: string;
-    goal: string;
-    current: number;
-    target: number;
-    progress: number;
-    category: 'applications' | 'networking' | 'skills' | 'interviews';
+  id: string;
+  goal: string;
+  current: number;
+  target: number;
+  progress: number;
+  category: 'applications' | 'networking' | 'skills' | 'interviews';
 }
 
 interface SkillGap {
-    skill: string;
-    demand: number;
-    proficiency: number;
-    gap: number;
-    jobsRequiring: number;
+  skill: string;
+  demand: number;
+  proficiency: number;
+  gap: number;
+  jobsRequiring: number;
 }
 
 interface SkillsTabProps {
-    skillGaps: SkillGap[];
-    goals: MonthlyGoal[];
+  skillGaps: SkillGap[];
+  goals: MonthlyGoal[];
 }
 
 export default function SkillsTab({ skillGaps, goals }: SkillsTabProps) {
-    return (
-        <div className="dashboard-grid skills-grid">
-            <div className="dashboard-card skills-gap-card">
-                <div className="card-header">
-                    <h3 className="card-title">Skills Gap Analysis</h3>
-                    <div className="filters">
-                        <EnhancedDropdown
-                            options={[
-                                { value: 'gap', label: 'Biggest Gaps' },
-                                { value: 'demand', label: 'Highest Demand' },
-                                { value: 'proficiency', label: 'Highest Proficiency' }
-                            ]}
-                            value="gap"
-                            onChange={(value) => console.log('Filter changed:', value)}
-                            placeholder="Sort by"
-                            width={180}
-                        />
-                    </div>
-                </div>
-                <div className="skills-gap-list">
-                    {skillGaps.map(skill => (
-                        <div className="skill-gap-item" key={skill.skill}>
-                            <div className="skill-header">
-                                <h4 className="skill-name">{skill.skill}</h4>
-                                <div className="skill-jobs">
-                                    <Briefcase size={14} />
-                                    <span>{skill.jobsRequiring} jobs</span>
-                                </div>
-                            </div>
-                            <div className="skill-bars">
-                                <div className="skill-bar-container">
-                                    <div className="bar-label">Demand</div>
-                                    <div className="bar-bg">
-                                        <div className="bar-value demand" style={{ width: `${skill.demand}%` }}></div>
-                                    </div>
-                                    <div className="bar-value-label">{skill.demand}%</div>
-                                </div>
-                                <div className="skill-bar-container">
-                                    <div className="bar-label">Your Proficiency</div>
-                                    <div className="bar-bg">
-                                        <div className="bar-value proficiency" style={{ width: `${skill.proficiency}%` }}></div>
-                                    </div>
-                                    <div className="bar-value-label">{skill.proficiency}%</div>
-                                </div>
-                            </div>
-                            <div className="skill-gap-indicator">
-                                <div className="gap-percentage">
-                                    <span className="gap-value">{skill.gap}%</span>
-                                    <span className="gap-label">Gap</span>
-                                </div>
-                                <div className="gap-actions">
-                                    <button className="gap-action-btn">
-                                        <Award size={14} />
-                                        <span>Improve</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-                <div className="skills-insights">
-                    <h4 className="section-subtitle">Skill Insights</h4>
-                    <ul className="insight-list">
-                        <li className="insight-item">
-                            <TrendingUp size={16} className="insight-icon" />
-                            <span>GraphQL skills would improve your match rate by 15%</span>
-                        </li>
-                        <li className="insight-item">
-                            <Award size={16} className="insight-icon" />
-                            <span>AWS certification could qualify you for 30% more jobs</span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-            <div className="dashboard-card goals-card">
-                <div className="card-header">
-                    <h3 className="card-title">Skill Development Goals</h3>
-                    <ActionButton
-                        label="Add Goal"
-                        icon={Plus}
-                        variant="ghost"
-                        size="small"
-                        onClick={() => console.log('Add skill goal')}
-                    />
-                </div>
-                <div className="goals-list">
-                    {goals.map(goal => (
-                        <GoalCard
-                            key={goal.id}
-                            id={goal.id}
-                            goal={goal.goal}
-                            current={goal.current}
-                            target={goal.target}
-                            onClick={() => console.log(`Goal ${goal.id} clicked`)}
-                        />
-                    ))}
-                    <div className="add-goal">
-                        <button className="add-goal-btn">
-                            <Plus size={16} />
-                            <span>Add Skill Goal</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
+  const { ENABLE_DEVELOPMENT_FEATURES } = useFeatureFlags();
 
-            <style jsx>{`
+  return (
+    <div className="dashboard-grid skills-grid">
+      <div className="dashboard-card skills-gap-card">
+        <div className="card-header">
+          <h3 className="card-title">Skills Gap Analysis</h3>
+          <div className="filters">
+            <EnhancedDropdown
+              options={[
+                { value: 'gap', label: 'Biggest Gaps' },
+                { value: 'demand', label: 'Highest Demand' },
+                { value: 'proficiency', label: 'Highest Proficiency' }
+              ]}
+              value="gap"
+              onChange={(value) => ENABLE_DEVELOPMENT_FEATURES ? console.log('Filter changed:', value) : undefined}
+              placeholder="Sort by"
+              width={180}
+            />
+          </div>
+        </div>
+        <div className="skills-gap-list">
+          {skillGaps.map(skill => (
+            <div className="skill-gap-item" key={skill.skill}>
+              <div className="skill-header">
+                <h4 className="skill-name">{skill.skill}</h4>
+                <div className="skill-jobs">
+                  <Briefcase size={14} />
+                  <span>{skill.jobsRequiring} jobs</span>
+                </div>
+              </div>
+              <div className="skill-bars">
+                <div className="skill-bar-container">
+                  <div className="bar-label">Demand</div>
+                  <div className="bar-bg">
+                    <div className="bar-value demand" style={{ width: `${skill.demand}%` }}></div>
+                  </div>
+                  <div className="bar-value-label">{skill.demand}%</div>
+                </div>
+                <div className="skill-bar-container">
+                  <div className="bar-label">Your Proficiency</div>
+                  <div className="bar-bg">
+                    <div className="bar-value proficiency" style={{ width: `${skill.proficiency}%` }}></div>
+                  </div>
+                  <div className="bar-value-label">{skill.proficiency}%</div>
+                </div>
+              </div>
+              <div className="skill-gap-indicator">
+                <div className="gap-percentage">
+                  <span className="gap-value">{skill.gap}%</span>
+                  <span className="gap-label">Gap</span>
+                </div>
+                <div className="gap-actions">
+                  <button className="gap-action-btn">
+                    <Award size={14} />
+                    <span>Improve</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="skills-insights">
+          <h4 className="section-subtitle">Skill Insights</h4>
+          <ul className="insight-list">
+            <li className="insight-item">
+              <TrendingUp size={16} className="insight-icon" />
+              <span>GraphQL skills would improve your match rate by 15%</span>
+            </li>
+            <li className="insight-item">
+              <Award size={16} className="insight-icon" />
+              <span>AWS certification could qualify you for 30% more jobs</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div className="dashboard-card goals-card">
+        <div className="card-header">
+          <h3 className="card-title">Skill Development Goals</h3>
+          <ActionButton
+            label="Add Goal"
+            icon={Plus}
+            variant="ghost"
+            size="small"
+            onClick={() => ENABLE_DEVELOPMENT_FEATURES ? console.log('Add skill goal') : alert('This feature is not available in the current version')}
+          />
+        </div>
+        <div className="goals-list">
+          {goals.map(goal => (
+            <GoalCard
+              key={goal.id}
+              id={goal.id}
+              goal={goal.goal}
+              current={goal.current}
+              target={goal.target}
+              onClick={() => ENABLE_DEVELOPMENT_FEATURES ? console.log(`Goal ${goal.id} clicked`) : alert('This feature is not available in the current version')}
+            />
+          ))}
+          <div className="add-goal">
+            <button className="add-goal-btn">
+              <Plus size={16} />
+              <span>Add Skill Goal</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <style jsx>{`
         .dashboard-grid {
           display: grid;
           gap: 24px;
@@ -366,6 +369,6 @@ export default function SkillsTab({ skillGaps, goals }: SkillsTabProps) {
           }
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 }

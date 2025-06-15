@@ -31,10 +31,10 @@ const TabButton: React.FC<TabButtonProps> = ({
   // State for tracking hover to enhance animation experience
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
-  
+
   // Determine appropriate ARIA attributes
   const isSelected = ariaSelected !== undefined ? ariaSelected : active;
-  
+
   // Calculate size based on prop
   const getSize = (size: string): number => {
     switch (size) {
@@ -43,11 +43,11 @@ const TabButton: React.FC<TabButtonProps> = ({
       default: return 16;
     }
   };
-  
+
   const iconSize = getSize(size);
-  
+
   return (
-    <div 
+    <div
       className={`tab-button-wrapper ${active ? 'active' : ''} ${isHovered ? 'hovered' : ''}`}
     >
       <button
@@ -67,14 +67,14 @@ const TabButton: React.FC<TabButtonProps> = ({
         {Icon && <Icon size={iconSize} className="tab-icon" />}
         <span className="tab-label">{label}</span>
       </button>
-      
+
       <style jsx>{`
         .tab-button-wrapper {
           position: relative;
           display: inline-block;
           padding-bottom: 2px;
         }
-        
+
         .tab-button {
           display: flex;
           align-items: center;
@@ -93,37 +93,37 @@ const TabButton: React.FC<TabButtonProps> = ({
           width: auto;
           min-width: 0;
         }
-        
+
         .tab-button.active {
           color: ${accentColor || 'var(--accent-primary)'};
         }
-        
+
         .tab-button.hovered:not(.active) {
           color: var(--text-primary);
           background: var(--hover-bg);
         }
-        
+
         .tab-button.pressed {
           transform: scale(0.97);
         }
-        
+
         .tab-button.disabled {
           opacity: 0.5;
           cursor: not-allowed;
         }
-        
+
         .tab-icon {
           transition: all 0.2s var(--easing-standard);
         }
-        
+
         .tab-button.active .tab-icon {
           color: ${accentColor || 'var(--accent-primary)'};
         }
-        
+
         .tab-label {
           transition: all 0.2s var(--easing-standard);
         }
-        
+
         .tab-button-wrapper::after {
           content: '';
           position: absolute;
@@ -139,22 +139,22 @@ const TabButton: React.FC<TabButtonProps> = ({
           opacity: 0;
           box-shadow: 0 0 8px rgba(var(--accent-primary-rgb), 0);
         }
-        
+
         .tab-button-wrapper.active::after {
           transform: scaleX(1);
           opacity: 1;
           box-shadow: 0 0 8px ${accentColor || 'var(--accent-primary)'};
         }
-        
+
         .tab-button-wrapper.hovered:not(.active)::after {
           opacity: 0.3;
           transform: scaleX(0.4);
         }
-        
+
         .tab-button-wrapper.active.hovered::after {
           box-shadow: 0 0 12px ${accentColor || 'var(--accent-primary)'};
         }
-        
+
         @media (max-width: 768px) {
           .tab-button {
             padding: ${size === 'small' ? '4px 10px' : size === 'large' ? '8px 14px' : '6px 12px'};
@@ -184,16 +184,16 @@ export const TabGroup: React.FC<TabGroupProps> = ({
     <div className={`tab-group ${className}`} role="tablist">
       {React.Children.map(children, (child) => {
         if (React.isValidElement(child)) {
-          const tabId = child.props['data-id'] || '';
+          const tabId = (child.props as any)['data-id'] || '';
           return React.cloneElement(child, {
             active: tabId === activeTab,
             onClick: () => onTabChange(tabId),
             'aria-selected': tabId === activeTab,
-          });
+          } as any);
         }
         return child;
       })}
-      
+
       <style jsx>{`
         .tab-group {
           display: flex;
@@ -205,11 +205,11 @@ export const TabGroup: React.FC<TabGroupProps> = ({
           width: auto;
           align-items: flex-start;
         }
-        
+
         .tab-group::-webkit-scrollbar {
           display: none; /* Chrome, Safari, Edge */
         }
-        
+
         /* Add a subtle background line that the active indicators will appear against */
         .tab-group::after {
           content: '';
@@ -221,7 +221,7 @@ export const TabGroup: React.FC<TabGroupProps> = ({
           background-color: var(--border-thin);
           opacity: 0.5;
         }
-        
+
         @media (max-width: 768px) {
           .tab-group {
             padding: 2px;

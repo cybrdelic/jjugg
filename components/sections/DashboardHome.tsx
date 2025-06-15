@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   FileText, Bell, Calendar, Search, CheckCircle, Activity,
-  BarChart2, MoreHorizontal, ChevronRight, ChevronDown, Clock, Target, Users, Plus,
+  BarChart2, MoreHorizontal, ChevronRight, ChevronDown, Clock, Target, Plus,
   X, Zap, Award, MessagesSquare, Share2, BookOpen, CheckSquare, User, Timer, X as XIcon
 } from 'lucide-react';
 import StatCard from '../dashboard/StatCard';
@@ -14,8 +14,10 @@ import TabButton, { TabGroup } from '../TabButton';
 import ApplicationFunnel from '../ApplicationFunnel';
 import WeeklyActivity from '../WeeklyActivity';
 import ActionsTab from '../ActionsTab';
+import { useFeatureFlags } from '@/contexts/FeatureFlagContext';
 import SkillsTab from '../SkillsTab'; // Import the new SkillsTab component
 import EnhancedDropdown from '../EnhancedDropdown';
+import { useAppData } from '../../hooks/useData';
 
 // Types
 interface Company {
@@ -83,11 +85,21 @@ interface SkillGap {
 }
 
 export default function DashboardHome() {
+  const { ENABLE_DEVELOPMENT_FEATURES } = useFeatureFlags();
+  const appData = useAppData();
+
+  // Extract individual data sets for easier access
+  const applicationsData = appData.applications;
+  const activitiesData = appData.activities;
+  const eventsData = appData.events;
+  const goalsData = appData.goals;
+  const remindersData = appData.reminders;
+
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
-  const [activeInsight, setActiveInsight] = useState('response-rate');
+  const [activeInsight, setActiveInsight] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState('30d');
   const [activityFilter, setActivityFilter] = useState('all');
 
@@ -95,71 +107,33 @@ export default function DashboardHome() {
     setMounted(true);
   }, []);
 
-  // MOCK DATA
-  const stageCounts = {
-    applied: 5,
-    screening: 3,
-    interview: 3,
-    offer: 1,
-    rejected: 1
-  };
+  // Calculate stats from actual data
+  const stageCounts = applicationsData.data.reduce((counts, app) => {
+    counts[app.stage] = (counts[app.stage] || 0) + 1;
+    return counts;
+  }, {
+    applied: 0,
+    screening: 0,
+    interview: 0,
+    offer: 0,
+    rejected: 0
+  });
 
   const totalApplications = Object.values(stageCounts).reduce((sum, count) => sum + count, 0);
   const activeApplications = stageCounts.applied + stageCounts.screening + stageCounts.interview;
-  const responseRate = ((totalApplications - stageCounts.applied) / totalApplications) * 100;
-  const successRate = (stageCounts.offer / (stageCounts.offer + stageCounts.rejected)) * 100;
+  const responseRate = totalApplications > 0 ? ((totalApplications - stageCounts.applied) / totalApplications) * 100 : 0;
+  const successRate = (stageCounts.offer + stageCounts.rejected) > 0 ? (stageCounts.offer / (stageCounts.offer + stageCounts.rejected)) * 100 : 0;
 
-  const skillGaps: SkillGap[] = [
-    { skill: 'React', demand: 85, proficiency: 75, gap: 10, jobsRequiring: 15 },
-    { skill: 'TypeScript', demand: 80, proficiency: 65, gap: 15, jobsRequiring: 12 },
-    { skill: 'GraphQL', demand: 60, proficiency: 30, gap: 30, jobsRequiring: 8 },
-    { skill: 'AWS', demand: 70, proficiency: 35, gap: 35, jobsRequiring: 10 },
-    { skill: 'Docker', demand: 65, proficiency: 40, gap: 25, jobsRequiring: 7 }
-  ].sort((a, b) => b.gap - a.gap);
+  const skillGaps: SkillGap[] = []; // Empty - no real data yet
 
-  const weeklyActivity = [3, 5, 2, 4, 7, 6, 4];
-  const responseTimesByTier = [
-    { tier: 'Enterprise', days: 12 },
-    { tier: 'Mid-size', days: 7 },
-    { tier: 'Startup', days: 3 }
-  ];
-  const networkingStats = { connections: 45, messages: 22, meetings: 5, referrals: 3 };
-  const topIndustries = [
-    { name: 'Technology', count: 6, success: 25 },
-    { name: 'Finance', count: 3, success: 33 },
-    { name: 'Healthcare', count: 2, success: 50 },
-    { name: 'E-commerce', count: 2, success: 0 }
-  ];
+  const weeklyActivity = [0, 0, 0, 0, 0, 0, 0]; // Empty - no real data yet
+  const responseTimesByTier: { tier: string; days: number }[] = []; // Empty - no real data yet
+  const topIndustries: { name: string; count: number; success: number }[] = []; // Empty - no real data yet
 
-  const upcomingEvents: UpcomingEvent[] = [
-    {
-      id: 'evt1', title: 'Technical Interview', company: { id: 'c1', name: 'Google', logo: '/companies/google.svg', industry: 'Technology' },
-      date: new Date(new Date().getTime() + 86400000), time: '10:00 AM', type: 'Interview', application: {} as Application,
-      details: 'System design and coding interview', duration: 60, priority: 'high'
-    },
-    {
-      id: 'evt2', title: 'Follow up on application', company: { id: 'c2', name: 'Microsoft', logo: '/companies/microsoft.svg', industry: 'Technology' },
-      date: new Date(new Date().getTime() + 172800000), time: '12:00 PM', type: 'Follow-up', application: {} as Application,
-      details: 'Send follow-up email about application status', priority: 'medium'
-    },
-    {
-      id: 'evt3', title: 'Virtual Networking Event', company: { id: 'c3', name: 'Tech Meetup', logo: '/companies/meetup.svg', industry: 'Technology' },
-      date: new Date(new Date().getTime() + 259200000), time: '5:30 PM', type: 'Networking', application: {} as Application,
-      details: 'Online networking event for frontend developers', duration: 120
-    },
-    {
-      id: 'evt4', title: 'Complete Assessment', company: { id: 'c4', name: 'Amazon', logo: '/companies/amazon.svg', industry: 'E-commerce' },
-      date: new Date(new Date().getTime() + 345600000), time: '11:59 PM', type: 'Deadline', application: {} as Application,
-      details: 'Finish coding assessment for Software Engineer position', priority: 'high'
-    }
-  ];
-
-  const goals: MonthlyGoal[] = [
-    { id: 'goal1', goal: 'Submit 20 Applications', current: 13, target: 20, progress: Math.round((13 / 20) * 100), category: 'applications' },
-    { id: 'goal2', goal: 'Connect with 15 Professionals', current: 8, target: 15, progress: Math.round((8 / 15) * 100), category: 'networking' },
-    { id: 'goal3', goal: 'Complete 5 Skill Assessments', current: 2, target: 5, progress: Math.round((2 / 5) * 100), category: 'skills' },
-    { id: 'goal4', goal: 'Attend 3 Mock Interviews', current: 1, target: 3, progress: Math.round((1 / 3) * 100), category: 'interviews' }
-  ];
+  const upcomingEvents = eventsData.getUpcoming(4);
+  const upcomingReminders = remindersData.getUpcoming(3); // Get next 3 upcoming reminders
+  const recentActivities = activitiesData.getRecent(5);
+  const monthlyGoals = goalsData.goals;
 
   const recommendedActions: RecommendedAction[] = [
     { id: 'action1', title: 'Follow up on Google application', description: 'It\'s been 7 days since your application with no response.', priority: 'high', type: 'follow-up', dueDate: new Date(new Date().getTime() + 86400000) },
@@ -169,13 +143,10 @@ export default function DashboardHome() {
     { id: 'action5', title: 'Apply to recommended jobs', description: '5 new jobs match your profile with 85%+ compatibility.', priority: 'medium', type: 'application' }
   ];
 
-  const activities = [
-    { id: 'act1', type: 'application' as const, title: 'Applied to Software Engineer position', company: { id: 'c5', name: 'Facebook', logo: '/companies/facebook.svg', industry: 'Technology' }, timestamp: new Date(new Date().getTime() - 86400000), details: 'Applied through company website with referral', application: {} as Application },
-    { id: 'act2', type: 'interview' as const, title: 'Completed technical interview', company: { id: 'c2', name: 'Microsoft', logo: '/companies/microsoft.svg', industry: 'Technology' }, timestamp: new Date(new Date().getTime() - 172800000), details: 'Interview feedback was positive, waiting for next steps', application: {} as Application },
-    { id: 'act3', type: 'network' as const, title: 'Connected with Senior Engineer', company: { id: 'c1', name: 'Google', logo: '/companies/google.svg', industry: 'Technology' }, timestamp: new Date(new Date().getTime() - 259200000), details: 'Made connection through LinkedIn after attending tech meetup', application: {} as Application }
-  ];
+  // Remove fake activities data - use real data from hooks
+  const activities = recentActivities; // Use real activities from the data hook
 
-  const jobMatchScores = [65, 72, 78];
+  const jobMatchScores: number[] = []; // Empty - no real data yet
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -202,43 +173,41 @@ export default function DashboardHome() {
       </div>
 
       <div className="time-range-selector">
-        <ActionButton 
-          label="7d" 
-          icon={Clock} 
-          variant={timeRange === '7d' ? 'secondary' : 'ghost'} 
-          size="small" 
-          onClick={() => setTimeRange('7d')} 
+        <ActionButton
+          label="7d"
+          icon={Clock}
+          variant={timeRange === '7d' ? 'secondary' : 'ghost'}
+          size="small"
+          onClick={() => setTimeRange('7d')}
         />
-        <ActionButton 
-          label="30d" 
-          icon={Clock} 
-          variant={timeRange === '30d' ? 'secondary' : 'ghost'} 
-          size="small" 
-          onClick={() => setTimeRange('30d')} 
+        <ActionButton
+          label="30d"
+          icon={Clock}
+          variant={timeRange === '30d' ? 'secondary' : 'ghost'}
+          size="small"
+          onClick={() => setTimeRange('30d')}
         />
-        <ActionButton 
-          label="90d" 
-          icon={Clock} 
-          variant={timeRange === '90d' ? 'secondary' : 'ghost'} 
-          size="small" 
-          onClick={() => setTimeRange('90d')} 
+        <ActionButton
+          label="90d"
+          icon={Clock}
+          variant={timeRange === '90d' ? 'secondary' : 'ghost'}
+          size="small"
+          onClick={() => setTimeRange('90d')}
         />
-        <ActionButton 
-          label="All" 
-          icon={Clock} 
-          variant={timeRange === 'all' ? 'secondary' : 'ghost'} 
-          size="small" 
-          onClick={() => setTimeRange('all')} 
+        <ActionButton
+          label="All"
+          icon={Clock}
+          variant={timeRange === 'all' ? 'secondary' : 'ghost'}
+          size="small"
+          onClick={() => setTimeRange('all')}
         />
       </div>
 
       <div className="stats-summary">
-        <StatCard value={totalApplications} label="Total Applications" icon={FileText} color="var(--accent-blue)" trend={{ value: 15, isPositive: true }} />
-        <StatCard value={`${responseRate.toFixed(0)}%`} label="Response Rate" icon={Activity} color="var(--accent-purple)" trend={{ value: 5, isPositive: true }} onClick={() => setActiveInsight('response-rate')} />
-        <StatCard value={`${successRate.toFixed(0)}%`} label="Success Rate" icon={Award} color="var(--accent-green)" trend={{ value: 10, isPositive: true }} onClick={() => setActiveInsight('success-rate')} />
-        <StatCard value={networkingStats.connections} label="Network Connections" icon={Users} color="var(--accent-orange)" trend={{ value: 8, isPositive: true }} onClick={() => setActiveInsight('networking')} />
-        <StatCard value={7.3} label="Avg. Response Time (Days)" icon={Timer} color="var(--accent-orange)" trend={{ value: 5, isPositive: true }} />
-        <StatCard value={'38%'} label="No Response Rate" icon={XIcon} color="var(--accent-orange)" trend={{ value: 5, isPositive: true }} />
+        <StatCard value={totalApplications} label="Total Applications" icon={FileText} color="var(--accent-blue)" onClick={() => setActiveInsight('total-applications')} />
+        <StatCard value={totalApplications > 0 ? `${responseRate.toFixed(0)}%` : "0%"} label="Response Rate" icon={Activity} color="var(--accent-purple)" onClick={() => setActiveInsight('response-rate')} />
+        <StatCard value={totalApplications > 0 ? `${successRate.toFixed(0)}%` : "0%"} label="Success Rate" icon={Award} color="var(--accent-green)" onClick={() => setActiveInsight('success-rate')} />
+        <StatCard value={activeApplications} label="Active Applications" icon={Clock} color="var(--accent-orange)" onClick={() => setActiveInsight('active-applications')} />
       </div>
 
       <div className="insight-panel">
@@ -252,21 +221,30 @@ export default function DashboardHome() {
               <div className="insight-data">
                 <div className="insight-chart">
                   <div className="response-time-chart">
-                    {responseTimesByTier.map((tier, index) => (
-                      <div className="response-tier" key={tier.tier}>
-                        <div className="tier-name">{tier.tier}</div>
-                        <div className="tier-bar-container">
-                          <div className="tier-bar" style={{ width: `${Math.min(100, tier.days * 5)}%`, backgroundColor: index === 0 ? 'var(--accent-green)' : index === 1 ? 'var(--accent-blue)' : 'var(--accent-purple)' }}>
-                            <span className="tier-value">{tier.days} days</span>
+                    {responseTimesByTier.length > 0 ? (
+                      responseTimesByTier.map((tier, index) => (
+                        <div className="response-tier" key={tier.tier}>
+                          <div className="tier-name">{tier.tier}</div>
+                          <div className="tier-bar-container">
+                            <div className="tier-bar" style={{ width: `${Math.min(100, tier.days * 5)}%`, backgroundColor: index === 0 ? 'var(--accent-green)' : index === 1 ? 'var(--accent-blue)' : 'var(--accent-purple)' }}>
+                              <span className="tier-value">{tier.days} days</span>
+                            </div>
                           </div>
                         </div>
+                      ))
+                    ) : (
+                      <div className="empty-state">
+                        <p>No response time data available yet.</p>
+                        <p>Start applying to jobs to see response time insights.</p>
                       </div>
-                    ))}
+                    )}
                   </div>
-                  <div className="chart-legend">
-                    <span>Faster Response</span>
-                    <span>Slower Response</span>
-                  </div>
+                  {responseTimesByTier.length > 0 && (
+                    <div className="chart-legend">
+                      <span>Faster Response</span>
+                      <span>Slower Response</span>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="dashboard-card match-score-card">
@@ -275,17 +253,24 @@ export default function DashboardHome() {
                   <ActionButton label="Improve Matches" icon={Award} variant="ghost" size="small" />
                 </div>
                 <div className="match-score-distribution">
-                  {jobMatchScores.map((score, index) => (
-                    <div className="match-score-bar" key={index}>
-                      <div className="score-bar-container">
-                        <div className="score-bar" style={{ width: `${score}%`, backgroundColor: score >= 90 ? 'var(--accent-green)' : score >= 80 ? 'var(--accent-blue)' : score >= 70 ? 'var(--accent-purple)' : 'var(--accent-orange)' }}></div>
+                  {jobMatchScores.length > 0 ? (
+                    jobMatchScores.map((score, index) => (
+                      <div className="match-score-bar" key={index}>
+                        <div className="score-bar-container">
+                          <div className="score-bar" style={{ width: `${score}%`, backgroundColor: score >= 90 ? 'var(--accent-green)' : score >= 80 ? 'var(--accent-blue)' : score >= 70 ? 'var(--accent-purple)' : 'var(--accent-orange)' }}></div>
+                        </div>
+                        <div className="score-label">
+                          <span className="company-name">Company {index + 1}</span>
+                          <span className="score-value">{score}%</span>
+                        </div>
                       </div>
-                      <div className="score-label">
-                        <span className="company-name">Company {index + 1}</span>
-                        <span className="score-value">{score}%</span>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="empty-state">
+                      <p>No job match data available yet.</p>
+                      <p>Apply to jobs to see match quality insights.</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             </div>
@@ -308,20 +293,27 @@ export default function DashboardHome() {
             <div className="insight-data">
               <div className="insight-chart">
                 <div className="success-rate-chart">
-                  {topIndustries.map(industry => (
-                    <div className="industry-row" key={industry.name}>
-                      <div className="industry-name">{industry.name}</div>
-                      <div className="industry-stats">
-                        <div className="industry-bar-container">
-                          <div className="industry-bar" style={{ width: `${industry.success}%`, backgroundColor: industry.success > 40 ? 'var(--accent-green)' : industry.success > 20 ? 'var(--accent-blue)' : 'var(--accent-red)' }}></div>
-                        </div>
-                        <div className="industry-values">
-                          <span className="applications-count">{industry.count} apps</span>
-                          <span className="success-percent">{industry.success}%</span>
+                  {topIndustries.length > 0 ? (
+                    topIndustries.map(industry => (
+                      <div className="industry-row" key={industry.name}>
+                        <div className="industry-name">{industry.name}</div>
+                        <div className="industry-stats">
+                          <div className="industry-bar-container">
+                            <div className="industry-bar" style={{ width: `${industry.success}%`, backgroundColor: industry.success > 40 ? 'var(--accent-green)' : industry.success > 20 ? 'var(--accent-blue)' : 'var(--accent-red)' }}></div>
+                          </div>
+                          <div className="industry-values">
+                            <span className="applications-count">{industry.count} apps</span>
+                            <span className="success-percent">{industry.success}%</span>
+                          </div>
                         </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="empty-state">
+                      <p>No industry success rate data available yet.</p>
+                      <p>Apply to jobs across different industries to see success rate insights.</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
               <div className="insight-metrics vertical">
@@ -349,68 +341,95 @@ export default function DashboardHome() {
             </div>
           </div>
         )}
-        {activeInsight === 'networking' && (
+        {activeInsight === 'total-applications' && (
           <div className="insight-content">
             <div className="insight-header">
-              <h3>Networking Effectiveness Analysis</h3>
-              <span className="insight-desc">How your networking activities impact job search outcomes</span>
+              <h3>Total Applications Overview</h3>
+              <span className="insight-desc">Your job application activity and progress</span>
             </div>
             <div className="insight-data">
               <div className="insight-chart">
-                <div className="networking-impact-chart">
-                  <div className="network-metric">
-                    <div className="network-label">Response Rate</div>
-                    <div className="comparison-bars">
-                      <div className="bar-container">
-                        <div className="bar-label">With Referral</div>
-                        <div className="bar-bg"><div className="bar-value" style={{ width: '85%' }}></div></div>
-                        <div className="bar-percent">85%</div>
-                      </div>
-                      <div className="bar-container">
-                        <div className="bar-label">Without Referral</div>
-                        <div className="bar-bg"><div className="bar-value" style={{ width: '42%' }}></div></div>
-                        <div className="bar-percent">42%</div>
-                      </div>
+                {totalApplications > 0 ? (
+                  <div className="applications-breakdown">
+                    <div className="breakdown-item">
+                      <span className="breakdown-label">Applied</span>
+                      <span className="breakdown-value">{stageCounts.applied}</span>
+                    </div>
+                    <div className="breakdown-item">
+                      <span className="breakdown-label">Screening</span>
+                      <span className="breakdown-value">{stageCounts.screening}</span>
+                    </div>
+                    <div className="breakdown-item">
+                      <span className="breakdown-label">Interview</span>
+                      <span className="breakdown-value">{stageCounts.interview}</span>
+                    </div>
+                    <div className="breakdown-item">
+                      <span className="breakdown-label">Offer</span>
+                      <span className="breakdown-value">{stageCounts.offer}</span>
+                    </div>
+                    <div className="breakdown-item">
+                      <span className="breakdown-label">Rejected</span>
+                      <span className="breakdown-value">{stageCounts.rejected}</span>
                     </div>
                   </div>
-                  <div className="network-metric">
-                    <div className="network-label">Interview Rate</div>
-                    <div className="comparison-bars">
-                      <div className="bar-container">
-                        <div className="bar-label">With Referral</div>
-                        <div className="bar-bg"><div className="bar-value" style={{ width: '65%' }}></div></div>
-                        <div className="bar-percent">65%</div>
-                      </div>
-                      <div className="bar-container">
-                        <div className="bar-label">Without Referral</div>
-                        <div className="bar-bg"><div className="bar-value" style={{ width: '28%' }}></div></div>
-                        <div className="bar-percent">28%</div>
-                      </div>
-                    </div>
+                ) : (
+                  <div className="empty-state">
+                    <p>No applications yet.</p>
+                    <p>Start applying to jobs to track your progress here.</p>
                   </div>
-                </div>
-              </div>
-              <div className="insight-metrics">
-                <div className="insight-metric">
-                  <span className="metric-value">{networkingStats.referrals}</span>
-                  <span className="metric-label">Referrals Used</span>
-                </div>
-                <div className="insight-metric">
-                  <span className="metric-value">{networkingStats.meetings}</span>
-                  <span className="metric-label">Informational Interviews</span>
-                </div>
-                <div className="insight-metric">
-                  <span className="metric-value">+43%</span>
-                  <span className="metric-label">Referral Advantage</span>
-                </div>
+                )}
               </div>
             </div>
             <div className="insight-recommendations">
-              <h4>Recommendations</h4>
+              <h4>Tips</h4>
               <ul>
-                <li>Reach out to 5 connections at your target companies for referrals</li>
-                <li>Schedule 2 informational interviews this week to expand your network</li>
-                <li>Join the upcoming tech meetup to connect with professionals in your field</li>
+                <li>Aim for 2-3 applications per day for consistent progress</li>
+                <li>Track which job boards and methods give you the best results</li>
+                <li>Quality applications perform better than quantity</li>
+              </ul>
+            </div>
+          </div>
+        )}
+        {activeInsight === 'active-applications' && (
+          <div className="insight-content">
+            <div className="insight-header">
+              <h3>Active Applications Status</h3>
+              <span className="insight-desc">Applications currently in progress</span>
+            </div>
+            <div className="insight-data">
+              <div className="insight-chart">
+                {activeApplications > 0 ? (
+                  <div className="active-breakdown">
+                    <div className="active-item">
+                      <span className="active-label">Awaiting Response</span>
+                      <span className="active-value">{stageCounts.applied}</span>
+                      <span className="active-desc">Applications submitted, waiting for initial response</span>
+                    </div>
+                    <div className="active-item">
+                      <span className="active-label">In Screening</span>
+                      <span className="active-value">{stageCounts.screening}</span>
+                      <span className="active-desc">Under review by HR or recruiters</span>
+                    </div>
+                    <div className="active-item">
+                      <span className="active-label">Interview Stage</span>
+                      <span className="active-value">{stageCounts.interview}</span>
+                      <span className="active-desc">Actively interviewing</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="empty-state">
+                    <p>No active applications.</p>
+                    <p>Submit applications to companies you're interested in.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="insight-recommendations">
+              <h4>Next Steps</h4>
+              <ul>
+                <li>Follow up on applications older than 2 weeks</li>
+                <li>Prepare for upcoming interviews</li>
+                <li>Continue applying to maintain momentum</li>
               </ul>
             </div>
           </div>
@@ -418,37 +437,40 @@ export default function DashboardHome() {
       </div>
 
       <div className="dashboard-tabs">
-        <TabGroup 
-          activeTab={activeTab} 
-          onTabChange={setActiveTab} 
+        <TabGroup
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
           className="dashboard-tab-group"
         >
-          <TabButton 
+          <TabButton
             data-id="overview"
-            label="Overview" 
-            icon={BarChart2} 
-            size="medium" 
+            label="Overview"
+            icon={BarChart2}
+            size="medium"
             accentColor="var(--accent-blue)"
           />
-          <TabButton 
+          {/* Temporarily disabled tabs */}
+          {/*
+          <TabButton
             data-id="actions"
-            label="Action Items" 
-            icon={Zap} 
+            label="Action Items"
+            icon={Zap}
             size="medium"
             accentColor="var(--accent-blue)"
           />
-          <TabButton 
+          <TabButton
             data-id="skills"
-            label="Skills Analysis" 
-            icon={Award} 
+            label="Skills Analysis"
+            icon={Award}
             size="medium"
             accentColor="var(--accent-blue)"
           />
-          <TabButton 
+          */}
+          <TabButton
             data-id="activity"
-            label="Activity" 
-            icon={Activity} 
-            size="medium" 
+            label="Activity"
+            icon={Activity}
+            size="medium"
             accentColor="var(--accent-blue)"
           />
         </TabGroup>
@@ -456,12 +478,12 @@ export default function DashboardHome() {
 
       {activeTab === 'overview' && (
         <div className="dashboard-grid overview-grid">
-          <ApplicationFunnel stageCounts={stageCounts} onViewAll={() => console.log('View all applications')} />
-          <WeeklyActivity weeklyActivity={weeklyActivity} onViewDetails={() => console.log('View activity details')} />
+          <ApplicationFunnel stageCounts={stageCounts} onViewAll={() => ENABLE_DEVELOPMENT_FEATURES ? console.log('View all applications') : alert('This feature is not available in the current version')} />
+          <WeeklyActivity weeklyActivity={weeklyActivity} onViewDetails={() => ENABLE_DEVELOPMENT_FEATURES ? console.log('View activity details') : alert('This feature is not available in the current version')} />
           <div className="dashboard-card upcoming-card">
             <div className="card-header">
               <h3 className="card-title">Upcoming</h3>
-              <ActionButton label="Calendar" icon={Calendar} variant="ghost" size="small" onClick={() => console.log('View calendar')} />
+              <ActionButton label="Calendar" icon={Calendar} variant="ghost" size="small" onClick={() => ENABLE_DEVELOPMENT_FEATURES ? console.log('View calendar') : alert('This feature is not available in the current version')} />
             </div>
             <div className="upcoming-events">
               {upcomingEvents.map(event => (
@@ -477,20 +499,46 @@ export default function DashboardHome() {
                   details={event.details}
                 />
               ))}
+              {upcomingReminders.map(reminder => (
+                <div key={reminder.id} className="upcoming-reminder">
+                  <div className="reminder-icon">
+                    <Bell size={16} />
+                  </div>
+                  <div className="reminder-content">
+                    <div className="reminder-title">{reminder.title}</div>
+                    <div className="reminder-meta">
+                      <span className="reminder-time">
+                        {new Intl.DateTimeFormat('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit'
+                        }).format(reminder.dueDate)}
+                      </span>
+                      {reminder.relatedApplication && (
+                        <span className="reminder-company">
+                          {reminder.relatedApplication.company.name}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className={`priority-indicator priority-${reminder.priority}`}></div>
+                </div>
+              ))}
             </div>
             <div className="card-actions">
-              <ActionButton 
-                label="Add Event" 
-                icon={Plus} 
-                variant="secondary" 
-                size="small" 
+              <ActionButton
+                label="Add Event"
+                icon={Plus}
+                variant="secondary"
+                size="small"
                 onClick={() => console.log('Add event')}
               />
-              <ActionButton 
-                label="View All" 
-                icon={ChevronRight} 
-                variant="ghost" 
-                size="small" 
+              <ActionButton
+                label="View All"
+                icon={ChevronRight}
+                variant="ghost"
+                size="small"
                 onClick={() => console.log('View all events')}
                 className="view-all"
               />
@@ -499,13 +547,16 @@ export default function DashboardHome() {
         </div>
       )}
 
+      {/* Temporarily disabled tab content */}
+      {/*
       {activeTab === 'actions' && (
         <ActionsTab recommendedActions={recommendedActions} />
       )}
 
       {activeTab === 'skills' && (
-        <SkillsTab skillGaps={skillGaps} goals={goals} />
+        <SkillsTab skillGaps={skillGaps} goals={monthlyGoals} />
       )}
+      */}
 
       {activeTab === 'activity' && (
         <div className="dashboard-grid activity-grid">
@@ -517,18 +568,17 @@ export default function DashboardHome() {
                   options={[
                     { value: 'all', label: 'All Activities' },
                     { value: 'applications', label: 'Applications' },
-                    { value: 'interviews', label: 'Interviews' },
-                    { value: 'networking', label: 'Networking' }
+                    { value: 'interviews', label: 'Interviews' }
                   ]}
                   value={activityFilter}
-                  onChange={(value) => setActivityFilter(value)}
+                  onChange={(value) => setActivityFilter(Array.isArray(value) ? value[0] : value)}
                   size="small"
                   width={150}
                 />
               </div>
             </div>
             <div className="activity-timeline">
-              {activities.map((activity, index) => (
+              {recentActivities.map((activity, index) => (
                 <ActivityItem
                   key={activity.id}
                   id={activity.id}
@@ -538,7 +588,7 @@ export default function DashboardHome() {
                   companyLogo={activity.company.logo}
                   timestamp={activity.timestamp}
                   details={activity.details}
-                  isLast={index === activities.length - 1}
+                  isLast={index === recentActivities.length - 1}
                   onClick={() => console.log(`Activity ${activity.id} clicked`)}
                 />
               ))}
@@ -593,11 +643,11 @@ export default function DashboardHome() {
         </div>
       )}
 
-      <ActionButton 
-        label="" 
-        icon={Zap} 
-        variant="primary" 
-        size="large" 
+      <ActionButton
+        label=""
+        icon={Zap}
+        variant="primary"
+        size="large"
         onClick={() => console.log('Quick actions')}
         className="quick-actions-button"
       />
@@ -896,65 +946,6 @@ export default function DashboardHome() {
           color: var(--text-tertiary);
         }
 
-        .networking-impact-chart {
-          display: flex;
-          flex-direction: column;
-          gap: 30px;
-        }
-
-        .network-metric {
-          display: flex;
-          flex-direction: column;
-          gap: 15px;
-        }
-
-        .network-label {
-          font-size: 15px;
-          font-weight: 500;
-          color: var(--text-primary);
-        }
-
-        .comparison-bars {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-        }
-
-        .bar-container {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .bar-label {
-          width: 120px;
-          font-size: 13px;
-          color: var(--text-secondary);
-        }
-
-        .bar-bg {
-          flex: 1;
-          height: 18px;
-          background: var(--hover-bg);
-          border-radius: var(--border-radius);
-          position: relative;
-        }
-
-        .bar-value {
-          height: 100%;
-          background: var(--accent-blue);
-          border-radius: var(--border-radius);
-          animation: growWidth 1s var(--easing-standard) forwards;
-        }
-
-        .bar-percent {
-          width: 40px;
-          text-align: right;
-          font-size: 13px;
-          font-weight: 500;
-          color: var(--text-primary);
-        }
-
         .dashboard-tabs {
           margin-bottom: 20px;
           border-bottom: 1px solid var(--border-divider);
@@ -1023,6 +1014,81 @@ export default function DashboardHome() {
           display: flex;
           flex-direction: column;
           gap: 16px;
+        }
+
+        .upcoming-reminder {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px;
+          background: var(--glass-bg);
+          border-radius: var(--border-radius);
+          border: 1px solid var(--border-thin);
+          transition: all 0.2s ease;
+        }
+
+        .upcoming-reminder:hover {
+          background: var(--hover-bg);
+          border-color: var(--border-hover);
+        }
+
+        .reminder-icon {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background: var(--accent-orange);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          flex-shrink: 0;
+        }
+
+        .reminder-content {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .reminder-title {
+          font-size: 14px;
+          font-weight: 500;
+          color: var(--text-primary);
+          margin-bottom: 4px;
+        }
+
+        .reminder-meta {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 12px;
+          color: var(--text-tertiary);
+        }
+
+        .reminder-time {
+          font-weight: 500;
+        }
+
+        .reminder-company {
+          color: var(--text-secondary);
+        }
+
+        .priority-indicator {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          flex-shrink: 0;
+        }
+
+        .priority-high {
+          background: var(--accent-red);
+        }
+
+        .priority-medium {
+          background: var(--accent-orange);
+        }
+
+        .priority-low {
+          background: var(--accent-blue);
         }
 
         .card-actions {
@@ -1204,6 +1270,136 @@ export default function DashboardHome() {
           .insight-data {
             flex-direction: column;
           }
+        }
+
+        .empty-state {
+          text-align: center;
+          padding: 40px 20px;
+          color: var(--text-tertiary);
+        }
+
+        .empty-state p {
+          margin: 8px 0;
+          font-size: 14px;
+        }
+
+        .empty-state p:first-child {
+          font-weight: 500;
+          color: var(--text-secondary);
+        }
+        .empty-state {
+          text-align: center;
+          padding: 40px 20px;
+          color: var(--text-tertiary);
+        }
+
+        .empty-state p:first-child {
+          font-size: 16px;
+          font-weight: 600;
+          color: var(--text-secondary);
+          margin-bottom: 8px;
+        }
+
+        .empty-state p:last-child {
+          font-size: 14px;
+          margin: 0;
+        }
+
+        .applications-breakdown {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+          gap: 16px;
+          padding: 20px 0;
+        }
+
+        .breakdown-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 16px;
+          background: var(--hover-bg);
+          border-radius: var(--border-radius);
+          border: 1px solid var(--border-thin);
+        }
+
+        .breakdown-label {
+          font-size: 12px;
+          color: var(--text-tertiary);
+          text-transform: uppercase;
+          font-weight: 600;
+          letter-spacing: 0.5px;
+          margin-bottom: 8px;
+        }
+
+        .breakdown-value {
+          font-size: 24px;
+          font-weight: 700;
+          color: var(--text-primary);
+        }
+
+        .active-breakdown {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          padding: 20px 0;
+        }
+
+        .active-item {
+          display: flex;
+          flex-direction: column;
+          padding: 20px;
+          background: var(--hover-bg);
+          border-radius: var(--border-radius);
+          border: 1px solid var(--border-thin);
+        }
+
+        .active-label {
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--text-primary);
+          margin-bottom: 4px;
+        }
+
+        .active-value {
+          font-size: 20px;
+          font-weight: 700;
+          color: var(--accent-blue);
+          margin-bottom: 8px;
+        }
+
+        .active-desc {
+          font-size: 13px;
+          color: var(--text-tertiary);
+          line-height: 1.4;
+        }
+
+        .insight-recommendations h4 {
+          margin: 0 0 12px 0;
+          font-size: 16px;
+          font-weight: 600;
+          color: var(--text-primary);
+        }
+
+        .insight-recommendations ul {
+          margin: 0;
+          padding-left: 20px;
+          list-style-type: disc;
+        }
+
+        .insight-recommendations li {
+          margin-bottom: 8px;
+          font-size: 14px;
+          color: var(--text-secondary);
+          line-height: 1.4;
+        }
+
+        .stat-card {
+          cursor: pointer;
+          transition: all 0.2s var(--easing-standard);
+        }
+
+        .stat-card:hover {
+          transform: translateY(-2px);
         }
       `}</style>
     </section>

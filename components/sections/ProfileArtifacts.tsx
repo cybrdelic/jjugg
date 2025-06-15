@@ -212,9 +212,9 @@ export default function ProfileArtifacts() {
       </CardHeader>
 
       <div className="tabs-container reveal-element">
-        <TabGroup 
-          activeTab={activeTab} 
-          onTabChange={setActiveTab} 
+        <TabGroup
+          activeTab={activeTab}
+          onTabChange={(tab) => setActiveTab(tab as 'portfolio' | 'resumes' | 'cover-letters')}
           className="tabs"
         >
           <TabButton

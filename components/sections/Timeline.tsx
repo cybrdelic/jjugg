@@ -10,6 +10,8 @@ import confetti from 'canvas-confetti';
 import Modal from '../Modal';
 import TabButton, { TabGroup } from '../TabButton';
 import EnhancedDropdown from '../EnhancedDropdown';
+import { useFeatureFlags } from '@/contexts/FeatureFlagContext';
+import { useAppData } from '../../hooks/useData';
 
 interface TimelineActivity {
   id: string;
@@ -82,6 +84,9 @@ const formatTime = (date: Date): string => {
 };
 
 export default function Timeline() {
+  const { ENABLE_TIMELINE_SECTION } = useFeatureFlags();
+  const appData = useAppData();
+
   const [activities, setActivities] = useState<TimelineActivity[]>([]);
   const [filter, setFilter] = useState<'all' | TimelineActivity['type']>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -91,7 +96,7 @@ export default function Timeline() {
   const [newActivity, setNewActivity] = useState({
     title: '',
     company: '',
-    type: 'application' as TimelineActivity['type'],
+    type: 'email' as TimelineActivity['type'],
     details: '',
     timestamp: '',
     priority: 'medium' as TimelineActivity['priority'],
@@ -101,74 +106,136 @@ export default function Timeline() {
   const [formError, setFormError] = useState<string>('');
   const [statusUpdates, setStatusUpdates] = useState<StatusUpdate[]>([]);
 
-  useEffect(() => {
-    const sampleActivities: TimelineActivity[] = [
-      {
-        id: '1',
-        type: 'application',
-        title: 'Applied to Senior Developer',
-        company: 'TechCorp',
-        timestamp: new Date('2025-03-15T09:30:00'),
-        details: 'Submitted via portal with resume and cover letter.',
-        status: 'pending',
-        priority: 'high',
-        tags: ['tech', 'senior'],
-        attachments: [{ name: 'Resume.pdf', url: '#' }],
-        nextSteps: 'Follow up in 3 days',
-      },
-      {
-        id: '2',
-        type: 'interview',
-        title: 'Technical Interview',
-        company: 'InnovateSoft',
-        timestamp: new Date('2025-03-22T14:00:00'),
-        details: '30-min screening with engineering team.',
-        status: 'pending',
-        priority: 'high',
-        tags: ['technical'],
-        nextSteps: 'Prepare React questions',
-      },
-      {
-        id: '3',
-        type: 'email',
-        title: 'Follow-up Email',
-        company: 'DataViz Inc',
-        timestamp: new Date('2025-03-19T10:15:00'),
-        details: 'Sent thank-you note with portfolio link.',
-        status: 'completed',
-        priority: 'medium',
-        tags: ['follow-up'],
-      },
-      {
-        id: '4',
-        type: 'call',
-        title: 'Recruiter Call',
-        company: 'CloudSystems',
-        timestamp: new Date('2025-03-20T11:00:00'),
-        details: 'Discussed job requirements and salary.',
-        status: 'completed',
-        priority: 'low',
-        tags: ['recruiter'],
-      },
-      {
-        id: '5',
-        type: 'note',
-        title: 'Research Notes',
-        company: 'AlgoTech',
-        timestamp: new Date('2025-02-10T15:00:00'),
-        details: 'Focus on algorithms, competitive pay.',
-        status: 'completed',
-        priority: 'medium',
-        tags: ['research'],
-      },
-    ];
+  // Generate event-driven timeline activities based on actual application state changes
+  const generateTimelineFromApplicationStates = (): TimelineActivity[] => {
+    const applications = appData.applications.data;
+    const timelineEvents: TimelineActivity[] = [];
 
-    setActivities(sampleActivities.sort((a, b) =>
+    applications.forEach(app => {
+      // Generate timeline events based on application stage progression
+      const baseTimestamp = new Date(app.dateApplied);
+
+      // 1. Application submitted event
+      timelineEvents.push({
+        id: `${app.id}-applied`,
+        type: 'application',
+        title: `Applied to ${app.position}`,
+        company: app.company.name,
+        timestamp: baseTimestamp,
+        details: `Submitted application for ${app.position} position at ${app.company.name}. ${app.notes || 'Application submitted successfully.'}`,
+        status: 'completed',
+        priority: 'medium',
+        tags: ['application', app.company.industry],
+      });
+
+      // 2. Stage progression events (only if progressed beyond applied)
+      if (app.stage !== 'applied') {
+        const stageEvents = generateStageProgressionEvents(app, baseTimestamp);
+        timelineEvents.push(...stageEvents);
+      }
+    });
+
+    return timelineEvents;
+  };
+
+  const generateStageProgressionEvents = (app: any, baseDate: Date): TimelineActivity[] => {
+    const events: TimelineActivity[] = [];
+    const stageProgression = ['applied', 'screening', 'interview', 'offer', 'rejected'];
+    const currentStageIndex = stageProgression.indexOf(app.stage);
+
+    // Generate events for each stage the application has progressed through
+    for (let i = 1; i <= currentStageIndex; i++) {
+      const stage = stageProgression[i];
+      const eventDate = new Date(baseDate.getTime() + (i * 3 * 24 * 60 * 60 * 1000)); // Spread events 3 days apart
+
+      const eventData = getStageEventData(stage, app, eventDate);
+      if (eventData) {
+        events.push(eventData);
+      }
+    }
+
+    return events;
+  };
+
+  const getStageEventData = (stage: string, app: any, timestamp: Date): TimelineActivity | null => {
+    const templates = {
+      screening: {
+        title: `Screening call scheduled with ${app.company.name}`,
+        details: `Recruiter from ${app.company.name} reached out for an initial screening call for the ${app.position} role. This is a positive sign that your application caught their attention.`,
+        type: 'call' as const,
+        priority: 'medium' as const,
+        nextSteps: 'Prepare for screening questions about your background and interest in the role.'
+      },
+      interview: {
+        title: `Interview scheduled with ${app.company.name}`,
+        details: `Technical/behavioral interview scheduled for the ${app.position} position. The hiring team is interested in moving forward with your candidacy.`,
+        type: 'interview' as const,
+        priority: 'high' as const,
+        nextSteps: 'Research the company, prepare technical questions, and review your portfolio.'
+      },
+      offer: {
+        title: `Job offer received from ${app.company.name}! 🎉`,
+        details: `Congratulations! You've received a job offer for the ${app.position} role. ${app.salary ? `Salary: ${app.salary}` : ''} Time to review terms and negotiate if needed.`,
+        type: 'status' as const,
+        priority: 'high' as const,
+        nextSteps: 'Review offer details, research market rates, and prepare for negotiation if needed.'
+      },
+      rejected: {
+        title: `Application update from ${app.company.name}`,
+        details: `Unfortunately, ${app.company.name} decided to move forward with other candidates for the ${app.position} role. This is part of the process - keep applying and improving.`,
+        type: 'status' as const,
+        priority: 'low' as const,
+        nextSteps: 'Request feedback if possible, and continue applying to other opportunities.'
+      }
+    };
+
+    const template = templates[stage as keyof typeof templates];
+    if (!template) return null;
+
+    return {
+      id: `${app.id}-${stage}`,
+      type: template.type,
+      title: template.title,
+      company: app.company.name,
+      timestamp,
+      details: template.details,
+      status: 'completed',
+      priority: template.priority,
+      tags: [stage, app.company.industry],
+      nextSteps: template.nextSteps,
+    };
+  };
+
+  useEffect(() => {
+    // Generate timeline events only from actual application state changes
+    const stateBasedEvents = generateTimelineFromApplicationStates();
+
+    // Add only confirmed upcoming events (interviews, deadlines)
+    const upcomingEvents = appData.events.getUpcoming(5);
+    const confirmedEvents: TimelineActivity[] = upcomingEvents
+      .filter(event => event.type === 'Interview' || event.type === 'Deadline') // Only show confirmed events
+      .map(event => ({
+        id: `upcoming-${event.id}`,
+        type: event.type === 'Interview' ? 'interview' : 'status',
+        title: event.title,
+        company: event.company.name,
+        timestamp: event.date,
+        details: `${event.details} This is a confirmed ${event.type.toLowerCase()} that requires your attention.`,
+        status: event.date > new Date() ? 'pending' : 'completed',
+        priority: event.type === 'Interview' ? 'high' : 'medium',
+        tags: [event.type.toLowerCase(), event.company.industry],
+        nextSteps: event.type === 'Interview' ? 'Prepare questions and review the job description' : 'Complete the required task on time',
+      }));
+
+    // Combine and sort all timeline events
+    const allTimelineEvents = [...stateBasedEvents, ...confirmedEvents].sort((a, b) =>
       sortOrder === 'desc'
         ? b.timestamp.getTime() - a.timestamp.getTime()
         : a.timestamp.getTime() - b.timestamp.getTime()
-    ));
-  }, [sortOrder]);
+    );
+
+    setActivities(allTimelineEvents);
+  }, [sortOrder, appData]);
 
   const addStatusUpdate = (message: string, activityId: string | null) => {
     const newId = `${activityId || 'global'}-${Date.now()}`;
@@ -213,27 +280,63 @@ export default function Timeline() {
       setFormError('Title, company, and timestamp are required.');
       return;
     }
+
+    // Check if the company exists in applications
+    const applications = appData.applications.data;
+    const relatedApp = applications.find(app =>
+      app.company.name.toLowerCase() === newActivity.company.toLowerCase()
+    );
+
+    if (!relatedApp) {
+      setFormError('Please select a company from your existing applications. Timeline events should be related to your job applications.');
+      return;
+    }
+
     setFormError('');
+
+    // Generate contextual details based on the application context
+    let enhancedDetails = newActivity.details;
+    if (!enhancedDetails) {
+      switch (newActivity.type) {
+        case 'email':
+          enhancedDetails = `Follow-up email sent to ${newActivity.company} regarding the ${relatedApp.position} position. ${newActivity.nextSteps ? 'Next steps: ' + newActivity.nextSteps : ''}`;
+          break;
+        case 'call':
+          enhancedDetails = `Phone conversation with ${newActivity.company} about the ${relatedApp.position} role. ${newActivity.nextSteps ? 'Action items: ' + newActivity.nextSteps : ''}`;
+          break;
+        case 'note':
+          enhancedDetails = `Personal note about ${relatedApp.position} opportunity at ${newActivity.company}. ${newActivity.details || 'Additional research and preparation notes.'}`;
+          break;
+        case 'interview':
+          enhancedDetails = `Manual entry: Interview scheduled for ${relatedApp.position} at ${newActivity.company}. ${newActivity.nextSteps ? 'Preparation needed: ' + newActivity.nextSteps : ''}`;
+          break;
+        default:
+          enhancedDetails = `Manual entry: ${newActivity.title} related to ${relatedApp.position} position at ${newActivity.company}`;
+      }
+    }
+
     const newActivityData: TimelineActivity = {
-      id: `user-${Date.now()}`,
+      id: `manual-${Date.now()}`,
       title: newActivity.title,
       company: newActivity.company,
       type: newActivity.type,
-      details: newActivity.details,
+      details: enhancedDetails,
       timestamp: new Date(newActivity.timestamp),
       status: new Date(newActivity.timestamp) < new Date() ? 'overdue' : 'pending',
       priority: newActivity.priority,
-      tags: newActivity.tags ? newActivity.tags.split(',').map(tag => tag.trim()) : [],
+      tags: ['manual-entry', newActivity.type, relatedApp.company.industry].filter(Boolean),
       nextSteps: newActivity.nextSteps,
     };
+
     setActivities(prev => [...prev, newActivityData].sort((a, b) =>
       sortOrder === 'desc'
         ? b.timestamp.getTime() - a.timestamp.getTime()
         : a.timestamp.getTime() - b.timestamp.getTime()
     ));
-    setNewActivity({ title: '', company: '', type: 'application', details: '', timestamp: '', priority: 'medium', nextSteps: '', tags: '' });
+
+    setNewActivity({ title: '', company: '', type: 'email', details: '', timestamp: '', priority: 'medium', nextSteps: '', tags: '' });
     setShowAddModal(false);
-    addStatusUpdate('Added!', newActivityData.id);
+    addStatusUpdate(`Added manual entry for ${newActivity.company}`, newActivityData.id);
   };
 
   const filteredActivities = activities
@@ -293,9 +396,9 @@ export default function Timeline() {
 
       <div className="timeline-controls">
         <div className="filter-container">
-          <TabGroup 
-            activeTab={filter} 
-            onTabChange={(tab) => setFilter(tab as any)} 
+          <TabGroup
+            activeTab={filter}
+            onTabChange={(tab) => setFilter(tab as any)}
             className="filter-tab-group"
           >
             {['all', 'application', 'interview', 'email', 'call', 'note', 'status'].map(type => (
@@ -452,18 +555,22 @@ export default function Timeline() {
           </div>
           <div className="form-group">
             <label>Company</label>
-            <input
-              type="text"
-              placeholder="e.g., TechCorp"
+            <select
               value={newActivity.company}
               onChange={e => setNewActivity({ ...newActivity, company: e.target.value })}
               className={newActivity.company ? '' : 'invalid'}
-            />
+            >
+              <option value="">Select a company from your applications</option>
+              {Array.from(new Set(appData.applications.data.map(app => app.company.name))).map(company => (
+                <option key={company} value={company}>{company}</option>
+              ))}
+            </select>
+            <small>Timeline entries must be related to your existing applications</small>
           </div>
           <div className="form-group">
             <label>Type</label>
             <EnhancedDropdown
-              options={['application', 'interview', 'email', 'call', 'note', 'status'].map(type => ({
+              options={['email', 'call', 'note', 'interview'].map(type => ({
                 value: type,
                 label: type.charAt(0).toUpperCase() + type.slice(1)
               }))}
@@ -471,6 +578,7 @@ export default function Timeline() {
               onChange={(value) => setNewActivity({ ...newActivity, type: value as TimelineActivity['type'] })}
               placeholder="Select activity type"
             />
+            <small>Note: Application submissions and status changes are automatically tracked</small>
           </div>
           <div className="form-group">
             <label>Details</label>
@@ -945,6 +1053,12 @@ export default function Timeline() {
           font-size: 12px;
           color: var(--accent-red);
           margin-top: 4px;
+        }
+        .form-group small {
+          font-size: 11px;
+          color: var(--text-tertiary);
+          margin-top: 4px;
+          display: block;
         }
         .modal-actions {
           display: flex;

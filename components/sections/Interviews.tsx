@@ -3,143 +3,11 @@
 import React, { useState } from 'react';
 import { Calendar, Clock, PlusCircle, User, Building, MapPin, ArrowUpRight, MoreHorizontal, ChevronDown } from 'lucide-react';
 import CardHeader from '../CardHeader';
-
-interface Company {
-  id: string;
-  name: string;
-  logo: string;
-  industry: string;
-}
-
-interface Application {
-  id: string;
-  position: string;
-  company: Company;
-}
-
-type InterviewType = 'Phone Screen' | 'Technical' | 'Behavioral' | 'Take-home' | 'Onsite' | 'Final Round';
-
-interface InterviewEvent {
-  id: string;
-  application: Application;
-  date: Date;
-  startTime: string;
-  endTime: string;
-  type: InterviewType;
-  location: string;
-  isRemote: boolean;
-  interviewers: string[];
-  notes: string;
-  preparationLinks: string[];
-  status: 'upcoming' | 'completed' | 'canceled';
-}
-
-// Mock data
-const companies: Company[] = [
-  { id: 'c1', name: 'Google', logo: '/companies/google.svg', industry: 'Technology' },
-  { id: 'c2', name: 'Microsoft', logo: '/companies/microsoft.svg', industry: 'Technology' },
-  { id: 'c4', name: 'Amazon', logo: '/companies/amazon.svg', industry: 'E-commerce' },
-  { id: 'c5', name: 'Facebook', logo: '/companies/facebook.svg', industry: 'Social Media' },
-  { id: 'c9', name: 'Uber', logo: '/companies/uber.svg', industry: 'Transportation' },
-  { id: 'c13', name: 'Salesforce', logo: '/companies/salesforce.svg', industry: 'CRM' },
-];
-
-const applications = [
-  { id: 'app1', position: 'Senior Frontend Developer', company: companies[0] },
-  { id: 'app5', position: 'Product Manager', company: companies[3] },
-  { id: 'app9', position: 'Mobile Engineer', company: companies[4] },
-  { id: 'app13', position: 'Software Engineer', company: companies[5] },
-];
-
-const interviews: InterviewEvent[] = [
-  {
-    id: 'int1',
-    application: applications[0],
-    date: new Date(2023, 11, 30, 10, 0),
-    startTime: '10:00 AM',
-    endTime: '11:00 AM',
-    type: 'Technical',
-    location: 'Google Meet',
-    isRemote: true,
-    interviewers: ['Sarah Johnson', 'Mike Chang'],
-    notes: 'Prepare for algorithm questions and system design.',
-    preparationLinks: ['https://leetcode.com/company/google/', 'https://www.educative.io/courses/grokking-the-system-design-interview'],
-    status: 'upcoming'
-  },
-  {
-    id: 'int2',
-    application: applications[1],
-    date: new Date(2023, 12, 2, 14, 0),
-    startTime: '2:00 PM',
-    endTime: '3:30 PM',
-    type: 'Behavioral',
-    location: 'Facebook HQ, Building 20',
-    isRemote: false,
-    interviewers: ['Lisa Park', 'David Williams'],
-    notes: 'Prepare STAR method responses for leadership and conflict resolution scenarios.',
-    preparationLinks: ['https://www.themuse.com/advice/star-interview-method'],
-    status: 'upcoming'
-  },
-  {
-    id: 'int3',
-    application: applications[2],
-    date: new Date(2023, 12, 5, 11, 0),
-    startTime: '11:00 AM',
-    endTime: '12:30 PM',
-    type: 'Technical',
-    location: 'Zoom',
-    isRemote: true,
-    interviewers: ['John Smith', 'Alex Rodriguez'],
-    notes: 'Mobile-specific questions about React Native and native Android/iOS.',
-    preparationLinks: ['https://reactnative.dev/docs/getting-started'],
-    status: 'upcoming'
-  },
-  {
-    id: 'int4',
-    application: applications[3],
-    date: new Date(2023, 12, 8, 15, 0),
-    startTime: '3:00 PM',
-    endTime: '4:30 PM',
-    type: 'Final Round',
-    location: 'Salesforce Tower, Floor 34',
-    isRemote: false,
-    interviewers: ['Emma Watson', 'Robert Chen', 'Michael Clark'],
-    notes: 'Panel interview with engineering director and team leads.',
-    preparationLinks: ['https://trailhead.salesforce.com/en/content/learn/modules/platform-developer-i-certification-maintenance-winter-22'],
-    status: 'upcoming'
-  },
-  {
-    id: 'int5',
-    application: applications[0],
-    date: new Date(2023, 11, 15, 13, 0),
-    startTime: '1:00 PM',
-    endTime: '2:00 PM',
-    type: 'Phone Screen',
-    location: 'Phone Call',
-    isRemote: true,
-    interviewers: ['Recruiter: Sarah Johnson'],
-    notes: 'Initial screening to discuss background and role expectations.',
-    preparationLinks: [],
-    status: 'completed'
-  },
-  {
-    id: 'int6',
-    application: applications[1],
-    date: new Date(2023, 11, 18, 11, 0),
-    startTime: '11:00 AM',
-    endTime: '12:00 PM',
-    type: 'Phone Screen',
-    location: 'Google Meet',
-    isRemote: true,
-    interviewers: ['Recruiter: Mark Thompson'],
-    notes: 'Initial discussion about the PM role and team structure.',
-    preparationLinks: [],
-    status: 'completed'
-  }
-];
+import { useApplications, useCompanies, useEvents } from '../../hooks/useData';
+import type { UpcomingEvent } from '../../types';
 
 // Helper function to format dates
-const formatDate = (date: Date): string => {
+const formatEventDate = (date: Date): string => {
   return new Intl.DateTimeFormat('en-US', {
     weekday: 'short',
     month: 'short',
@@ -148,566 +16,402 @@ const formatDate = (date: Date): string => {
   }).format(date);
 };
 
-// Get interview type color
-const getInterviewTypeColor = (type: InterviewType): string => {
-  switch (type) {
-    case 'Phone Screen':
-      return 'var(--accent-blue)';
-    case 'Technical':
-      return 'var(--accent-purple)';
-    case 'Behavioral':
-      return 'var(--accent-green)';
-    case 'Take-home':
-      return 'var(--accent-orange)';
-    case 'Onsite':
-      return 'var(--accent-pink)';
-    case 'Final Round':
-      return 'var(--accent-red)';
-    default:
-      return 'var(--text-secondary)';
+// Get interview type color based on event details or title
+const getEventTypeColor = (event: UpcomingEvent): string => {
+  const title = event.title.toLowerCase();
+  const details = event.details?.toLowerCase() || '';
+
+  if (title.includes('phone') || title.includes('screen') || details.includes('phone')) {
+    return 'var(--accent-blue)';
+  } else if (title.includes('technical') || details.includes('technical')) {
+    return 'var(--accent-purple)';
+  } else if (title.includes('behavioral') || details.includes('behavioral')) {
+    return 'var(--accent-green)';
+  } else if (title.includes('final') || details.includes('final')) {
+    return 'var(--accent-red)';
+  } else if (title.includes('onsite') || details.includes('onsite')) {
+    return 'var(--accent-pink)';
+  } else {
+    return 'var(--accent-blue)'; // default
   }
 };
 
+// Get interview type from event
+const getEventType = (event: UpcomingEvent): string => {
+  const title = event.title.toLowerCase();
+  const details = event.details?.toLowerCase() || '';
+
+  if (title.includes('phone') || title.includes('screen') || details.includes('phone')) {
+    return 'Phone Screen';
+  } else if (title.includes('technical') || details.includes('technical')) {
+    return 'Technical';
+  } else if (title.includes('behavioral') || details.includes('behavioral')) {
+    return 'Behavioral';
+  } else if (title.includes('final') || details.includes('final')) {
+    return 'Final Round';
+  } else if (title.includes('onsite') || details.includes('onsite')) {
+    return 'Onsite';
+  } else {
+    return 'Interview';
+  }
+};
+
+// Get status from event date
+const getEventStatus = (event: UpcomingEvent): 'upcoming' | 'completed' => {
+  return event.date > new Date() ? 'upcoming' : 'completed';
+};
+
 // Get status color
-const getStatusColor = (status: string): string => {
+const getEventStatusColor = (status: string): string => {
   switch (status) {
     case 'upcoming':
       return 'var(--accent-blue)';
     case 'completed':
-      return 'var(--accent-success)';
+      return 'var(--accent-green)';
     case 'canceled':
       return 'var(--accent-red)';
     default:
-      return 'var(--text-secondary)';
+      return 'var(--text-tertiary)';
   }
 };
 
 export default function Interviews() {
-  const [filter, setFilter] = useState<'all' | 'upcoming' | 'completed' | 'canceled'>('all');
+  const eventsData = useEvents();
+  const applicationsData = useApplications();
+  const companiesData = useCompanies();
 
-  // Filter interviews based on status filter
-  const filteredInterviews = interviews.filter(interview => {
-    return filter === 'all' || interview.status === filter;
-  });
+  // Filter events for interviews only
+  const interviews = eventsData.data.filter(event =>
+    event.type === 'Interview' ||
+    event.title.toLowerCase().includes('interview') ||
+    event.title.toLowerCase().includes('screen')
+  );
 
-  // Sort interviews by date (most recent first for upcoming, oldest first for completed)
-  const sortedInterviews = [...filteredInterviews].sort((a, b) => {
-    if (a.status === 'upcoming' && b.status === 'upcoming') {
-      return a.date.getTime() - b.date.getTime(); // Upcoming: chronological order
-    } else if (a.status === 'completed' && b.status === 'completed') {
-      return b.date.getTime() - a.date.getTime(); // Completed: reverse chronological
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
+  const [selectedInterview, setSelectedInterview] = useState<UpcomingEvent | null>(null);
+  const [showModal, setShowModal] = useState(false);
+
+  // Sort interviews by date
+  const sortedInterviews = interviews.sort((a, b) => {
+    const statusA = getEventStatus(a);
+    const statusB = getEventStatus(b);
+
+    if (statusA === 'upcoming' && statusB === 'upcoming') {
+      return a.date.getTime() - b.date.getTime();
+    } else if (statusA === 'completed' && statusB === 'completed') {
+      return b.date.getTime() - a.date.getTime();
     } else {
-      // Put upcoming first, then completed, then canceled
-      return a.status === 'upcoming' ? -1 : b.status === 'upcoming' ? 1 : 0;
+      return statusA === 'upcoming' ? -1 : statusB === 'upcoming' ? 1 : 0;
     }
   });
 
-  // Group interviews by date for better organization
-  const interviewsByDate: Record<string, InterviewEvent[]> = {};
-  
-  sortedInterviews.forEach(interview => {
-    const dateKey = formatDate(interview.date);
+  // Filter interviews based on selected filter
+  const filteredInterviews = sortedInterviews.filter(interview => {
+    if (selectedFilter === 'all') return true;
+    return getEventStatus(interview) === selectedFilter;
+  });
+
+  // Group interviews by date
+  const interviewsByDate: Record<string, UpcomingEvent[]> = {};
+  filteredInterviews.forEach(interview => {
+    const dateKey = formatEventDate(interview.date);
     if (!interviewsByDate[dateKey]) {
       interviewsByDate[dateKey] = [];
     }
     interviewsByDate[dateKey].push(interview);
   });
 
+  const handleInterviewClick = (interview: UpcomingEvent) => {
+    setSelectedInterview(interview);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setSelectedInterview(null);
+    setShowModal(false);
+  };
+
+  const upcomingCount = interviews.filter(interview => getEventStatus(interview) === 'upcoming').length;
+
   return (
-    <section className="interviews-section reveal-element">
+    <div className="interviews-section">
       <CardHeader
         title="Interviews"
-        subtitle={`Schedule and prepare for your upcoming interviews (${interviews.filter(i => i.status === 'upcoming').length} upcoming)`}
+        subtitle={`Schedule and prepare for your upcoming interviews (${upcomingCount} upcoming)`}
         accentColor="var(--accent-green)"
-        variant="default"
       >
-        <button className="add-interview-btn">
+        <button
+          className="action-button primary"
+          onClick={() => console.log('Add interview')}
+        >
           <PlusCircle size={18} />
-          <span className="btn-text">Add Interview</span>
+          <span>Schedule Interview</span>
         </button>
       </CardHeader>
 
-      <div className="interviews-controls reveal-element">
-        <div className="filter-container">
-          <button 
-            className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
-            onClick={() => setFilter('all')}
-          >
-            All
-          </button>
-          <button 
-            className={`filter-btn ${filter === 'upcoming' ? 'active' : ''}`}
-            onClick={() => setFilter('upcoming')}
-          >
-            Upcoming
-          </button>
-          <button 
-            className={`filter-btn ${filter === 'completed' ? 'active' : ''}`}
-            onClick={() => setFilter('completed')}
-          >
-            Completed
-          </button>
-          <button 
-            className={`filter-btn ${filter === 'canceled' ? 'active' : ''}`}
-            onClick={() => setFilter('canceled')}
-          >
-            Canceled
-          </button>
-        </div>
-
-        <div className="view-options">
-          <button className="view-option">
-            <span>Sort By</span>
-            <ChevronDown size={14} />
-          </button>
-        </div>
-      </div>
-
-      <div className="interviews-timeline reveal-element">
-        {Object.keys(interviewsByDate).length > 0 ? (
-          Object.entries(interviewsByDate).map(([dateKey, dayInterviews]) => (
-            <div key={dateKey} className="date-group">
-              <div className="date-header">
-                <div className="date-line"></div>
-                <h3 className="date-label">{dateKey}</h3>
-                <div className="date-line"></div>
-              </div>
-
-              <div className="interviews-list">
-                {dayInterviews.map(interview => (
-                  <div key={interview.id} className={`interview-card ${interview.status}`}>
-                    {/* Company section with logo */}
-                    <div className="card-company-info">
-                      <div className="company-logo-container">
-                        <div className="company-logo-placeholder">
-                          {interview.application.company.name.charAt(0)}
-                        </div>
-                      </div>
-                      <div className="company-details">
-                        <h3 className="company-name">{interview.application.company.name}</h3>
-                        <p className="position-title">{interview.application.position}</p>
-                      </div>
-                    </div>
-
-                    {/* Interview details section */}
-                    <div className="interview-details">
-                      {/* Type badge */}
-                      <div 
-                        className="interview-type-badge"
-                        style={{ 
-                          backgroundColor: `${getInterviewTypeColor(interview.type)}10`,
-                          color: getInterviewTypeColor(interview.type)
-                        }}
-                      >
-                        <span 
-                          className="type-indicator"
-                          style={{ backgroundColor: getInterviewTypeColor(interview.type) }}
-                        ></span>
-                        {interview.type}
-                      </div>
-
-                      {/* Time and location */}
-                      <div className="detail-items">
-                        <div className="detail-item">
-                          <Clock size={16} className="detail-icon" />
-                          <span>{interview.startTime} - {interview.endTime}</span>
-                        </div>
-                        
-                        <div className="detail-item">
-                          <MapPin size={16} className="detail-icon" />
-                          <span>{interview.location}</span>
-                          {interview.isRemote && <span className="remote-badge">Remote</span>}
-                        </div>
-                        
-                        <div className="detail-item">
-                          <User size={16} className="detail-icon" />
-                          <span>{interview.interviewers.length > 1 
-                            ? `${interview.interviewers.length} interviewers` 
-                            : interview.interviewers[0]}</span>
-                        </div>
-                      </div>
-
-                      {/* Notes preview */}
-                      {interview.notes && (
-                        <div className="interview-notes">
-                          <p>{interview.notes}</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Action buttons */}
-                    <div className="interview-actions">
-                      {interview.status === 'upcoming' && (
-                        <>
-                          <button className="prepare-btn">
-                            Prepare
-                            <ArrowUpRight size={14} />
-                          </button>
-                          <button className="action-btn">
-                            <MoreHorizontal size={18} />
-                          </button>
-                        </>
-                      )}
-                      
-                      {interview.status === 'completed' && (
-                        <button className="review-btn">
-                          Review Notes
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Status indicator */}
-                    <div 
-                      className="status-badge"
-                      style={{ 
-                        backgroundColor: `${getStatusColor(interview.status)}10`,
-                        color: getStatusColor(interview.status)
-                      }}
-                    >
-                      {interview.status.charAt(0).toUpperCase() + interview.status.slice(1)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="empty-state">
-            <Calendar size={48} className="empty-icon" />
-            <h3>No interviews found</h3>
-            <p>No interviews match your current filter selection</p>
-            <button 
-              className="reset-filter-btn"
-              onClick={() => setFilter('all')}
+      <div className="interviews-content">
+        {/* Filter tabs */}
+        <div className="filter-tabs">
+          {(['all', 'upcoming', 'completed'] as const).map((filter) => (
+            <button
+              key={filter}
+              className={`filter-tab ${selectedFilter === filter ? 'active' : ''}`}
+              onClick={() => setSelectedFilter(filter)}
             >
-              Show All Interviews
+              {filter === 'all' ? 'All Interviews' :
+                filter === 'upcoming' ? 'Upcoming' : 'Completed'}
+              <span className="count">
+                {filter === 'all' ? interviews.length :
+                  interviews.filter(interview => getEventStatus(interview) === filter).length}
+              </span>
             </button>
-          </div>
-        )}
+          ))}
+        </div>
+
+        {/* Interviews list */}
+        <div className="interviews-list">
+          {Object.keys(interviewsByDate).length === 0 ? (
+            <div className="empty-state">
+              <Calendar size={48} />
+              <h3>No interviews scheduled</h3>
+              <p>Schedule your first interview to get started!</p>
+              <button className="action-button primary">
+                <PlusCircle size={18} />
+                Schedule Interview
+              </button>
+            </div>
+          ) : (
+            Object.entries(interviewsByDate)
+              .sort(([dateA], [dateB]) => {
+                const a = new Date(dateA);
+                const b = new Date(dateB);
+                return selectedFilter === 'completed' ? b.getTime() - a.getTime() : a.getTime() - b.getTime();
+              })
+              .map(([date, dayInterviews]) => (
+                <div key={date} className="interview-day">
+                  <div className="day-header">
+                    <h4>{date}</h4>
+                    <span className="day-count">{dayInterviews.length} interview{dayInterviews.length !== 1 ? 's' : ''}</span>
+                  </div>
+
+                  <div className="day-interviews">
+                    {dayInterviews.map((interview) => {
+                      const status = getEventStatus(interview);
+                      const interviewType = getEventType(interview);
+
+                      return (
+                        <div
+                          key={interview.id}
+                          className={`interview-card ${status}`}
+                          onClick={() => handleInterviewClick(interview)}
+                        >
+                          <div className="interview-header">
+                            <div className="interview-time">
+                              <Clock size={16} />
+                              <span>{interview.time}</span>
+                              {interview.duration && (
+                                <span className="duration">({interview.duration}min)</span>
+                              )}
+                            </div>
+                            <div className="interview-status">
+                              <div
+                                className="status-indicator"
+                                style={{ backgroundColor: getEventStatusColor(status) }}
+                              />
+                              <span>{status}</span>
+                            </div>
+                          </div>
+
+                          <div className="interview-main">
+                            <div className="interview-info">
+                              <h5>{interview.title}</h5>
+                              <div className="interview-details">
+                                <div className="detail-item">
+                                  <Building size={14} />
+                                  <span>{interview.company.name}</span>
+                                </div>
+                                <div className="detail-item">
+                                  <User size={14} />
+                                  <span>{interview.application.position}</span>
+                                </div>
+                                {interview.location && (
+                                  <div className="detail-item">
+                                    <MapPin size={14} />
+                                    <span>{interview.location}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="interview-type">
+                              <div
+                                className="type-pill"
+                                style={{
+                                  backgroundColor: getEventTypeColor(interview),
+                                  color: 'white'
+                                }}
+                              >
+                                {interviewType}
+                              </div>
+                            </div>
+                          </div>
+
+                          {interview.details && (
+                            <div className="interview-notes">
+                              <p>{interview.details}</p>
+                            </div>
+                          )}
+
+                          <div className="interview-actions">
+                            <button className="action-btn">
+                              <ArrowUpRight size={16} />
+                            </button>
+                            <button className="action-btn">
+                              <MoreHorizontal size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))
+          )}
+        </div>
       </div>
+
+      {/* Interview detail modal */}
+      {showModal && selectedInterview && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-content interview-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{selectedInterview.title}</h3>
+              <button className="close-button" onClick={closeModal}>×</button>
+            </div>
+
+            <div className="modal-body">
+              <div className="interview-summary">
+                <div className="summary-item">
+                  <strong>Company:</strong>
+                  <span>{selectedInterview.company.name}</span>
+                </div>
+                <div className="summary-item">
+                  <strong>Position:</strong>
+                  <span>{selectedInterview.application.position}</span>
+                </div>
+                <div className="summary-item">
+                  <strong>Date & Time:</strong>
+                  <span>{formatEventDate(selectedInterview.date)} at {selectedInterview.time}</span>
+                </div>
+                {selectedInterview.duration && (
+                  <div className="summary-item">
+                    <strong>Duration:</strong>
+                    <span>{selectedInterview.duration} minutes</span>
+                  </div>
+                )}
+                {selectedInterview.location && (
+                  <div className="summary-item">
+                    <strong>Location:</strong>
+                    <span>{selectedInterview.location}</span>
+                  </div>
+                )}
+                <div className="summary-item">
+                  <strong>Type:</strong>
+                  <span style={{ color: getEventTypeColor(selectedInterview) }}>
+                    {getEventType(selectedInterview)}
+                  </span>
+                </div>
+                <div className="summary-item">
+                  <strong>Status:</strong>
+                  <span style={{ color: getEventStatusColor(getEventStatus(selectedInterview)) }}>
+                    {getEventStatus(selectedInterview)}
+                  </span>
+                </div>
+              </div>
+
+              {selectedInterview.details && (
+                <div className="interview-details">
+                  <h4>Details</h4>
+                  <p>{selectedInterview.details}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <button className="action-button secondary" onClick={closeModal}>
+                Close
+              </button>
+              <button className="action-button primary">
+                Edit Interview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         .interviews-section {
           display: flex;
           flex-direction: column;
-          gap: 24px;
-          padding: 0;
-          min-height: 100%;
+          gap: 1.5rem;
+          height: 100%;
         }
 
-        .interviews-controls {
+        .interviews-content {
           display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 16px;
-          margin-bottom: 8px;
+          flex-direction: column;
+          gap: 1.5rem;
+          flex: 1;
+          overflow: hidden;
         }
 
-        .filter-container {
+        .filter-tabs {
+          display: flex;
+          gap: 0.5rem;
+          padding: 0 1rem;
+        }
+
+        .filter-tab {
           display: flex;
           align-items: center;
-          gap: 12px;
-          background: var(--glass-bg);
-          border-radius: var(--border-radius);
-          padding: 4px;
-          border: 1px solid var(--border-thin);
-          box-shadow: var(--shadow-sharp);
-        }
-
-        .filter-btn {
-          padding: 8px 16px;
-          border-radius: var(--border-radius-sm);
-          border: none;
+          gap: 0.5rem;
+          padding: 0.75rem 1rem;
+          border: 1px solid var(--border-color);
+          border-radius: 8px;
           background: transparent;
           color: var(--text-secondary);
-          font-size: 14px;
-          font-weight: 500;
           cursor: pointer;
           transition: all 0.2s ease;
         }
 
-        .filter-btn:hover {
-          color: var(--text-primary);
-          background: var(--hover-bg);
+        .filter-tab:hover {
+          background: var(--surface-secondary);
         }
 
-        .filter-btn.active {
-          background: var(--active-bg);
-          color: var(--accent-green);
-        }
-
-        .view-options {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .view-option {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 16px;
-          border-radius: var(--border-radius);
-          border: 1px solid var(--border-thin);
-          background: var(--glass-bg);
-          color: var(--text-primary);
-          font-size: 14px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          box-shadow: var(--shadow-sharp);
-        }
-
-        .view-option:hover {
+        .filter-tab.active {
+          background: var(--accent-green);
+          color: white;
           border-color: var(--accent-green);
-          box-shadow: 0 2px 6px rgba(var(--accent-green-rgb), 0.15);
-          transform: translateY(-1px);
         }
 
-        .interviews-timeline {
-          display: flex;
-          flex-direction: column;
-          gap: 32px;
+        .filter-tab .count {
+          background: var(--surface-tertiary);
+          color: var(--text-primary);
+          padding: 0.25rem 0.5rem;
+          border-radius: 12px;
+          font-size: 0.75rem;
+          font-weight: 500;
         }
 
-        .date-group {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        .date-header {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          margin: 8px 0;
-        }
-
-        .date-line {
-          flex: 1;
-          height: 1px;
-          background-color: var(--border-divider);
-        }
-
-        .date-label {
-          font-size: 14px;
-          font-weight: 600;
-          color: var(--text-secondary);
-          flex-shrink: 0;
-          margin: 0;
-          padding: 0 8px;
+        .filter-tab.active .count {
+          background: rgba(255, 255, 255, 0.2);
+          color: white;
         }
 
         .interviews-list {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        .interview-card {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-          background: var(--glass-card-bg);
-          border-radius: var(--border-radius);
-          padding: 20px;
-          border: 1px solid var(--border-thin);
-          box-shadow: var(--shadow);
-          position: relative;
-          transition: all 0.2s ease;
-        }
-
-        .interview-card:hover {
-          box-shadow: var(--shadow-lg);
-          transform: translateY(-2px);
-          border-color: var(--border-hover);
-        }
-
-        .interview-card.completed {
-          opacity: 0.8;
-        }
-
-        .interview-card.canceled {
-          opacity: 0.6;
-        }
-
-        .card-company-info {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-        }
-
-        .company-logo-container {
-          width: 48px;
-          height: 48px;
-          border-radius: 12px;
-          overflow: hidden;
-          background: linear-gradient(135deg, var(--accent-primary), var(--accent-green));
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: 600;
-          color: white;
-          font-size: 20px;
-          box-shadow: var(--shadow-sharp);
-        }
-
-        .company-details {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-
-        .company-name {
-          font-size: 18px;
-          font-weight: 600;
-          margin: 0;
-          color: var(--text-primary);
-        }
-
-        .position-title {
-          font-size: 14px;
-          color: var(--text-secondary);
-          margin: 0;
-        }
-
-        .interview-details {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          margin-left: 64px;
-        }
-
-        .interview-type-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 12px;
-          border-radius: 20px;
-          font-size: 13px;
-          font-weight: 500;
-          align-self: flex-start;
-        }
-
-        .type-indicator {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-        }
-
-        .detail-items {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .detail-item {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          color: var(--text-secondary);
-          font-size: 14px;
-        }
-
-        .detail-icon {
-          color: var(--text-tertiary);
-          flex-shrink: 0;
-        }
-
-        .remote-badge {
-          font-size: 12px;
-          padding: 2px 6px;
-          border-radius: 4px;
-          background: rgba(var(--accent-blue-rgb), 0.1);
-          color: var(--accent-blue);
-          margin-left: 8px;
-        }
-
-        .interview-notes {
-          background: var(--hover-bg);
-          border-radius: var(--border-radius);
-          padding: 12px;
-          font-size: 14px;
-          color: var(--text-secondary);
-          border-left: 3px solid var(--accent-green);
-        }
-
-        .interview-notes p {
-          margin: 0;
-          line-height: 1.5;
-        }
-
-        .interview-actions {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-left: 64px;
-          margin-top: 8px;
-        }
-
-        .prepare-btn, .review-btn {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 16px;
-          border-radius: var(--border-radius);
-          font-size: 14px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .prepare-btn {
-          background: var(--accent-green);
-          color: white;
-          border: none;
-          box-shadow: 0 2px 6px rgba(var(--accent-green-rgb), 0.25);
-        }
-
-        .prepare-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(var(--accent-green-rgb), 0.3);
-        }
-
-        .review-btn {
-          background: transparent;
-          color: var(--accent-blue);
-          border: 1px solid var(--accent-blue);
-        }
-
-        .review-btn:hover {
-          background: rgba(var(--accent-blue-rgb), 0.1);
-          transform: translateY(-1px);
-        }
-
-        .action-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          border: 1px solid var(--border-thin);
-          background: var(--glass-bg);
-          color: var(--text-tertiary);
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .action-btn:hover {
-          background: var(--hover-bg);
-          color: var(--text-primary);
-          transform: translateY(-1px);
-        }
-
-        .status-badge {
-          position: absolute;
-          top: 20px;
-          right: 20px;
-          padding: 4px 10px;
-          border-radius: 20px;
-          font-size: 12px;
-          font-weight: 500;
+          flex: 1;
+          overflow-y: auto;
+          padding: 0 1rem;
         }
 
         .empty-state {
@@ -715,118 +419,343 @@ export default function Interviews() {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          padding: 64px;
           text-align: center;
-          color: var(--text-tertiary);
-          gap: 16px;
-          background: var(--glass-card-bg);
-          border-radius: var(--border-radius);
-          border: 1px solid var(--border-thin);
-        }
-
-        .empty-icon {
-          opacity: 0.5;
-        }
-
-        .empty-state h3 {
-          margin: 0;
-          font-size: 18px;
+          padding: 3rem 1rem;
           color: var(--text-secondary);
         }
 
+        .empty-state svg {
+          color: var(--text-tertiary);
+          margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+          margin: 0 0 0.5rem 0;
+          color: var(--text-primary);
+        }
+
         .empty-state p {
-          margin: 0;
-          font-size: 14px;
+          margin: 0 0 1.5rem 0;
         }
 
-        .reset-filter-btn {
-          margin-top: 16px;
-          padding: 8px 16px;
-          border-radius: var(--border-radius);
-          background: var(--accent-green);
-          color: white;
-          border: none;
-          font-size: 14px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s ease;
+        .interview-day {
+          margin-bottom: 2rem;
         }
 
-        .reset-filter-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(var(--accent-green-rgb), 0.3);
-        }
-
-        .add-interview-btn {
+        .day-header {
           display: flex;
           align-items: center;
-          gap: 8px;
-          padding: 8px 16px;
-          border-radius: var(--border-radius);
-          background: var(--accent-green);
-          color: white;
+          justify-content: space-between;
+          margin-bottom: 1rem;
+          padding-bottom: 0.5rem;
+          border-bottom: 1px solid var(--border-color);
+        }
+
+        .day-header h4 {
+          margin: 0;
+          color: var(--text-primary);
+          font-weight: 600;
+        }
+
+        .day-count {
+          color: var(--text-secondary);
+          font-size: 0.875rem;
+        }
+
+        .day-interviews {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .interview-card {
+          border: 1px solid var(--border-color);
+          border-radius: 12px;
+          padding: 1.25rem;
+          background: var(--surface-primary);
+          cursor: pointer;
+          transition: all 0.2s ease;
+          position: relative;
+        }
+
+        .interview-card:hover {
+          border-color: var(--accent-green);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .interview-card.completed {
+          opacity: 0.8;
+        }
+
+        .interview-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 1rem;
+        }
+
+        .interview-time {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          color: var(--text-secondary);
+          font-size: 0.875rem;
+        }
+
+        .duration {
+          color: var(--text-tertiary);
+        }
+
+        .interview-status {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.75rem;
+          text-transform: uppercase;
+          font-weight: 600;
+          letter-spacing: 0.5px;
+        }
+
+        .status-indicator {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+        }
+
+        .interview-main {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 1rem;
+        }
+
+        .interview-info {
+          flex: 1;
+        }
+
+        .interview-info h5 {
+          margin: 0 0 0.75rem 0;
+          color: var(--text-primary);
+          font-weight: 600;
+        }
+
+        .interview-details {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .detail-item {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          color: var(--text-secondary);
+          font-size: 0.875rem;
+        }
+
+        .interview-type {
+          flex-shrink: 0;
+        }
+
+        .type-pill {
+          padding: 0.5rem 1rem;
+          border-radius: 20px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .interview-notes {
+          margin-top: 1rem;
+          padding-top: 1rem;
+          border-top: 1px solid var(--border-color);
+        }
+
+        .interview-notes p {
+          margin: 0;
+          color: var(--text-secondary);
+          font-size: 0.875rem;
+          line-height: 1.5;
+        }
+
+        .interview-actions {
+          position: absolute;
+          top: 1rem;
+          right: 1rem;
+          display: flex;
+          gap: 0.5rem;
+          opacity: 0;
+          transition: opacity 0.2s ease;
+        }
+
+        .interview-card:hover .interview-actions {
+          opacity: 1;
+        }
+
+        .action-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 32px;
+          height: 32px;
+          border: 1px solid var(--border-color);
+          border-radius: 6px;
+          background: var(--surface-primary);
+          color: var(--text-secondary);
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+          background: var(--surface-secondary);
+          color: var(--text-primary);
+        }
+
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+        }
+
+        .modal-content {
+          background: var(--surface-primary);
+          border-radius: 12px;
+          max-width: 600px;
+          max-height: 80vh;
+          overflow-y: auto;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 1.5rem;
+          border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-header h3 {
+          margin: 0;
+          color: var(--text-primary);
+        }
+
+        .close-button {
+          background: none;
           border: none;
-          font-size: 14px;
+          font-size: 1.5rem;
+          color: var(--text-secondary);
+          cursor: pointer;
+          padding: 0;
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 6px;
+          transition: all 0.2s ease;
+        }
+
+        .close-button:hover {
+          background: var(--surface-secondary);
+          color: var(--text-primary);
+        }
+
+        .modal-body {
+          padding: 1.5rem;
+        }
+
+        .interview-summary {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .summary-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.75rem 0;
+          border-bottom: 1px solid var(--border-color);
+        }
+
+        .summary-item:last-child {
+          border-bottom: none;
+        }
+
+        .summary-item strong {
+          color: var(--text-secondary);
+          font-weight: 500;
+        }
+
+        .summary-item span {
+          color: var(--text-primary);
+          font-weight: 500;
+        }
+
+        .interview-details {
+          margin-top: 1.5rem;
+          padding-top: 1.5rem;
+          border-top: 1px solid var(--border-color);
+        }
+
+        .interview-details h4 {
+          margin: 0 0 1rem 0;
+          color: var(--text-primary);
+        }
+
+        .interview-details p {
+          margin: 0;
+          color: var(--text-secondary);
+          line-height: 1.6;
+        }
+
+        .modal-footer {
+          display: flex;
+          gap: 1rem;
+          padding: 1.5rem;
+          border-top: 1px solid var(--border-color);
+          justify-content: flex-end;
+        }
+
+        .action-button {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1.25rem;
+          border-radius: 8px;
           font-weight: 500;
           cursor: pointer;
           transition: all 0.2s ease;
-          box-shadow: 0 2px 6px rgba(var(--accent-green-rgb), 0.25);
+          border: none;
         }
 
-        .add-interview-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(var(--accent-green-rgb), 0.3);
+        .action-button.primary {
+          background: var(--accent-green);
+          color: white;
         }
 
-        @media (max-width: 768px) {
-          .interviews-controls {
-            flex-direction: column;
-            align-items: stretch;
-          }
+        .action-button.primary:hover {
+          background: var(--accent-green-dark);
+        }
 
-          .filter-container {
-            overflow-x: auto;
-            padding: 8px;
-          }
+        .action-button.secondary {
+          background: var(--surface-secondary);
+          color: var(--text-primary);
+          border: 1px solid var(--border-color);
+        }
 
-          .filter-btn {
-            white-space: nowrap;
-          }
-
-          .view-options {
-            align-self: flex-end;
-          }
-
-          .interview-card {
-            padding: 16px;
-          }
-
-          .card-company-info {
-            gap: 12px;
-          }
-
-          .company-logo-container {
-            width: 40px;
-            height: 40px;
-          }
-
-          .interview-details {
-            margin-left: 52px;
-          }
-
-          .interview-actions {
-            margin-left: 52px;
-          }
-
-          .status-badge {
-            position: relative;
-            top: 0;
-            right: 0;
-            align-self: flex-end;
-            margin-bottom: 8px;
-          }
+        .action-button.secondary:hover {
+          background: var(--surface-tertiary);
         }
       `}</style>
-    </section>
+    </div>
   );
 }

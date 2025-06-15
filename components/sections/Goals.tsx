@@ -13,6 +13,7 @@ import Portal from '../Portal';
 import ActionButton from '../dashboard/ActionButton';
 import TabButton, { TabGroup } from '../TabButton';
 import EnhancedDropdown from '../EnhancedDropdown';
+import { useFeatureFlags } from '@/contexts/FeatureFlagContext';
 
 interface MonthlyGoal {
   id: string;
@@ -82,6 +83,7 @@ const isDeadlineNear = (deadline: Date): boolean => {
 const categoryOrder: MonthlyGoal['category'][] = ['applications', 'interviews', 'networking', 'skills'];
 
 export default function Goals() {
+  const { ENABLE_GOALS_SECTION } = useFeatureFlags();
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
   const [searchQuery, setSearchQuery] = useState<string>(''); // New state for search
   const [showAddModal, setShowAddModal] = useState(false);
@@ -715,24 +717,24 @@ export default function Goals() {
                 aria-label="Search goals"
               />
             </div>
-            
+
             <div className="view-options">
               <ActionButton
                 label="Sort By"
                 icon={ChevronDown}
                 variant="ghost"
                 size="small"
-                onClick={() => alert('Sort functionality coming soon')}
+                onClick={() => ENABLE_GOALS_SECTION ? alert('Sort functionality coming soon') : alert('This feature is not available in the current version')}
                 className="sort-btn"
                 aria-label="Sort options (not implemented)"
               />
             </div>
           </div>
-          
+
           <div className="filter-container">
             <TabGroup
               activeTab={filter}
-              onTabChange={setFilter}
+              onTabChange={(tab) => setFilter(tab as 'all' | 'active' | 'completed')}
               className="filter-tab-group"
             >
               <TabButton
@@ -806,7 +808,7 @@ export default function Goals() {
                             icon={Sparkles}
                             variant="ghost"
                             size="small"
-                            onClick={(e) => { e.stopPropagation(); handleApproveGoal(goal.id); }}
+                            onClick={() => handleApproveGoal(goal.id)}
                             className="ai-badge-button pending-banner"
                             aria-label="AI suggested goal - Click to approve"
                           />
@@ -823,7 +825,7 @@ export default function Goals() {
                             icon={MoreHorizontal}
                             variant="ghost"
                             size="small"
-                            onClick={(e) => { e.stopPropagation(); alert('More options coming soon'); }}
+                            onClick={() => ENABLE_GOALS_SECTION ? alert('More options coming soon') : alert('This feature is not available in the current version')}
                             className="action-button"
                             aria-label="More options"
                           />
@@ -857,7 +859,7 @@ export default function Goals() {
                                   icon={CheckCircle}
                                   variant="secondary"
                                   size="small"
-                                  onClick={(e) => { e.stopPropagation(); handleApproveGoal(goal.id); }}
+                                  onClick={() => handleApproveGoal(goal.id)}
                                   className="action-icon-btn approve"
                                   aria-label={`Approve ${goal.title}`}
                                 />
@@ -866,7 +868,7 @@ export default function Goals() {
                                   icon={XCircle}
                                   variant="danger"
                                   size="small"
-                                  onClick={(e) => { e.stopPropagation(); handleRejectGoal(goal.id); }}
+                                  onClick={() => handleRejectGoal(goal.id)}
                                   className="action-icon-btn reject"
                                   aria-label={`Reject ${goal.title}`}
                                 />
@@ -879,7 +881,7 @@ export default function Goals() {
                                   icon={Minus}
                                   variant="ghost"
                                   size="small"
-                                  onClick={(e) => { e.stopPropagation(); handleDecrementProgress(goal.id); }}
+                                  onClick={() => handleDecrementProgress(goal.id)}
                                   className="action-icon-btn"
                                   aria-label={`Decrease progress for ${goal.title}`}
                                   disabled={goal.current === 0}
@@ -889,7 +891,7 @@ export default function Goals() {
                                   icon={Plus}
                                   variant="ghost"
                                   size="small"
-                                  onClick={(e) => { e.stopPropagation(); handleIncrementProgress(goal.id); }}
+                                  onClick={() => handleIncrementProgress(goal.id)}
                                   className="action-icon-btn"
                                   aria-label={`Increase progress for ${goal.title}`}
                                   disabled={goal.current >= goal.target}
@@ -899,7 +901,7 @@ export default function Goals() {
                                   icon={CheckCircle}
                                   variant="secondary"
                                   size="small"
-                                  onClick={(e) => { e.stopPropagation(); handleMarkComplete(goal.id); }}
+                                  onClick={() => handleMarkComplete(goal.id)}
                                   className="action-icon-btn"
                                   aria-label={`Mark ${goal.title} as complete`}
                                 />
@@ -910,7 +912,7 @@ export default function Goals() {
                                 icon={Trash2}
                                 variant="danger"
                                 size="small"
-                                onClick={(e) => { e.stopPropagation(); handleDeleteGoal(goal.id); }}
+                                onClick={() => handleDeleteGoal(goal.id)}
                                 className="action-icon-btn delete"
                                 aria-label={`Delete ${goal.title}`}
                               />
@@ -1160,35 +1162,35 @@ export default function Goals() {
         .goal-card.pending { border-left: 4px solid var(--accent-cyan); }
         .goal-card.skeleton { background: transparent; border: none; position: relative; overflow: hidden; }
         .goal-card.skeleton::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0) 100%); transform: translateX(-100%); animation: shimmer 1.5s infinite ease-in-out; z-index: 2; }
-        .pending-banner { 
-          position: absolute; 
-          top: -12px; 
-          left: 50%; 
-          transform: translateX(-50%); 
-          font-size: 12px; 
-          z-index: 3; 
+        .pending-banner {
+          position: absolute;
+          top: -12px;
+          left: 50%;
+          transform: translateX(-50%);
+          font-size: 12px;
+          z-index: 3;
           padding: 0;
           background: none;
           border: none;
           box-shadow: none;
         }
-        
+
         .pending-banner.ai-badge-button {
           max-height: 26px;
           min-width: 110px;
         }
-        
+
         .pending-banner.ai-badge-button .button-label {
           font-size: 11px !important;
           white-space: nowrap;
         }
-        
+
         .pending-banner.ai-badge-button .button-content {
           justify-content: center;
         }
-        
-        .pending-banner:hover { 
-          transform: translateX(-50%) translateY(-2px); 
+
+        .pending-banner:hover {
+          transform: translateX(-50%) translateY(-2px);
         }
         .status-updates { position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; gap: 4px; z-index: 4; }
         .status-bubble { padding: 4px 8px; background: rgba(0, 0, 0, 0.7); color: white; font-size: 12px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); animation: bubbleFade 2s ease-in-out forwards; }

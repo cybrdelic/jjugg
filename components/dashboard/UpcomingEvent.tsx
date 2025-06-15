@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, Users, CheckCircle, Clock, ExternalLink } from 'lucide-react';
 
 export type EventType = 'Interview' | 'Task' | 'Deadline' | 'Networking' | 'Follow-up';
@@ -32,33 +32,17 @@ const UpcomingEvent: React.FC<UpcomingEventProps> = ({
   duration,
   onClick
 }) => {
-  const [isHovered, setIsHovered] = useState(false);
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
-  // Format date
+  // Ensure client-side rendering for date calculations
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Format date - always use consistent format to prevent hydration mismatch
   const formatDate = (date: Date) => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const dateToCheck = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-
-    if (dateToCheck.getTime() === today.getTime()) {
-      return 'Today';
-    }
-
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-    if (dateToCheck.getTime() === tomorrow.getTime()) {
-      return 'Tomorrow';
-    }
-
-    // Check if it's within the next 7 days
-    const oneWeekLater = new Date(today);
-    oneWeekLater.setDate(today.getDate() + 7);
-
-    if (dateToCheck <= oneWeekLater) {
-      return date.toLocaleDateString('en-US', { weekday: 'long' });
-    }
-
+    // Always use simple format for consistent server/client rendering
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
@@ -88,28 +72,26 @@ const UpcomingEvent: React.FC<UpcomingEventProps> = ({
 
   const typeColor = getTypeColor(type);
 
-  // Calculate if the event is today
-  const isToday = formatDate(date) === 'Today';
+  // Use consistent CSS variables for server/client rendering
+  const cssVariables = {
+    '--type-color': typeColor,
+    '--type-color-rgb': typeColor === 'var(--accent-green)' ? 'var(--accent-green-rgb)' :
+      typeColor === 'var(--accent-purple)' ? 'var(--accent-purple-rgb)' :
+        typeColor === 'var(--accent-red)' ? 'var(--accent-red-rgb)' :
+          'var(--accent-blue-rgb)'
+  };
 
-  // Calculate if the event is soon (within 2 days)
-  const isSoon = (
-    formatDate(date) === 'Today' ||
-    formatDate(date) === 'Tomorrow'
-  );
+  // Use simple className that's consistent on server/client
+  const baseClassName = 'event-item';
 
   return (
     <div
-      className={`event-item ${isHovered ? 'hovered' : ''} ${isToday ? 'today' : ''} ${isSoon ? 'soon' : ''}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className={baseClassName}
       onClick={() => {
         if (onClick) onClick();
         setIsDetailsVisible(!isDetailsVisible);
       }}
-      style={{
-        '--type-color': typeColor,
-        '--type-color-rgb': typeColor.replace('var(--accent-', 'var(--accent-').replace(')', '-rgb)')
-      } as React.CSSProperties}
+      style={cssVariables as React.CSSProperties}
     >
       <div className="event-date">
         <div className="date-label">{formatDate(date)}</div>
@@ -151,12 +133,10 @@ const UpcomingEvent: React.FC<UpcomingEventProps> = ({
         )}
 
         <div className="event-actions">
-          {isHovered && (
-            <button className="action-button join-btn">
-              <ExternalLink size={14} />
-              <span>Join</span>
-            </button>
-          )}
+          <button className="action-button join-btn">
+            <ExternalLink size={14} />
+            <span>Join</span>
+          </button>
         </div>
       </div>
 
@@ -203,18 +183,18 @@ const UpcomingEvent: React.FC<UpcomingEventProps> = ({
           transition: opacity 0.5s var(--easing-standard);
         }
 
-        .event-item.hovered {
+        .event-item:hover {
           transform: translateY(-3px);
           box-shadow: var(--shadow);
           border-color: rgba(var(--type-color-rgb), 0.3);
         }
 
-        .event-item.hovered::after {
+        .event-item:hover::after {
           width: 6px;
           opacity: 1;
         }
 
-        .event-item.hovered::before {
+        .event-item:hover::before {
           opacity: 1;
         }
 
@@ -243,7 +223,7 @@ const UpcomingEvent: React.FC<UpcomingEventProps> = ({
           transition: all 0.3s var(--easing-standard);
         }
 
-        .event-item.hovered .event-date {
+        .event-item:hover .event-date {
           background: rgba(var(--type-color-rgb), 0.1);
           transform: scale(1.05);
         }
@@ -255,7 +235,7 @@ const UpcomingEvent: React.FC<UpcomingEventProps> = ({
           transition: all 0.3s var(--easing-standard);
         }
 
-        .event-item.hovered .date-label {
+        .event-item:hover .date-label {
           color: var(--type-color);
         }
 
@@ -266,7 +246,7 @@ const UpcomingEvent: React.FC<UpcomingEventProps> = ({
           transition: all 0.3s var(--easing-standard);
         }
 
-        .event-item.hovered .time-label {
+        .event-item:hover .time-label {
           color: var(--text-secondary);
         }
 
@@ -282,7 +262,7 @@ const UpcomingEvent: React.FC<UpcomingEventProps> = ({
           transition: all 0.3s var(--easing-standard);
         }
 
-        .event-item.hovered .duration-label {
+        .event-item:hover .duration-label {
           opacity: 1;
           transform: translateY(0);
         }
@@ -309,7 +289,7 @@ const UpcomingEvent: React.FC<UpcomingEventProps> = ({
           transition: color 0.3s var(--easing-standard);
         }
 
-        .event-item.hovered .event-title {
+        .event-item:hover .event-title {
           color: var(--type-color);
         }
 
@@ -340,7 +320,7 @@ const UpcomingEvent: React.FC<UpcomingEventProps> = ({
           color: var(--accent-red);
         }
 
-        .event-item.hovered .event-type {
+        .event-item:hover .event-type {
           background: rgba(var(--type-color-rgb), 0.2);
           transform: translateY(-2px);
         }
@@ -378,7 +358,7 @@ const UpcomingEvent: React.FC<UpcomingEventProps> = ({
           object-fit: cover;
         }
 
-        .event-item.hovered .company-logo {
+        .event-item:hover .company-logo {
           transform: scale(1.1) rotate(3deg);
           box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
         }
@@ -390,7 +370,7 @@ const UpcomingEvent: React.FC<UpcomingEventProps> = ({
           transition: color 0.3s var(--easing-standard);
         }
 
-        .event-item.hovered .company-name {
+        .event-item:hover .company-name {
           color: var(--text-primary);
         }
 
@@ -409,7 +389,7 @@ const UpcomingEvent: React.FC<UpcomingEventProps> = ({
           margin-top: 4px;
         }
 
-        .event-item.hovered .event-location {
+        .event-item:hover .event-location {
           color: var(--text-secondary);
         }
 
@@ -461,7 +441,11 @@ const UpcomingEvent: React.FC<UpcomingEventProps> = ({
           transition: all 0.2s var(--easing-standard);
           opacity: 0;
           transform: translateY(10px);
-          animation: fadeInUp 0.3s var(--easing-standard) forwards;
+        }
+
+        .event-item:hover .action-button {
+          opacity: 1;
+          transform: translateY(0);
         }
 
         .action-button:hover {

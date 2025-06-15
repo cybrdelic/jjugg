@@ -58,11 +58,11 @@ const Pill: React.FC<PillProps> = ({
       className={`pill ${active ? 'active' : ''} ${disabled ? 'disabled' : ''} ${className}`}
       onClick={!disabled ? onClick : undefined}
       disabled={disabled}
-      style={{ 
+      style={{
         '--pill-color': pillColor,
-        '--pill-color-rgb': pillColor.includes('var(') 
-          ? `var(--${pillColor.match(/var\(--([^)]+)\)/)?.[1]}-rgb)` 
-          : pillColor 
+        '--pill-color-rgb': pillColor.includes('var(')
+          ? `var(--${pillColor.match(/var\(--([^)]+)\)/)?.[1]}-rgb)`
+          : pillColor
       } as React.CSSProperties}
     >
       {Icon && <Icon size={iconSize} className="pill-icon" />}
@@ -87,7 +87,7 @@ const Pill: React.FC<PillProps> = ({
           position: relative;
           overflow: hidden;
         }
-        
+
         .pill::before {
           content: '';
           position: absolute;
@@ -100,7 +100,7 @@ const Pill: React.FC<PillProps> = ({
           transition: opacity 0.2s ease;
           z-index: -1;
         }
-        
+
         .pill::after {
           content: '';
           position: absolute;
@@ -115,47 +115,47 @@ const Pill: React.FC<PillProps> = ({
           transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
           z-index: -1;
         }
-        
+
         .pill:hover:not(.disabled) {
           color: var(--text-primary);
           border-color: var(--pill-color);
           transform: translateY(-1px);
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
-        
+
         .pill:hover::before {
           opacity: 0.08;
         }
-        
+
         .pill:active:not(.disabled) {
           transform: translateY(0);
         }
-        
+
         .pill.active {
           background-color: var(--pill-color);
           color: white;
           border-color: var(--pill-color);
           box-shadow: 0 2px 8px rgba(var(--pill-color-rgb), 0.3);
         }
-        
+
         .pill.active::after {
           opacity: 1;
           transform: scale(1);
         }
-        
+
         .pill.disabled {
           opacity: 0.5;
           cursor: not-allowed;
         }
-        
+
         .pill-icon {
           transition: transform 0.2s ease;
         }
-        
+
         .pill:hover:not(.disabled) .pill-icon {
           transform: scale(1.1);
         }
-        
+
         @media (max-width: 768px) {
           .pill {
             padding: ${size === 'small' ? '3px 6px' : size === 'large' ? '5px 12px' : '4px 8px'};
@@ -185,16 +185,16 @@ export const PillGroup: React.FC<PillGroupProps> = ({
     <div className={`pill-group ${className}`}>
       {React.Children.map(children, (child) => {
         if (React.isValidElement(child)) {
-          const pillId = child.props['data-id'] || '';
+          const pillId = (child.props as any)['data-id'] || '';
           const isActive = pillId === activePill;
           return React.cloneElement(child, {
             active: isActive,
             onClick: () => onPillChange?.(pillId),
-          });
+          } as any);
         }
         return child;
       })}
-      
+
       <style jsx>{`
         .pill-group {
           display: inline-flex;
@@ -202,7 +202,7 @@ export const PillGroup: React.FC<PillGroupProps> = ({
           gap: 8px;
           align-items: center;
         }
-        
+
         @media (max-width: 768px) {
           .pill-group {
             gap: 6px;

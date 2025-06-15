@@ -5,12 +5,12 @@ import { ChevronDown, Check, X, ChevronsUpDown, Search } from 'lucide-react';
 import Portal from './Portal';
 
 // Dropdown placement types
-type DropdownPlacement = 
-  | 'bottom-start' 
-  | 'bottom-end' 
-  | 'bottom-center' 
-  | 'top-start' 
-  | 'top-end' 
+type DropdownPlacement =
+  | 'bottom-start'
+  | 'bottom-end'
+  | 'bottom-center'
+  | 'top-start'
+  | 'top-end'
   | 'top-center';
 
 // Position interface for dropdown positioning
@@ -114,15 +114,15 @@ const TriggerDropdown: React.FC<TriggerDropdownProps> = ({
   renderInPlace = false,
 }) => {
   const [isOpenState, setIsOpenState] = useState(false);
-  const [position, setPosition] = useState<Position>({ 
-    top: 0, 
-    left: 0, 
-    transformOrigin: 'top left' 
+  const [position, setPosition] = useState<Position>({
+    top: 0,
+    left: 0,
+    transformOrigin: 'top left'
   });
-  
+
   // Use controlled or uncontrolled state
   const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : isOpenState;
-  
+
   const triggerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -133,7 +133,7 @@ const TriggerDropdown: React.FC<TriggerDropdownProps> = ({
 
     const triggerRect = triggerRef.current.getBoundingClientRect();
     const dropdownRect = dropdownRef.current.getBoundingClientRect();
-    
+
     let top = 0;
     let left = 0;
     let transformOrigin = '';
@@ -141,11 +141,11 @@ const TriggerDropdown: React.FC<TriggerDropdownProps> = ({
     // Calculate space above and below
     const spaceBelow = window.innerHeight - triggerRect.bottom;
     const spaceAbove = triggerRect.top;
-    
-    const placementBase = spaceBelow < dropdownRect.height && spaceAbove > spaceBelow 
-      ? 'top' 
+
+    const placementBase = spaceBelow < dropdownRect.height && spaceAbove > spaceBelow
+      ? 'top'
       : 'bottom';
-    
+
     // Calculate horizontal position based on placement
     if (placement.endsWith('start') || placementBase === 'top' && placement.endsWith('start')) {
       left = triggerRect.left + window.scrollX;
@@ -157,7 +157,7 @@ const TriggerDropdown: React.FC<TriggerDropdownProps> = ({
       left = triggerRect.left + (triggerRect.width / 2) - (dropdownRect.width / 2) + window.scrollX;
       transformOrigin = 'top center';
     }
-    
+
     // Calculate vertical position
     if (placementBase === 'bottom') {
       top = triggerRect.bottom + window.scrollY + 8; // Add 8px gap
@@ -166,10 +166,10 @@ const TriggerDropdown: React.FC<TriggerDropdownProps> = ({
       top = triggerRect.top - dropdownRect.height + window.scrollY - 8; // Add 8px gap
       transformOrigin = transformOrigin.replace('top', 'bottom');
     }
-    
+
     // Make sure dropdown stays within viewport
     const viewportWidth = window.innerWidth;
-    
+
     // Adjust horizontal position if needed
     if (left < 10) {
       left = 10;
@@ -182,7 +182,7 @@ const TriggerDropdown: React.FC<TriggerDropdownProps> = ({
 
   const toggle = () => {
     if (disabled) return;
-    
+
     if (controlledIsOpen === undefined) {
       setIsOpenState(prev => !prev);
       if (!isOpenState) {
@@ -207,15 +207,15 @@ const TriggerDropdown: React.FC<TriggerDropdownProps> = ({
     if (isOpen && closeOnOutsideClick) {
       const handleClickOutside = (event: MouseEvent) => {
         if (
-          dropdownRef.current && 
+          dropdownRef.current &&
           !dropdownRef.current.contains(event.target as Node) &&
-          triggerRef.current && 
+          triggerRef.current &&
           !triggerRef.current.contains(event.target as Node)
         ) {
           close();
         }
       };
-      
+
       document.addEventListener('mousedown', handleClickOutside);
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
@@ -229,10 +229,10 @@ const TriggerDropdown: React.FC<TriggerDropdownProps> = ({
       setMounted(true);
       // Delay position calculation to ensure DOM is updated
       setTimeout(updatePosition, 20);
-      
+
       window.addEventListener('resize', updatePosition);
       window.addEventListener('scroll', updatePosition);
-      
+
       return () => {
         window.removeEventListener('resize', updatePosition);
         window.removeEventListener('scroll', updatePosition);
@@ -247,8 +247,8 @@ const TriggerDropdown: React.FC<TriggerDropdownProps> = ({
     onClick: (e: React.MouseEvent) => {
       e.stopPropagation();
       toggle();
-      if (trigger.props.onClick) {
-        trigger.props.onClick(e);
+      if (trigger.props && (trigger.props as any).onClick) {
+        (trigger.props as any).onClick(e);
       }
     },
     ref: triggerRef,
@@ -256,19 +256,19 @@ const TriggerDropdown: React.FC<TriggerDropdownProps> = ({
     "aria-expanded": isOpen,
     "aria-haspopup": true,
     "data-state": isOpen ? "open" : "closed"
-  });
+  } as any);
 
   // Create the dropdown content
   const dropdownContent = (
-    <div 
+    <div
       ref={dropdownRef}
-      className={`enhanced-dropdown ${className} ${mounted ? 'visible' : ''}`} 
-      style={{ 
-        top: `${position.top}px`, 
+      className={`enhanced-dropdown ${className} ${mounted ? 'visible' : ''}`}
+      style={{
+        top: `${position.top}px`,
         left: `${position.left}px`,
-        width: typeof width === 'number' ? `${width}px` : 
-              (width === 'auto' && triggerRef.current) ? `${triggerRef.current.offsetWidth}px` : 
-              triggerRef.current ? `${triggerRef.current.offsetWidth}px` : width,
+        width: typeof width === 'number' ? `${width}px` :
+          (width === 'auto' && triggerRef.current) ? `${triggerRef.current.offsetWidth}px` :
+            triggerRef.current ? `${triggerRef.current.offsetWidth}px` : width,
         maxHeight,
         transformOrigin: position.transformOrigin,
         transitionDuration: `${animationDuration}ms`,
@@ -284,7 +284,7 @@ const TriggerDropdown: React.FC<TriggerDropdownProps> = ({
   return (
     <>
       {triggerElement}
-      
+
       {isOpen && (
         <>
           {darkOverlay && <div className="dropdown-overlay" onClick={close} />}
@@ -298,7 +298,7 @@ const TriggerDropdown: React.FC<TriggerDropdownProps> = ({
           )}
         </>
       )}
-      
+
       <style jsx>{`
         .dropdown-overlay {
           position: fixed;
@@ -311,7 +311,7 @@ const TriggerDropdown: React.FC<TriggerDropdownProps> = ({
           z-index: 80;
           animation: fadeIn ${animationDuration}ms var(--easing-standard);
         }
-        
+
         .enhanced-dropdown {
           position: fixed;
           background: var(--glass-bg);
@@ -320,7 +320,7 @@ const TriggerDropdown: React.FC<TriggerDropdownProps> = ({
           box-shadow: var(--shadow-lg);
           opacity: 0;
           transform: scale(0.95);
-          transition: opacity ${animationDuration}ms var(--easing-standard), 
+          transition: opacity ${animationDuration}ms var(--easing-standard),
                     transform ${animationDuration}ms var(--easing-standard);
           max-height: ${maxHeight};
           overflow-y: auto;
@@ -329,23 +329,23 @@ const TriggerDropdown: React.FC<TriggerDropdownProps> = ({
           scrollbar-width: thin;
           scrollbar-color: var(--scrollbar-thumb) transparent;
         }
-        
+
         .enhanced-dropdown::-webkit-scrollbar {
           width: 8px;
           height: 8px;
         }
-        
+
         .enhanced-dropdown::-webkit-scrollbar-track {
           background: transparent;
         }
-        
+
         .enhanced-dropdown::-webkit-scrollbar-thumb {
           background: var(--scrollbar-thumb);
           border-radius: 10px;
           border: 2px solid transparent;
           background-clip: padding-box;
         }
-        
+
         .enhanced-dropdown::-webkit-scrollbar-thumb:hover {
           background: var(--scrollbar-thumb-hover);
           border: 2px solid transparent;
@@ -356,7 +356,7 @@ const TriggerDropdown: React.FC<TriggerDropdownProps> = ({
           opacity: 1;
           transform: scale(1);
         }
-        
+
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
@@ -401,13 +401,13 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [position, setPosition] = useState<Position>({ 
-    top: 0, 
-    left: 0, 
-    transformOrigin: 'top left' 
+  const [position, setPosition] = useState<Position>({
+    top: 0,
+    left: 0,
+    transformOrigin: 'top left'
   });
   const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
-  
+
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -415,13 +415,13 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
   const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Convert value to array for easier handling
-  const selectedValues = Array.isArray(value) 
-    ? value 
+  const selectedValues = Array.isArray(value)
+    ? value
     : value ? [value] : [];
 
   // Filter options based on search query
-  const filteredOptions = options.filter(option => 
-    !searchQuery || 
+  const filteredOptions = options.filter(option =>
+    !searchQuery ||
     option.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
     option.value.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (option.description && option.description.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -430,18 +430,18 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
   // Group options if groupBy is provided
   const groupedOptions = groupBy
     ? filteredOptions.reduce((groups, option) => {
-        const groupName = option.group || 'Other';
-        if (!groups[groupName]) {
-          groups[groupName] = [];
-        }
-        groups[groupName].push(option);
-        return groups;
-      }, {} as Record<string, DropdownOption[]>)
+      const groupName = option.group || 'Other';
+      if (!groups[groupName]) {
+        groups[groupName] = [];
+      }
+      groups[groupName].push(option);
+      return groups;
+    }, {} as Record<string, DropdownOption[]>)
     : { 'default': filteredOptions };
-    
+
   // Calculate visible options (flattened if grouped)
-  const visibleOptions = groupBy 
-    ? Object.values(groupedOptions).flat() 
+  const visibleOptions = groupBy
+    ? Object.values(groupedOptions).flat()
     : filteredOptions;
 
   // Calculate dropdown position based on trigger element
@@ -450,7 +450,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
 
     const triggerRect = triggerRef.current.getBoundingClientRect();
     const dropdownRect = dropdownRef.current.getBoundingClientRect();
-    
+
     let top = 0;
     let left = 0;
     let transformOrigin = '';
@@ -458,11 +458,11 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
     // Calculate space above and below
     const spaceBelow = window.innerHeight - triggerRect.bottom;
     const spaceAbove = triggerRect.top;
-    
-    const placementBase = spaceBelow < dropdownRect.height && spaceAbove > spaceBelow 
-      ? 'top' 
+
+    const placementBase = spaceBelow < dropdownRect.height && spaceAbove > spaceBelow
+      ? 'top'
       : 'bottom';
-    
+
     // Calculate horizontal position based on placement
     if (placement.endsWith('start') || placementBase === 'top' && placement.endsWith('start')) {
       left = triggerRect.left + window.scrollX;
@@ -474,7 +474,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
       left = triggerRect.left + (triggerRect.width / 2) - (dropdownRect.width / 2) + window.scrollX;
       transformOrigin = 'top center';
     }
-    
+
     // Calculate vertical position
     if (placementBase === 'bottom') {
       top = triggerRect.bottom + window.scrollY + 8; // Add 8px gap
@@ -483,10 +483,10 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
       top = triggerRect.top - dropdownRect.height + window.scrollY - 8; // Add 8px gap
       transformOrigin = transformOrigin.replace('top', 'bottom');
     }
-    
+
     // Make sure dropdown stays within viewport
     const viewportWidth = window.innerWidth;
-    
+
     // Adjust horizontal position if needed
     if (left < 10) {
       left = 10;
@@ -500,7 +500,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
   // Toggle dropdown open/closed
   const toggle = () => {
     if (disabled || loading) return;
-    
+
     setIsOpen(prev => !prev);
     if (!isOpen) {
       onOpen?.();
@@ -520,15 +520,15 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
   // Handle option selection
   const handleSelect = (option: DropdownOption) => {
     if (option.disabled) return;
-    
+
     if (multiple) {
       const isSelected = selectedValues.includes(option.value);
       const newValues = isSelected
         ? selectedValues.filter(v => v !== option.value)
         : [...selectedValues, option.value];
-      
+
       onChange(newValues);
-      
+
       // Focus search input after selection in multiple mode
       if (searchable && searchInputRef.current) {
         searchInputRef.current.focus();
@@ -550,15 +550,15 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
   // Get selected option(s) label for display
   const getSelectedLabels = () => {
     if (selectedValues.length === 0) return null;
-    
+
     const selectedOptions = options.filter(o => selectedValues.includes(o.value));
-    
+
     if (multiple) {
-      return selectedOptions.length > 1 
+      return selectedOptions.length > 1
         ? `${selectedOptions[0].label} + ${selectedOptions.length - 1} more`
         : selectedOptions[0]?.label;
     }
-    
+
     return selectedOptions[0]?.label;
   };
 
@@ -570,7 +570,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (disabled) return;
-    
+
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
@@ -586,7 +586,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
           });
         }
         break;
-        
+
       case 'ArrowUp':
         e.preventDefault();
         if (!isOpen) {
@@ -595,15 +595,15 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
           setHighlightedIndex(visibleOptions.length - 1);
         } else {
           setHighlightedIndex(prev => {
-            const newIndex = prev === null 
-              ? visibleOptions.length - 1 
+            const newIndex = prev === null
+              ? visibleOptions.length - 1
               : (prev - 1 + visibleOptions.length) % visibleOptions.length;
             scrollOptionIntoView(newIndex);
             return newIndex;
           });
         }
         break;
-        
+
       case 'Enter':
         e.preventDefault();
         if (isOpen && highlightedIndex !== null) {
@@ -613,12 +613,12 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
           onOpen?.();
         }
         break;
-        
+
       case 'Escape':
         e.preventDefault();
         close();
         break;
-        
+
       case ' ': // Space
         if (!searchable && !isOpen) {
           e.preventDefault();
@@ -629,7 +629,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
           handleSelect(visibleOptions[highlightedIndex]);
         }
         break;
-        
+
       case 'Tab':
         if (isOpen) {
           close();
@@ -644,13 +644,13 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
       if (optionRefs.current[index] && dropdownRef.current) {
         const option = optionRefs.current[index];
         const dropdown = dropdownRef.current;
-        
+
         const optionTop = option!.offsetTop;
         const optionBottom = optionTop + option!.offsetHeight;
-        
+
         const scrollTop = dropdown.scrollTop;
         const scrollBottom = scrollTop + dropdown.clientHeight;
-        
+
         if (optionTop < scrollTop) {
           dropdown.scrollTop = optionTop;
         } else if (optionBottom > scrollBottom) {
@@ -665,13 +665,13 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
     if (isOpen && closeOnOutsideClick) {
       const handleClickOutside = (event: MouseEvent) => {
         if (
-          containerRef.current && 
+          containerRef.current &&
           !containerRef.current.contains(event.target as Node)
         ) {
           close();
         }
       };
-      
+
       document.addEventListener('mousedown', handleClickOutside);
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
@@ -684,15 +684,15 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
     if (isOpen) {
       // Delay position calculation to ensure DOM is updated
       setTimeout(updatePosition, 20);
-      
+
       window.addEventListener('resize', updatePosition);
       window.addEventListener('scroll', updatePosition);
-      
+
       // Focus search input if searchable
       if (searchable && searchInputRef.current) {
         searchInputRef.current.focus();
       }
-      
+
       return () => {
         window.removeEventListener('resize', updatePosition);
         window.removeEventListener('scroll', updatePosition);
@@ -711,32 +711,32 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
   // Determine sizing
   const getSizing = () => {
     switch (size) {
-      case 'small': return { 
-        height: '32px', 
-        padding: '6px 10px', 
+      case 'small': return {
+        height: '32px',
+        padding: '6px 10px',
         fontSize: '13px',
         iconSize: 16
       };
-      case 'large': return { 
-        height: '44px', 
-        padding: '10px 16px', 
+      case 'large': return {
+        height: '44px',
+        padding: '10px 16px',
         fontSize: '15px',
         iconSize: 20
       };
-      default: return { 
-        height: '38px', 
-        padding: '8px 12px', 
-        fontSize: '14px', 
+      default: return {
+        height: '38px',
+        padding: '8px 12px',
+        fontSize: '14px',
         iconSize: 18
       };
     }
   };
-  
+
   const { height, padding, fontSize, iconSize } = getSizing();
 
   // Render the dropdown
   return (
-    <div 
+    <div
       className={`select-dropdown-container ${className}`}
       ref={containerRef}
       style={{ width: typeof width === 'string' ? width : `${width}px` }}
@@ -747,8 +747,8 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
           {label}
         </label>
       )}
-      
-      <div 
+
+      <div
         className={`select-dropdown-trigger ${isOpen ? 'open' : ''} ${disabled ? 'disabled' : ''} ${error ? 'error' : ''} ${loading ? 'loading' : ''} ${size}`}
         ref={triggerRef}
         onClick={toggle}
@@ -775,10 +775,10 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
             <span className="placeholder">{placeholder}</span>
           )}
         </div>
-        
+
         <div className="select-dropdown-indicators">
           {(clearable && selectedValues.length > 0) && (
-            <button 
+            <button
               className="clear-indicator"
               onClick={handleClear}
               aria-label="Clear selection"
@@ -787,26 +787,26 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
               <X size={iconSize - 4} />
             </button>
           )}
-          
+
           <div className="dropdown-indicator">
             <ChevronsUpDown size={iconSize - 2} />
           </div>
         </div>
       </div>
-      
+
       {error && <div className="select-dropdown-error">{error}</div>}
-      
+
       {isOpen && (
         <>
           {darkOverlay && <div className="dropdown-overlay" onClick={close} />}
-          
+
           {renderInPlace ? (
-            <div 
+            <div
               className="select-dropdown-menu"
               ref={dropdownRef}
               style={{
                 width: typeof width === 'number' ? `${width}px` :
-                       triggerRef.current ? `${triggerRef.current.offsetWidth}px` : '100%',
+                  triggerRef.current ? `${triggerRef.current.offsetWidth}px` : '100%',
                 maxHeight,
               }}
             >
@@ -815,15 +815,15 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
           ) : (
             <Portal zIndex={3000}>
               <div key={`select-dropdown-${position.top}-${position.left}`}>
-                <div 
+                <div
                   ref={dropdownRef}
                   className="select-dropdown-menu"
-                  style={{ 
-                    top: `${position.top}px`, 
+                  style={{
+                    top: `${position.top}px`,
                     left: `${position.left}px`,
-                    width: typeof width === 'number' ? `${width}px` : 
-                          (width === 'auto' && triggerRef.current) ? `${triggerRef.current.offsetWidth}px` : 
-                          triggerRef.current ? `${triggerRef.current.offsetWidth}px` : width,
+                    width: typeof width === 'number' ? `${width}px` :
+                      (width === 'auto' && triggerRef.current) ? `${triggerRef.current.offsetWidth}px` :
+                        triggerRef.current ? `${triggerRef.current.offsetWidth}px` : width,
                     maxHeight,
                     transformOrigin: position.transformOrigin,
                     transitionDuration: `${animationDuration}ms`,
@@ -837,13 +837,13 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
           )}
         </>
       )}
-      
+
       <style jsx>{`
         .select-dropdown-container {
           position: relative;
           font-size: ${fontSize};
         }
-        
+
         .select-dropdown-label {
           display: block;
           font-size: ${parseInt(fontSize as string) - 1}px;
@@ -851,7 +851,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
           margin-bottom: 6px;
           color: var(--text-secondary);
         }
-        
+
         .select-dropdown-trigger {
           display: flex;
           align-items: center;
@@ -870,35 +870,35 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
           backdrop-filter: blur(var(--blur-amount));
           -webkit-backdrop-filter: blur(var(--blur-amount));
         }
-        
+
         .select-dropdown-trigger:hover:not(.disabled) {
           border-color: var(--border-hover);
           background: var(--hover-bg);
         }
-        
+
         .select-dropdown-trigger:focus {
           outline: none;
           border-color: var(--accent-primary);
           box-shadow: 0 0 0 2px var(--ring-color), var(--shadow-sm);
         }
-        
+
         .select-dropdown-trigger.open {
           border-color: var(--accent-primary);
           background: var(--active-bg);
           box-shadow: 0 0 0 2px var(--ring-color), var(--shadow-sm);
         }
-        
+
         .select-dropdown-trigger.disabled {
           background: var(--disabled-bg);
           color: var(--text-disabled);
           cursor: not-allowed;
           opacity: 0.7;
         }
-        
+
         .select-dropdown-trigger.error {
           border-color: var(--accent-danger);
         }
-        
+
         .select-dropdown-value {
           flex: 1;
           display: flex;
@@ -908,11 +908,11 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
           white-space: nowrap;
           text-overflow: ellipsis;
         }
-        
+
         .placeholder {
           color: var(--text-placeholder);
         }
-        
+
         .selection-count {
           display: flex;
           align-items: center;
@@ -926,12 +926,12 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
           font-size: 12px;
           font-weight: 500;
         }
-        
+
         .select-dropdown-indicators {
           display: flex;
           align-items: center;
         }
-        
+
         .clear-indicator {
           display: flex;
           align-items: center;
@@ -945,29 +945,29 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
           border-radius: 50%;
           transition: all 0.15s var(--easing-standard);
         }
-        
+
         .clear-indicator:hover {
           background: var(--hover-bg);
           color: var(--text-primary);
         }
-        
+
         .dropdown-indicator {
           display: flex;
           align-items: center;
           color: var(--text-tertiary);
           transition: transform 0.2s var(--easing-standard);
         }
-        
+
         .open .dropdown-indicator {
           color: var(--text-secondary);
         }
-        
+
         .select-dropdown-error {
           margin-top: 4px;
           color: var(--accent-danger);
           font-size: ${parseInt(fontSize as string) - 1}px;
         }
-        
+
         .select-dropdown-menu {
           background: var(--glass-bg);
           border-radius: var(--border-radius);
@@ -984,29 +984,29 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
           backdrop-filter: blur(var(--blur-amount));
           -webkit-backdrop-filter: blur(var(--blur-amount));
         }
-        
+
         .select-dropdown-menu::-webkit-scrollbar {
           width: 8px;
           height: 8px;
         }
-        
+
         .select-dropdown-menu::-webkit-scrollbar-track {
           background: transparent;
         }
-        
+
         .select-dropdown-menu::-webkit-scrollbar-thumb {
           background: var(--scrollbar-thumb);
           border-radius: 10px;
           border: 2px solid transparent;
           background-clip: padding-box;
         }
-        
+
         .select-dropdown-menu::-webkit-scrollbar-thumb:hover {
           background: var(--scrollbar-thumb-hover);
           border: 2px solid transparent;
           background-clip: padding-box;
         }
-        
+
         .dropdown-overlay {
           position: fixed;
           top: 0;
@@ -1018,7 +1018,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
           z-index: 80;
           animation: fadeIn ${animationDuration}ms var(--easing-standard);
         }
-        
+
         @keyframes slideIn {
           from {
             opacity: 0;
@@ -1029,13 +1029,13 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
             transform: translateY(0);
           }
         }
-        
+
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
         }
       `}</style>
-      
+
       <style jsx global>{`
         .menu-search {
           padding: 8px 12px;
@@ -1044,7 +1044,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
           position: relative;
           border-bottom: 1px solid var(--border-thin);
         }
-        
+
         .menu-search-input {
           width: 100%;
           border: none;
@@ -1054,21 +1054,21 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
           padding-left: 28px;
           font-size: ${fontSize};
         }
-        
+
         .menu-search-icon {
           position: absolute;
           left: 14px;
           color: var(--text-tertiary);
         }
-        
+
         .option-list {
           padding: 6px 0;
         }
-        
+
         .option-group {
           padding: 0;
         }
-        
+
         .group-label {
           padding: 6px 12px;
           font-size: ${parseInt(fontSize as string) - 1}px;
@@ -1084,7 +1084,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
           -webkit-backdrop-filter: blur(var(--blur-amount));
           border-bottom: 1px solid var(--border-divider);
         }
-        
+
         .dropdown-option {
           padding: 8px 12px;
           display: flex;
@@ -1094,43 +1094,43 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
           position: relative;
           user-select: none;
         }
-        
+
         .dropdown-option:hover:not(.disabled) {
           background: var(--hover-bg);
         }
-        
+
         .dropdown-option.selected {
           background: rgba(var(--accent-primary-rgb), 0.08);
           font-weight: 500;
         }
-        
+
         .dropdown-option.highlighted {
           background: var(--hover-bg);
         }
-        
+
         .dropdown-option.disabled {
           opacity: 0.5;
           cursor: not-allowed;
         }
-        
+
         .option-content {
           display: flex;
           flex-direction: column;
           flex: 1;
         }
-        
+
         .option-label {
           display: flex;
           align-items: center;
           gap: 8px;
         }
-        
+
         .option-description {
           font-size: ${parseInt(fontSize as string) - 2}px;
           color: var(--text-tertiary);
           margin-top: 2px;
         }
-        
+
         .option-check {
           color: var(--accent-primary);
           margin-left: 8px;
@@ -1140,30 +1140,30 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
           opacity: 0;
           transition: opacity 0.15s var(--easing-standard);
         }
-        
+
         .dropdown-option.selected .option-check {
           opacity: 1;
         }
-        
+
         .no-options {
           padding: 16px;
           text-align: center;
           color: var(--text-tertiary);
           font-style: italic;
         }
-        
+
         .loading-indicator {
           display: flex;
           justify-content: center;
           padding: 16px;
           color: var(--text-tertiary);
         }
-        
+
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
-        
+
         .loading-spinner {
           animation: spin 1s linear infinite;
         }
@@ -1190,7 +1190,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
             />
           </div>
         )}
-        
+
         {loading ? (
           <div className="loading-indicator">
             <div className="loading-spinner">
@@ -1215,16 +1215,18 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
                   {groupBy && groupName !== 'default' && (
                     <div className="group-label">{groupName}</div>
                   )}
-                  
+
                   {groupOptions.map((option, idx) => {
                     const optionIndex = visibleOptions.findIndex(o => o.value === option.value);
                     const isOptionSelected = isSelected(option);
                     const isHighlighted = highlightedIndex === optionIndex;
-                    
+
                     return (
                       <div
                         key={option.value}
-                        ref={el => optionRefs.current[optionIndex] = el}
+                        ref={(el: HTMLDivElement | null): void => {
+                          optionRefs.current[optionIndex] = el;
+                        }}
                         className={`dropdown-option ${isOptionSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''} ${option.disabled ? 'disabled' : ''}`}
                         onClick={() => !option.disabled && handleSelect(option)}
                         role="option"
@@ -1246,7 +1248,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
                                 <div className="option-description">{option.description}</div>
                               )}
                             </div>
-                            
+
                             {showCheckmarks && (
                               <div className="option-check">
                                 <Check size={16} />

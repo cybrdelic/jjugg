@@ -50,7 +50,7 @@ export default function Tooltip({
 
     const triggerRect = triggerRef.current.getBoundingClientRect();
     const tooltipRect = tooltipRef.current.getBoundingClientRect();
-    
+
     let top = 0;
     let left = 0;
 
@@ -76,13 +76,13 @@ export default function Tooltip({
     // Make sure tooltip stays within viewport
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-    
+
     // Adjust horizontal position
     if (left < 10) left = 10;
     if (left + tooltipRect.width > viewportWidth - 10) {
       left = viewportWidth - tooltipRect.width - 10;
     }
-    
+
     // Adjust vertical position
     if (top < 10) top = 10;
     if (top + tooltipRect.height > viewportHeight - 10) {
@@ -111,7 +111,7 @@ export default function Tooltip({
     if (isVisible) {
       window.addEventListener('resize', updatePosition);
       window.addEventListener('scroll', updatePosition);
-      
+
       return () => {
         window.removeEventListener('resize', updatePosition);
         window.removeEventListener('scroll', updatePosition);
@@ -131,19 +131,19 @@ export default function Tooltip({
     onMouseEnter: handleMouseEnter,
     onMouseLeave: handleMouseLeave,
     ref: triggerRef,
-  } as TriggerEvents);
+  } as any);
 
   return (
     <>
       {triggerElement}
-      
+
       {isVisible && (
         <Portal>
-          <div 
+          <div
             ref={tooltipRef}
-            className={`tooltip ${className} ${placement}`} 
-            style={{ 
-              top: `${position.top}px`, 
+            className={`tooltip ${className} ${placement}`}
+            style={{
+              top: `${position.top}px`,
               left: `${position.left}px`
             }}
             onMouseEnter={handleMouseEnter}
@@ -153,7 +153,7 @@ export default function Tooltip({
               {content}
             </div>
             <div className="tooltip-arrow" />
-            
+
             <style jsx>{`
               .tooltip {
                 position: fixed;

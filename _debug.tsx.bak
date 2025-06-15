@@ -1,0 +1,26 @@
+import React from 'react';
+
+export default function Debug() {
+  return (
+    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+      <h1>Debug Page</h1>
+      <p>This page exists only for debugging purposes.</p>
+      <div>
+        <h2>Environment Info:</h2>
+        <ul>
+          <li>Node Environment: {process.env.NODE_ENV || 'development'}</li>
+          <li>Build Time: {new Date().toISOString()}</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+// Add getStaticProps to ensure this page can be built statically
+export async function getStaticProps() {
+  return {
+    props: {
+      buildTime: new Date().toISOString()
+    }
+  };
+}

@@ -2,8 +2,7 @@
 
 import React, { useState } from 'react';
 import { LucideIcon, FileText, Users, CheckCircle, Target, Activity, Bell, TrendingUp } from 'lucide-react';
-
-export type ActivityType = 'application' | 'interview' | 'offer' | 'rejected' | 'assessment' | 'screening' | 'task' | 'email' | 'network';
+import { ActivityType } from '../../types';
 
 interface ActivityItemProps {
   id: string;
@@ -78,6 +77,10 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
         return <Bell size={18} className="activity-icon email" />;
       case 'screening':
         return <Activity size={18} className="activity-icon screening" />;
+      case 'viewed':
+        return <Activity size={18} className="activity-icon viewed" />;
+      case 'network':
+        return <Users size={18} className="activity-icon network" />;
       default:
         return <Activity size={18} className="activity-icon" />;
     }
@@ -94,6 +97,8 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
       case 'task': return 'var(--accent-purple)';
       case 'email': return 'var(--accent-yellow)';
       case 'screening': return 'var(--accent-secondary)';
+      case 'viewed': return 'var(--accent-secondary)';
+      case 'network': return 'var(--accent-purple)';
       default: return 'var(--text-secondary)';
     }
   };

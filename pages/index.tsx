@@ -2,6 +2,7 @@
 import React, { JSX, useState, useEffect, Suspense } from 'react';
 import GlassSidebar from '../components/GlassSidebar';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useFeatureFlags } from '@/contexts/FeatureFlagContext';
 import type { SectionKey, NavItemType } from '@/types';
 import {
   House, FileText, Bell, Users, User, Target, Clock, Menu, ChevronLeft, Calendar as CalendarIcon
@@ -59,15 +60,23 @@ export default function Home(): JSX.Element {
   const [width, setWidth] = useState(280);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  const {
+    ENABLE_CALENDAR_VIEW,
+    ENABLE_TIMELINE_SECTION,
+    ENABLE_GOALS_SECTION,
+    ENABLE_PROFILE_ARTIFACTS
+  } = useFeatureFlags();
+
+  // Only include sidebar items for enabled features
   const sidebarItems: NavItemType[] = [
     { id: 'dashboard-home', key: 'dashboard-home', label: 'Dashboard', icon: <House className="w-5 h-5" />, color: 'var(--accent-blue)', badge: { count: 3 } },
     { id: 'applications-section', key: 'applications-section', label: 'Applications', icon: <FileText className="w-5 h-5" />, color: 'var(--accent-purple)', badge: { count: applications.length } },
     { id: 'reminders-section', key: 'reminders-section', label: 'Reminders', icon: <Bell className="w-5 h-5" />, color: 'var(--accent-pink)', badge: { count: upcomingEvents.length } },
     { id: 'interviews-section', key: 'interviews-section', label: 'Interviews', icon: <Users className="w-5 h-5" />, color: 'var(--accent-orange)', badge: { count: appStats.interviewsScheduled } },
-    { id: 'profile-artifacts-section', key: 'profile-artifacts-section', label: 'Profile', icon: <User className="w-5 h-5" />, color: 'var(--accent-green)' },
-    { id: 'goals-section', key: 'goals-section', label: 'Goals', icon: <Target className="w-5 h-5" />, color: 'var(--accent-yellow)' },
-    { id: 'timeline-section', key: 'timeline-section', label: 'Timeline', icon: <Clock className="w-5 h-5" />, color: 'var(--accent-red)', badge: { count: activities.length } },
-    { id: 'calendar-section', key: 'calendar-section', label: 'Calendar', icon: <CalendarIcon className="w-5 h-5" />, color: 'var(--accent-blue-light)', badge: { count: upcomingEvents.length } },
+    ...(ENABLE_PROFILE_ARTIFACTS ? [{ id: 'profile-artifacts-section' as SectionKey, key: 'profile-artifacts-section' as SectionKey, label: 'Profile', icon: <User className="w-5 h-5" />, color: 'var(--accent-green)' }] : []),
+    ...(ENABLE_GOALS_SECTION ? [{ id: 'goals-section' as SectionKey, key: 'goals-section' as SectionKey, label: 'Goals', icon: <Target className="w-5 h-5" />, color: 'var(--accent-yellow)' }] : []),
+    ...(ENABLE_TIMELINE_SECTION ? [{ id: 'timeline-section' as SectionKey, key: 'timeline-section' as SectionKey, label: 'Timeline', icon: <Clock className="w-5 h-5" />, color: 'var(--accent-red)', badge: { count: activities.length } }] : []),
+    ...(ENABLE_CALENDAR_VIEW ? [{ id: 'calendar-section' as SectionKey, key: 'calendar-section' as SectionKey, label: 'Calendar', icon: <CalendarIcon className="w-5 h-5" />, color: 'var(--accent-blue-light)', badge: { count: upcomingEvents.length } }] : []),
   ];
 
   useEffect(() => {
@@ -95,7 +104,42 @@ export default function Home(): JSX.Element {
       />
       <main className={`glass-main ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
         <div className="reveal-element">
-          {sections[currentSection]()}
+          {/* Render sections based on feature flags */}
+          {currentSection === 'calendar-section' && !ENABLE_CALENDAR_VIEW && (
+            <div className="feature-disabled">
+              <h2>Calendar View</h2>
+              <p>This feature is currently disabled.</p>
+            </div>
+          )}
+          {currentSection === 'timeline-section' && !ENABLE_TIMELINE_SECTION && (
+            <div className="feature-disabled">
+              <h2>Timeline View</h2>
+              <p>This feature is currently disabled.</p>
+            </div>
+          )}
+          {currentSection === 'goals-section' && !ENABLE_GOALS_SECTION && (
+            <div className="feature-disabled">
+              <h2>Goals View</h2>
+              <p>This feature is currently disabled.</p>
+            </div>
+          )}
+          {currentSection === 'profile-artifacts-section' && !ENABLE_PROFILE_ARTIFACTS && (
+            <div className="feature-disabled">
+              <h2>Profile Artifacts View</h2>
+              <p>This feature is currently disabled.</p>
+            </div>
+          )}
+          {/* Render the section if it's enabled */}
+          {((currentSection === 'calendar-section' && ENABLE_CALENDAR_VIEW) ||
+            (currentSection === 'timeline-section' && ENABLE_TIMELINE_SECTION) ||
+            (currentSection === 'goals-section' && ENABLE_GOALS_SECTION) ||
+            (currentSection === 'profile-artifacts-section' && ENABLE_PROFILE_ARTIFACTS) ||
+            !(
+              currentSection === 'calendar-section' ||
+              currentSection === 'timeline-section' ||
+              currentSection === 'goals-section' ||
+              currentSection === 'profile-artifacts-section'
+            )) && sections[currentSection]()}
         </div>
 
         <button
@@ -138,6 +182,28 @@ export default function Home(): JSX.Element {
           flex-grow: 1;
           padding: 20px;
           transition: margin-left var(--transition-normal);
+        }
+
+        .feature-disabled {
+          background: var(--card-bg);
+          border-radius: var(--border-radius);
+          padding: 48px 64px;
+          text-align: center;
+          box-shadow: var(--shadow-soft);
+          margin: 48px auto;
+          max-width: 600px;
+          border: 1px solid var(--border-thin);
+        }
+
+        .feature-disabled h2 {
+          font-size: 24px;
+          margin-bottom: 16px;
+          color: var(--text-primary);
+        }
+
+        .feature-disabled p {
+          color: var(--text-secondary);
+          font-size: 16px;
         }
 
         .mobile-menu-toggle {

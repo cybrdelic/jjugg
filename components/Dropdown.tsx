@@ -40,15 +40,15 @@ export default function Dropdown({
   className = '',
 }: DropdownProps) {
   const [isOpenState, setIsOpenState] = useState(false);
-  const [position, setPosition] = useState<Position>({ 
-    top: 0, 
-    left: 0, 
-    transformOrigin: 'top left' 
+  const [position, setPosition] = useState<Position>({
+    top: 0,
+    left: 0,
+    transformOrigin: 'top left'
   });
-  
+
   // Use controlled or uncontrolled state
   const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : isOpenState;
-  
+
   const triggerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -59,7 +59,7 @@ export default function Dropdown({
 
     const triggerRect = triggerRef.current.getBoundingClientRect();
     const dropdownRect = dropdownRef.current.getBoundingClientRect();
-    
+
     let top = 0;
     let left = 0;
     let transformOrigin = '';
@@ -67,11 +67,11 @@ export default function Dropdown({
     // Calculate space above and below
     const spaceBelow = window.innerHeight - triggerRect.bottom;
     const spaceAbove = triggerRect.top;
-    
-    const placementBase = spaceBelow < dropdownRect.height && spaceAbove > spaceBelow 
-      ? 'top' 
+
+    const placementBase = spaceBelow < dropdownRect.height && spaceAbove > spaceBelow
+      ? 'top'
       : 'bottom';
-    
+
     // Calculate horizontal position based on placement
     if (placement.endsWith('start') || placementBase === 'top' && placement.endsWith('start')) {
       left = triggerRect.left + window.scrollX;
@@ -83,7 +83,7 @@ export default function Dropdown({
       left = triggerRect.left + (triggerRect.width / 2) - (dropdownRect.width / 2) + window.scrollX;
       transformOrigin = 'top center';
     }
-    
+
     // Calculate vertical position
     if (placementBase === 'bottom') {
       top = triggerRect.bottom + window.scrollY;
@@ -92,10 +92,10 @@ export default function Dropdown({
       top = triggerRect.top - dropdownRect.height + window.scrollY;
       transformOrigin = transformOrigin.replace('top', 'bottom');
     }
-    
+
     // Make sure dropdown stays within viewport
     const viewportWidth = window.innerWidth;
-    
+
     // Adjust horizontal position if needed
     if (left < 10) {
       left = 10;
@@ -126,15 +126,15 @@ export default function Dropdown({
     if (isOpen && closeOnOutsideClick) {
       const handleClickOutside = (event: MouseEvent) => {
         if (
-          dropdownRef.current && 
+          dropdownRef.current &&
           !dropdownRef.current.contains(event.target as Node) &&
-          triggerRef.current && 
+          triggerRef.current &&
           !triggerRef.current.contains(event.target as Node)
         ) {
           close();
         }
       };
-      
+
       document.addEventListener('mousedown', handleClickOutside);
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
@@ -147,10 +147,10 @@ export default function Dropdown({
     if (isOpen) {
       setMounted(true);
       setTimeout(updatePosition, 0);
-      
+
       window.addEventListener('resize', updatePosition);
       window.addEventListener('scroll', updatePosition);
-      
+
       return () => {
         window.removeEventListener('resize', updatePosition);
         window.removeEventListener('scroll', updatePosition);
@@ -165,24 +165,24 @@ export default function Dropdown({
     onClick: (e: React.MouseEvent) => {
       e.stopPropagation();
       toggle();
-      if (trigger.props.onClick) {
-        trigger.props.onClick(e);
+      if (trigger.props && (trigger.props as any).onClick) {
+        (trigger.props as any).onClick(e);
       }
     },
     ref: triggerRef,
-  });
+  } as any);
 
   return (
     <>
       {triggerElement}
-      
+
       {isOpen && (
         <Portal>
-          <div 
+          <div
             ref={dropdownRef}
-            className={`dropdown ${className} ${mounted ? 'visible' : ''}`} 
-            style={{ 
-              top: `${position.top}px`, 
+            className={`dropdown ${className} ${mounted ? 'visible' : ''}`}
+            style={{
+              top: `${position.top}px`,
               left: `${position.left}px`,
               width: typeof width === 'number' ? `${width}px` : width,
               transformOrigin: position.transformOrigin
@@ -190,7 +190,7 @@ export default function Dropdown({
             onClick={e => e.stopPropagation()}
           >
             {children}
-            
+
             <style jsx>{`
               .dropdown {
                 position: fixed;

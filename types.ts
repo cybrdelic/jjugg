@@ -133,3 +133,65 @@ export interface StatusUpdate {
   message: string; // Update message (e.g., "Moved to interview stage")
   appId: string | null; // ID of the application this update relates to, or null for general updates
 }
+
+// Additional types for data persistence
+export interface MonthlyGoal {
+  id: string;
+  goal: string;
+  current: number;
+  target: number;
+  progress: number;
+  category: 'applications' | 'networking' | 'skills' | 'interviews';
+}
+
+export interface AppStats {
+  totalApplications: number;
+  stageCount: Record<ApplicationStage, number>;
+  interviewsScheduled: number;
+  successRate: number;
+  tasksdue: number;
+  activeApplications: number;
+}
+
+export type ActivityType = 'application' | 'interview' | 'email' | 'viewed' | 'assessment' | 'offer' | 'screening' | 'rejected' | 'task' | 'network';
+
+export interface Activity {
+  id: string;
+  type: ActivityType;
+  title: string;
+  application: Application;
+  company: Company;
+  timestamp: Date;
+  details: string;
+}
+
+export type EventType = 'Interview' | 'Task' | 'Deadline';
+
+export interface UpcomingEvent {
+  id: string;
+  title: string;
+  company: Company;
+  date: Date;
+  time: string;
+  type: EventType;
+  application: Application;
+  details: string;
+  deadline?: Date;
+  location?: string;
+  duration?: number;
+}
+
+// Reminder types
+export type ReminderPriority = 'high' | 'medium' | 'low';
+export type ReminderStatus = 'pending' | 'completed';
+
+export interface Reminder {
+  id: string;
+  title: string;
+  description?: string;
+  dueDate: Date;
+  priority: ReminderPriority;
+  status: ReminderStatus;
+  relatedApplication?: Application;
+  notifyBefore?: number; // minutes
+}

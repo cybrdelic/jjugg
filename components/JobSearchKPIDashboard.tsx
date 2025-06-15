@@ -149,20 +149,6 @@ const JobSearchKPIDashboard: React.FC<JobSearchKPIDashboardProps> = ({ initialDa
                     </div>
                 </div>
 
-                <div className="stat-card" onClick={() => setActiveInsight('networking')}>
-                    <div className="stat-icon" style={{ background: 'var(--accent-orange)' }}>
-                        <Users size={18} />
-                    </div>
-                    <div className="stat-content">
-                        <div className="stat-value">{networkingStats.connections}</div>
-                        <div className="stat-label">Network Connections</div>
-                        <div className="stat-trend positive">
-                            <span className="trend-arrow">↑</span>
-                            <span className="trend-value">8%</span>
-                        </div>
-                    </div>
-                </div>
-
                 <div className="stat-card" onClick={() => console.log("clicked")}>
                     <div className="stat-icon" style={{ background: 'var(--accent-yellow)' }}>
                         <Timer size={18} />

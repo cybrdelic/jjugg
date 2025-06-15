@@ -4,7 +4,7 @@ import {
   PlusCircle, Grid3x3, ListFilter, SlidersHorizontal, Download, X, Clock,
   ArrowUp, ArrowDown, Calendar, User, Briefcase, CheckSquare, Users,
   Edit2, Trash2, ChevronRight, Plus, Minus, Search, Loader2, ArrowLeft, ArrowRight,
-  Smartphone, Monitor, Maximize2, Minimize2 
+  Smartphone, Monitor, Maximize2, Minimize2
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import CardHeader from '../CardHeader';
@@ -14,8 +14,8 @@ import ActionButton from '../dashboard/ActionButton';
 import Tooltip from '../Tooltip';
 import Portal from '../Portal';
 import ApplicationDetailDrawer from '../applications/ApplicationDetailDrawer';
-import { applications as mockApplications, companies as mockCompanies } from '../../pages/data';
 import { Application, ApplicationStage, InterviewEvent, StatusUpdate } from '@/types';
+import { useApplications, useCompanies } from '../../hooks/useData';
 
 // Helper Functions
 const formatDate = (date: Date): string =>
@@ -41,14 +41,14 @@ const getStageColor = (stage: ApplicationStage): string => {
 };
 
 const getEventTypeColor = (type: string): string => {
-  switch(type.toLowerCase()) {
+  switch (type.toLowerCase()) {
     case 'phone': return 'var(--accent-blue)';
     case 'video': return 'var(--accent-purple)';
     case 'onsite': return 'var(--accent-green)';
     case 'technical': return 'var(--accent-yellow)';
     case 'final': return 'var(--accent-red)';
     case 'screening': return 'var(--accent-purple)';
-    case 'interview': 
+    case 'interview':
     default: return 'var(--accent-blue)';
   }
 };
@@ -61,9 +61,6 @@ const calculateStageProgress = (stage: ApplicationStage): number => {
   return Math.min(((stages.indexOf(stage) + 1) / stages.length) * 100, 100);
 };
 
-const companies = mockCompanies;
-const applications = mockApplications;
-
 // Type Guard Function
 const isInputElement = (element: EventTarget | null): element is HTMLInputElement => {
   return element instanceof HTMLInputElement;
@@ -71,13 +68,15 @@ const isInputElement = (element: EventTarget | null): element is HTMLInputElemen
 
 export default function Applications() {
   const { currentTheme } = useTheme();
+  const applications = useApplications();
+  const companies = useCompanies();
+
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
   const [sortConfig, setSortConfig] = useState<{ column: keyof Application | 'company.name'; direction: 'asc' | 'desc' }>(
     { column: 'dateApplied', direction: 'desc' }
   );
   const [selectedApplication, setSelectedApplication] = useState<string | null>(null);
-  const [applicationData, setApplicationData] = useState<Application[]>(applications);
   const [mounted, setMounted] = useState<boolean>(false);
   const [isDetailModalVisible, setIsDetailModalVisible] = useState<boolean>(false);
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
@@ -90,7 +89,7 @@ export default function Applications() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
-  const [contextMenu, setContextMenu] = useState<{id: string, x: number, y: number} | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ id: string, x: number, y: number } | null>(null);
   const [isMobileView, setIsMobileView] = useState<boolean>(false);
   const [isAutosizeEnabled, setIsAutosizeEnabled] = useState<boolean>(false);
   const tableRef = useRef<HTMLDivElement>(null);
@@ -102,20 +101,20 @@ export default function Applications() {
   const checkMobileView = () => {
     setIsMobileView(window.innerWidth <= 768);
   };
-  
+
   useEffect(() => {
     console.log('Applications component mounted');
     setMounted(true);
     loadInitialApplications();
     checkMobileView();
-    
+
     // Add resize listener for responsive adjustments
     window.addEventListener('resize', checkMobileView);
     return () => window.removeEventListener('resize', checkMobileView);
   }, []);
 
   const filteredApplications = useMemo(() => {
-    let filtered = [...applicationData];
+    let filtered = [...applications.data];
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
       filtered = filtered.filter(app =>
@@ -153,7 +152,7 @@ export default function Applications() {
       return 0;
     });
     return filtered;
-  }, [applicationData, searchTerm, columnFilters, sortConfig]);
+  }, [applications.data, searchTerm, columnFilters, sortConfig]);
 
   const loadInitialApplications = () => {
     setVisibleApplications(filteredApplications.slice(0, ITEMS_PER_PAGE));
@@ -195,13 +194,13 @@ export default function Applications() {
   };
 
   const applicationStats = useMemo(() => ({
-    applications: applicationData.length,
-    interviews: applicationData.flatMap(app => app.interviews || []).filter(i => !i.completed && i.date > new Date()).length,
-  }), [applicationData]);
+    applications: applications.data.length,
+    interviews: applications.data.flatMap(app => app.interviews || []).filter(i => !i.completed && i.date > new Date()).length,
+  }), [applications.data]);
 
   const selectedAppData = useMemo(() =>
-    selectedApplication ? applicationData.find(app => app.id === selectedApplication) || null : null,
-    [selectedApplication, applicationData]
+    selectedApplication ? applications.data.find(app => app.id === selectedApplication) || null : null,
+    [selectedApplication, applications.data]
   );
 
   const applicationsByStage = useMemo(() => {
@@ -217,32 +216,29 @@ export default function Applications() {
   const stagesOrder: ApplicationStage[] = ['applied', 'screening', 'interview', 'offer', 'rejected'];
 
   const handleStageChange = (appId: string, newStage: ApplicationStage) => {
-    setApplicationData(prev => prev.map(app =>
-      app.id === appId ? { ...app, stage: newStage } : app
-    ));
-    addStatusUpdate(`Moved to ${getStageLabel(newStage)}`, appId);
+    const app = applications.data.find(a => a.id === appId);
+    if (app) {
+      applications.update(appId, { ...app, stage: newStage });
+      addStatusUpdate(`Moved to ${getStageLabel(newStage)}`, appId);
+    }
   };
 
   const handleIncrementStage = (appId: string) => {
-    setApplicationData(prev => prev.map(app => {
-      if (app.id === appId && stagesOrder.indexOf(app.stage) < stagesOrder.length - 1) {
-        const newStage = stagesOrder[stagesOrder.indexOf(app.stage) + 1];
-        addStatusUpdate(`Progressed to ${getStageLabel(newStage)}`, appId);
-        return { ...app, stage: newStage };
-      }
-      return app;
-    }));
+    const app = applications.data.find(a => a.id === appId);
+    if (app && stagesOrder.indexOf(app.stage) < stagesOrder.length - 1) {
+      const newStage = stagesOrder[stagesOrder.indexOf(app.stage) + 1];
+      applications.update(appId, { ...app, stage: newStage });
+      addStatusUpdate(`Progressed to ${getStageLabel(newStage)}`, appId);
+    }
   };
 
   const handleDecrementStage = (appId: string) => {
-    setApplicationData(prev => prev.map(app => {
-      if (app.id === appId && stagesOrder.indexOf(app.stage) > 0) {
-        const newStage = stagesOrder[stagesOrder.indexOf(app.stage) - 1];
-        addStatusUpdate(`Reverted to ${getStageLabel(newStage)}`, appId);
-        return { ...app, stage: newStage };
-      }
-      return app;
-    }));
+    const app = applications.data.find(a => a.id === appId);
+    if (app && stagesOrder.indexOf(app.stage) > 0) {
+      const newStage = stagesOrder[stagesOrder.indexOf(app.stage) - 1];
+      applications.update(appId, { ...app, stage: newStage });
+      addStatusUpdate(`Reverted to ${getStageLabel(newStage)}`, appId);
+    }
   };
 
   const handleEditApplication = (appId: string) => {
@@ -252,7 +248,7 @@ export default function Applications() {
 
   const handleDeleteApplication = (appId: string) => {
     if (confirm('Are you sure you want to delete this application?')) {
-      setApplicationData(prev => prev.filter(app => app.id !== appId));
+      applications.remove(appId);
       addStatusUpdate('Application Deleted', appId);
       if (selectedApplication === appId) setIsDetailModalVisible(false);
       setSelectedRows(prev => prev.filter(id => id !== appId));
@@ -277,7 +273,7 @@ export default function Applications() {
     }
     handleOpenDetailModal(appId);
   };
-  
+
   const handleContextMenu = (appId: string, e: React.MouseEvent) => {
     e.preventDefault();
     setContextMenu({
@@ -286,12 +282,12 @@ export default function Applications() {
       y: e.clientY
     });
   };
-  
+
   useEffect(() => {
     const handleClickOutside = () => {
       if (contextMenu) setContextMenu(null);
     };
-    
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (contextMenu) {
         if (e.key === 'Escape') {
@@ -302,10 +298,10 @@ export default function Applications() {
         }
       }
     };
-    
+
     document.addEventListener('click', handleClickOutside);
     document.addEventListener('keydown', handleKeyDown);
-    
+
     return () => {
       document.removeEventListener('click', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
@@ -314,7 +310,7 @@ export default function Applications() {
   const handleBulkDelete = () => {
     if (selectedRows.length === 0) return;
     if (confirm(`Are you sure you want to delete ${selectedRows.length} application(s)?`)) {
-      setApplicationData(prev => prev.filter(app => !selectedRows.includes(app.id)));
+      selectedRows.forEach(appId => applications.remove(appId));
       addStatusUpdate(`Deleted ${selectedRows.length} applications`, null);
       setSelectedRows([]);
       if (selectedRows.includes(selectedApplication || '')) setIsDetailModalVisible(false);
@@ -658,22 +654,22 @@ export default function Applications() {
                               </div>
                               <div className="company-cell">
                                 {app.company.logo ? (
-                                  <img 
-                                    src={app.company.logo} 
-                                    alt={app.company.name} 
-                                    className="company-logo" 
+                                  <img
+                                    src={app.company.logo}
+                                    alt={app.company.name}
+                                    className="company-logo"
                                   />
                                 ) : (
-                                  <div 
+                                  <div
                                     className="company-logo-placeholder"
-                                    style={{ 
-                                      backgroundColor: `hsl(${app.company.name.charCodeAt(0) * 5}, 70%, 60%)` 
+                                    style={{
+                                      backgroundColor: `hsl(${app.company.name.charCodeAt(0) * 5}, 70%, 60%)`
                                     }}
                                   >
                                     {app.company.name.charAt(0).toUpperCase()}
                                   </div>
                                 )}
-                                <Tooltip 
+                                <Tooltip
                                   content={
                                     <div className="company-tooltip">
                                       <h4>{app.company.name}</h4>
@@ -726,8 +722,8 @@ export default function Applications() {
                                     className={`stage-badge stage-${app.stage}`}
                                     style={{ borderColor: getStageColor(app.stage) }}
                                   >
-                                    <div 
-                                      className="stage-indicator" 
+                                    <div
+                                      className="stage-indicator"
                                       style={{ backgroundColor: getStageColor(app.stage) }}
                                     ></div>
                                     <span className="stage-label">{getStageLabel(app.stage)}</span>
@@ -736,8 +732,8 @@ export default function Applications() {
                                 <div className="stage-progress-container">
                                   <div className="stage-progress-background">
                                     {stagesOrder.map((stage, idx) => (
-                                      <div 
-                                        key={stage} 
+                                      <div
+                                        key={stage}
                                         className={`stage-step ${stagesOrder.indexOf(app.stage) >= idx ? 'completed' : ''}`}
                                         style={{ backgroundColor: stagesOrder.indexOf(app.stage) >= idx ? getStageColor(stage) : 'var(--border-thin)' }}
                                       />
@@ -782,12 +778,12 @@ export default function Applications() {
                                 </div>
                                 <div className="tasks-progress-container">
                                   <div className="tasks-progress-bar">
-                                    <div 
-                                      className="tasks-progress-fill" 
-                                      style={{ 
-                                        width: `${(app.tasks || []).length ? 
+                                    <div
+                                      className="tasks-progress-fill"
+                                      style={{
+                                        width: `${(app.tasks || []).length ?
                                           ((app.tasks || []).filter(t => t.completed).length / (app.tasks || []).length) * 100 : 0}%`,
-                                        backgroundColor: (app.tasks || []).filter(t => !t.completed).length > 0 ? 
+                                        backgroundColor: (app.tasks || []).filter(t => !t.completed).length > 0 ?
                                           'var(--accent-blue)' : 'var(--accent-green)'
                                       }}
                                     />
@@ -938,11 +934,11 @@ export default function Applications() {
           onStageChange={(newStage) => handleStageChange(selectedAppData.id, newStage)}
         />
       )}
-      
+
       {contextMenu && (
-        <div 
+        <div
           className="context-menu"
-          style={{ 
+          style={{
             position: 'fixed',
             top: `${contextMenu.y}px`,
             left: `${contextMenu.x}px`
@@ -951,8 +947,8 @@ export default function Applications() {
           aria-label="Application actions"
           tabIndex={0}
         >
-          <div 
-            className="context-menu-item" 
+          <div
+            className="context-menu-item"
             onClick={() => {
               handleOpenDetailModal(contextMenu.id);
               setContextMenu(null);
@@ -969,8 +965,8 @@ export default function Applications() {
             <ChevronRight size={14} className="context-icon" />
             <span>View Details</span>
           </div>
-          <div 
-            className="context-menu-item" 
+          <div
+            className="context-menu-item"
             onClick={() => {
               handleEditApplication(contextMenu.id);
               setContextMenu(null);
@@ -988,10 +984,10 @@ export default function Applications() {
             <span>Edit Application</span>
           </div>
           <div className="context-menu-divider"></div>
-          <div 
-            className="context-menu-item" 
+          <div
+            className="context-menu-item"
             onClick={() => {
-              const app = applicationData.find(a => a.id === contextMenu.id);
+              const app = applications.data.find(a => a.id === contextMenu.id);
               if (app && stagesOrder.indexOf(app.stage) > 0) {
                 handleDecrementStage(contextMenu.id);
               }
@@ -1001,7 +997,7 @@ export default function Applications() {
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
-                const app = applicationData.find(a => a.id === contextMenu.id);
+                const app = applications.data.find((a: Application) => a.id === contextMenu.id);
                 if (app && stagesOrder.indexOf(app.stage) > 0) {
                   handleDecrementStage(contextMenu.id);
                 }
@@ -1012,10 +1008,10 @@ export default function Applications() {
             <ArrowLeft size={14} className="context-icon" />
             <span>Previous Stage</span>
           </div>
-          <div 
-            className="context-menu-item" 
+          <div
+            className="context-menu-item"
             onClick={() => {
-              const app = applicationData.find(a => a.id === contextMenu.id);
+              const app = applications.data.find((a: Application) => a.id === contextMenu.id);
               if (app && stagesOrder.indexOf(app.stage) < stagesOrder.length - 1) {
                 handleIncrementStage(contextMenu.id);
               }
@@ -1025,7 +1021,7 @@ export default function Applications() {
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
-                const app = applicationData.find(a => a.id === contextMenu.id);
+                const app = applications.data.find((a: Application) => a.id === contextMenu.id);
                 if (app && stagesOrder.indexOf(app.stage) < stagesOrder.length - 1) {
                   handleIncrementStage(contextMenu.id);
                 }
@@ -1037,8 +1033,8 @@ export default function Applications() {
             <span>Next Stage</span>
           </div>
           <div className="context-menu-divider"></div>
-          <div 
-            className="context-menu-item delete" 
+          <div
+            className="context-menu-item delete"
             onClick={() => {
               handleDeleteApplication(contextMenu.id);
               setContextMenu(null);
@@ -1082,13 +1078,13 @@ export default function Applications() {
           flex-wrap: wrap;
           margin-top: 8px;
         }
-        
+
         @media (max-width: 768px) {
           .header-actions {
             flex-direction: column;
             align-items: stretch;
           }
-          
+
           .search-bar {
             max-width: 100%;
           }
@@ -1180,17 +1176,17 @@ export default function Applications() {
           color: white;
           border-color: var(--accent-blue);
         }
-        
+
         .control-btn.responsive-toggle {
           margin-left: 8px;
           border-left: 1px solid var(--border-thin);
           padding-left: 12px;
         }
-        
+
         .control-btn.autosize-toggle {
           margin-left: 4px;
         }
-        
+
         @media (min-width: 768px) {
           .control-btn.responsive-toggle {
             display: none;
@@ -1240,7 +1236,7 @@ export default function Applications() {
           overflow-x: auto;
           padding-bottom: 12px;
         }
-        
+
         .kanban-grid.mobile-view {
           grid-template-columns: 1fr;
           overflow-y: auto;
@@ -1279,29 +1275,29 @@ export default function Applications() {
           width: 100%;
           transition: all 0.3s ease;
         }
-        
+
         .table-header.autosize {
           grid-template-columns: auto auto auto auto auto auto auto auto;
         }
-        
+
         @media (max-width: 1400px) {
           .table-header {
             grid-template-columns: 2fr 2.5fr 1fr 1.2fr 1fr 1.5fr 1.2fr 0;
           }
         }
-        
+
         @media (max-width: 1200px) {
           .table-header {
             grid-template-columns: 2fr 2fr 1fr 1.2fr 1fr 1.5fr 0 0;
           }
         }
-        
+
         @media (max-width: 992px) {
           .table-header {
             grid-template-columns: 2fr 2fr 1fr 1.2fr 0 0 0 0;
           }
         }
-        
+
         @media (max-width: 768px) {
           .table-header {
             grid-template-columns: 2fr 2fr 1fr 1.2fr 0 0 0 0;
@@ -1353,35 +1349,35 @@ export default function Applications() {
           box-shadow: 0 2px 6px rgba(0,0,0,0.08);
           overflow: hidden;
         }
-        
+
         .table-row.autosize {
           grid-template-columns: auto auto auto auto auto auto auto auto;
         }
-        
+
         @media (max-width: 1400px) {
           .table-row {
             grid-template-columns: 2fr 2.5fr 1fr 1.2fr 1fr 1.5fr 1.2fr 0;
           }
         }
-        
+
         @media (max-width: 1200px) {
           .table-row {
             grid-template-columns: 2fr 2fr 1fr 1.2fr 1fr 1.5fr 0 0;
           }
         }
-        
+
         @media (max-width: 992px) {
           .table-row {
             grid-template-columns: 2fr 2fr 1fr 1.2fr 0 0 0 0;
           }
         }
-        
+
         @media (max-width: 768px) {
           .table-row {
             grid-template-columns: 2fr 2fr 1fr 1.2fr 0 0 0 0;
           }
         }
-        
+
         .table-row::before {
           content: '';
           position: absolute;
@@ -1406,7 +1402,7 @@ export default function Applications() {
           box-shadow: 0 8px 15px rgba(0,0,0,0.1);
           transform: translateY(-3px) scale(1.01);
         }
-        
+
         .table-row:hover::before {
           background: var(--accent-blue);
         }
@@ -1416,11 +1412,11 @@ export default function Applications() {
           box-shadow: 0 6px 15px rgba(var(--accent-blue-rgb), 0.15);
           border: 1px solid rgba(var(--accent-blue-rgb), 0.2);
         }
-        
+
         .table-row.selected::before {
           background: var(--accent-blue);
         }
-        
+
         /* Mobile view styles */
         .table-row.mobile-view {
           display: flex;
@@ -1428,7 +1424,7 @@ export default function Applications() {
           padding: 16px;
           gap: 10px;
         }
-        
+
         .table-row.mobile-view > div:nth-child(1) { order: 1; } /* Company */
         .table-row.mobile-view > div:nth-child(2) { order: 2; } /* Position */
         .table-row.mobile-view > div:nth-child(4) { order: 3; } /* Stage */
@@ -1437,7 +1433,7 @@ export default function Applications() {
         .table-row.mobile-view > div:nth-child(6) { order: 6; } /* Location */
         .table-row.mobile-view > div:nth-child(5) { order: 7; } /* Tasks */
         .table-row.mobile-view > div:nth-child(3) { order: 8; } /* Date Applied */
-        
+
         .table-row.mobile-view .cell {
           padding: 10px;
           width: 100%;
@@ -1447,7 +1443,7 @@ export default function Applications() {
           display: flex;
           flex-direction: column;
         }
-        
+
         .table-row.mobile-view .cell::before {
           content: attr(data-label);
           font-weight: 600;
@@ -1458,7 +1454,7 @@ export default function Applications() {
           border-bottom: 1px solid var(--border-thin);
           padding-bottom: 4px;
         }
-        
+
         .table-row.mobile-view .company-cell {
           width: 100%;
           display: flex;
@@ -1466,55 +1462,55 @@ export default function Applications() {
           margin-top: 8px;
           align-items: center;
         }
-        
+
         .table-row.mobile-view .position-cell {
           width: 100%;
         }
-        
+
         .table-row.mobile-view .checkbox-wrapper {
           position: absolute;
           top: 16px;
           left: 16px;
         }
-        
+
         .table-row.mobile-view .position-title {
           font-size: 16px;
           margin-bottom: 8px;
         }
-        
+
         .table-row.mobile-view .stage-container {
           align-items: center;
         }
-        
+
         .table-row.mobile-view .compensation-cell {
           display: flex;
           flex-direction: row;
           align-items: center;
           gap: 10px;
         }
-        
+
         .table-row.mobile-view .alerts-cell {
           flex-direction: row;
           flex-wrap: wrap;
         }
-        
+
         .table-row.mobile-view .alert-item {
           margin-right: 8px;
         }
-        
+
         .table-row.mobile-view .benefits-container {
           display: flex;
           flex-direction: column;
           width: 100%;
         }
-        
+
         .table-row.mobile-view .benefits-list {
           display: flex;
           flex-wrap: wrap;
           gap: 6px;
           margin-top: 8px;
         }
-        
+
         .table-row.mobile-view .benefit-tag {
           background: rgba(var(--accent-blue-rgb), 0.1);
           color: var(--accent-blue);
@@ -1567,14 +1563,14 @@ export default function Applications() {
           height: 18px;
           margin-right: 12px;
         }
-        
+
         .custom-checkbox {
           position: absolute;
           opacity: 0;
           width: 0;
           height: 0;
         }
-        
+
         .checkbox-label {
           position: absolute;
           top: 0;
@@ -1587,12 +1583,12 @@ export default function Applications() {
           cursor: pointer;
           transition: all 0.2s ease;
         }
-        
+
         .custom-checkbox:checked + .checkbox-label {
           background: var(--accent-blue);
           border-color: var(--accent-blue);
         }
-        
+
         .custom-checkbox:checked + .checkbox-label::after {
           content: '';
           position: absolute;
@@ -1604,13 +1600,13 @@ export default function Applications() {
           border-width: 0 2px 2px 0;
           transform: rotate(45deg);
         }
-        
+
         .company-cell {
           display: flex;
           align-items: center;
           gap: 10px;
         }
-        
+
         .company-logo {
           width: 28px;
           height: 28px;
@@ -1618,7 +1614,7 @@ export default function Applications() {
           object-fit: cover;
           border: 1px solid var(--border-thin);
         }
-        
+
         .company-logo-placeholder {
           width: 28px;
           height: 28px;
@@ -1630,19 +1626,19 @@ export default function Applications() {
           font-weight: 600;
           font-size: 14px;
         }
-        
+
         .company-name {
           font-weight: 600;
           letter-spacing: -0.2px;
         }
-        
+
         .position-cell {
           display: flex;
           flex-direction: column;
           gap: 4px;
           width: 100%;
         }
-        
+
         .position-title {
           font-weight: 600;
           color: var(--text-primary);
@@ -1651,7 +1647,7 @@ export default function Applications() {
           overflow: hidden;
           text-overflow: ellipsis;
         }
-        
+
         .position-description {
           font-size: 12px;
           color: var(--text-tertiary);
@@ -1662,7 +1658,7 @@ export default function Applications() {
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
         }
-        
+
         /* Tooltip styles */
         .company-tooltip h4,
         .position-tooltip h4,
@@ -1671,24 +1667,24 @@ export default function Applications() {
           color: var(--accent-blue);
           font-size: 15px;
         }
-        
+
         .company-tooltip p,
         .position-tooltip p {
           margin: 4px 0;
           font-size: 13px;
         }
-        
+
         .position-tooltip p {
           max-width: 400px;
           white-space: normal;
           line-height: 1.4;
         }
-        
+
         .benefits-tooltip ul {
           margin: 0;
           padding: 0 0 0 18px;
         }
-        
+
         .benefits-tooltip li {
           margin-bottom: 4px;
           font-size: 13px;
@@ -1732,28 +1728,28 @@ export default function Applications() {
           min-width: 120px;
           transition: all 0.2s ease;
         }
-        
+
         .stage-indicator {
           width: 8px;
           height: 8px;
           border-radius: 50%;
           flex-shrink: 0;
         }
-        
+
         .stage-label {
           font-size: 13px;
           font-weight: 600;
           color: var(--text-primary);
         }
-        
+
         .stage-offer .stage-label {
           color: var(--accent-green);
         }
-        
+
         .stage-rejected .stage-label {
           color: var(--accent-red);
         }
-        
+
         .table-row:hover .stage-badge {
           background: rgba(var(--accent-blue-rgb), 0.05);
           transform: translateY(-1px);
@@ -1783,20 +1779,20 @@ export default function Applications() {
         .stage-step.completed {
           box-shadow: 0 0 4px rgba(0,0,0,0.2);
         }
-        
+
         .interview-cell {
           display: flex;
           flex-direction: column;
           gap: 6px;
           width: 100%;
         }
-        
+
         .interview-date-container {
           display: flex;
           align-items: center;
           gap: 8px;
         }
-        
+
         .interview-type-tag {
           font-size: 11px;
           padding: 2px 8px;
@@ -1807,7 +1803,7 @@ export default function Applications() {
           max-width: fit-content;
           box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        
+
         .no-interview {
           display: flex;
           align-items: center;
@@ -1815,27 +1811,27 @@ export default function Applications() {
           width: 100%;
           height: 100%;
         }
-        
+
         .tasks-cell {
           display: flex;
           flex-direction: column;
           gap: 4px;
           width: 100%;
         }
-        
+
         .tasks-count-container {
           display: flex;
           align-items: center;
           gap: 8px;
         }
-        
+
         .tasks-progress-container {
           display: flex;
           align-items: center;
           gap: 8px;
           width: 100%;
         }
-        
+
         .tasks-progress-bar {
           height: 6px;
           background: var(--glass-bg);
@@ -1844,12 +1840,12 @@ export default function Applications() {
           overflow: hidden;
           border: 1px solid var(--border-thin);
         }
-        
+
         .tasks-progress-fill {
           height: 100%;
           transition: width 0.3s ease;
         }
-        
+
         .tasks-pending-count {
           font-size: 11px;
           color: var(--text-secondary);
@@ -1862,7 +1858,7 @@ export default function Applications() {
           gap: 4px;
           width: 100%;
         }
-        
+
         .alert-item {
           display: flex;
           align-items: center;
@@ -1876,38 +1872,38 @@ export default function Applications() {
           box-shadow: 0 1px 3px rgba(0,0,0,0.05);
           animation: slideIn 0.3s ease;
         }
-        
+
         @keyframes slideIn {
           from { opacity: 0; transform: translateX(10px); }
           to { opacity: 1; transform: translateX(0); }
         }
-        
+
         .alert-icon {
           flex-shrink: 0;
         }
-        
+
         .interview-alert {
           background: rgba(var(--accent-blue-rgb), 0.1);
           color: var(--accent-blue);
           border-left: 2px solid var(--accent-blue);
         }
-        
+
         .interview-alert:hover {
           background: rgba(var(--accent-blue-rgb), 0.15);
           transform: translateX(-2px);
         }
-        
+
         .task-alert {
           background: rgba(var(--accent-red-rgb), 0.1);
           color: var(--accent-red);
           border-left: 2px solid var(--accent-red);
         }
-        
+
         .task-alert:hover {
           background: rgba(var(--accent-red-rgb), 0.15);
           transform: translateX(-2px);
         }
-        
+
         .offer-alert {
           background: rgba(var(--accent-green-rgb), 0.1);
           color: var(--accent-green);
@@ -1915,45 +1911,45 @@ export default function Applications() {
           border-left: 2px solid var(--accent-green);
           animation: pulseAlert 2s infinite;
         }
-        
+
         .offer-alert:hover {
           background: rgba(var(--accent-green-rgb), 0.15);
           transform: translateX(-2px);
         }
-        
+
         @keyframes pulseAlert {
           0% { box-shadow: 0 0 0 0 rgba(var(--accent-green-rgb), 0.2); }
           70% { box-shadow: 0 0 0 5px rgba(var(--accent-green-rgb), 0); }
           100% { box-shadow: 0 0 0 0 rgba(var(--accent-green-rgb), 0); }
         }
-        
+
         .location-cell {
           display: flex;
           flex-direction: column;
           gap: 4px;
           width: 100%;
         }
-        
+
         .location-info {
           display: flex;
           align-items: center;
           gap: 8px;
         }
-        
+
         .remote-indicator {
           color: var(--accent-green);
           margin-left: 6px;
           font-weight: 500;
           font-size: 13px;
         }
-        
+
         .compensation-cell {
           display: flex;
           flex-direction: column;
           width: 100%;
           gap: 2px;
         }
-        
+
         .comp-value {
           font-weight: 600;
           color: var(--text-primary);
@@ -1964,32 +1960,32 @@ export default function Applications() {
           max-width: fit-content;
           transition: all 0.2s ease;
         }
-        
+
         .table-row:hover .comp-value {
           background: rgba(var(--accent-blue-rgb), 0.1);
         }
-        
+
         .bonus-value {
           color: var(--accent-green);
           background: rgba(var(--accent-green-rgb), 0.075);
         }
-        
+
         .table-row:hover .bonus-value {
           background: rgba(var(--accent-green-rgb), 0.1);
         }
-        
+
         .no-comp {
           font-size: 12px;
           color: var(--text-tertiary);
           font-style: italic;
         }
-        
+
         .benefits-container {
           display: flex;
           flex-direction: column;
           gap: 2px;
         }
-        
+
         .benefits-count {
           font-size: 12px;
           color: var(--text-secondary);
@@ -1998,7 +1994,7 @@ export default function Applications() {
           border-radius: 10px;
           max-width: fit-content;
         }
-        
+
         .benefits-value {
           font-size: 12px;
           color: var(--text-primary);
@@ -2007,13 +2003,13 @@ export default function Applications() {
           overflow: hidden;
           text-overflow: ellipsis;
         }
-        
+
         .more-indicator {
           margin-left: 4px;
           color: var(--text-tertiary);
           font-size: 11px;
         }
-        
+
         @keyframes pulse {
           0% {
             box-shadow: 0 0 0 0 rgba(var(--accent-green-rgb), 0.4);
@@ -2032,20 +2028,20 @@ export default function Applications() {
           gap: 6px;
           width: 100%;
         }
-        
+
         .contacts-header {
           display: flex;
           align-items: center;
           gap: 8px;
         }
-        
+
         .contact-avatars-container {
           display: flex;
           align-items: center;
           padding-left: 8px;
           height: 28px;
         }
-        
+
         .no-contacts {
           font-size: 12px;
           color: var(--text-tertiary);
@@ -2068,7 +2064,7 @@ export default function Applications() {
           box-shadow: 0 1px 3px rgba(0,0,0,0.1);
           transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-        
+
         .contact-avatar:hover {
           transform: translateY(-2px) scale(1.05) !important;
           box-shadow: 0 3px 6px rgba(0,0,0,0.15);
@@ -2101,16 +2097,16 @@ export default function Applications() {
           opacity: 0;
           transition: all 0.2s ease;
         }
-        
+
         .table-row:hover .row-actions-menu {
           opacity: 1;
         }
-        
+
         .row-stage-controls {
           display: flex;
           gap: 4px;
         }
-        
+
         .stage-control-btn {
           width: 24px;
           height: 24px;
@@ -2125,23 +2121,23 @@ export default function Applications() {
           transition: all 0.2s ease;
           padding: 0;
         }
-        
+
         .stage-control-btn:hover:not(:disabled) {
           background: var(--hover-bg);
           color: var(--text-primary);
           transform: scale(1.1);
         }
-        
+
         .stage-control-btn:disabled {
           opacity: 0.3;
           cursor: not-allowed;
         }
-        
+
         .prev-stage:hover:not(:disabled) {
           background: rgba(var(--accent-blue-rgb), 0.1);
           color: var(--accent-blue);
         }
-        
+
         .next-stage:hover:not(:disabled) {
           background: rgba(var(--accent-green-rgb), 0.1);
           color: var(--accent-green);
@@ -2157,12 +2153,12 @@ export default function Applications() {
           animation: fadeIn 0.2s ease;
           backdrop-filter: blur(10px);
         }
-        
+
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        
+
         .context-menu-item {
           padding: 10px 12px;
           display: flex;
@@ -2174,27 +2170,27 @@ export default function Applications() {
           border-radius: 4px;
           margin: 2px;
         }
-        
+
         .context-menu-item:hover {
           background: var(--hover-bg);
         }
-        
+
         .context-icon {
           color: var(--text-secondary);
         }
-        
+
         .context-menu-item.delete {
           color: var(--accent-red);
         }
-        
+
         .context-menu-item.delete:hover {
           background: rgba(var(--accent-red-rgb), 0.1);
         }
-        
+
         .context-menu-item.delete .context-icon {
           color: var(--accent-red);
         }
-        
+
         .context-menu-divider {
           height: 1px;
           background: var(--border-thin);
