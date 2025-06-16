@@ -69,24 +69,42 @@ module.exports = {
             dark: 'rgba(96, 165, 250, 0.2)',
           },
         },
-      },
-
-      // Typography
+      },      // Typography - Cohesive font system
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['Fira Code', 'monospace'],
-        display: ['Lexend', 'sans-serif'],
+        display: ['Lexend', 'Inter', 'sans-serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'monospace'],
       },
 
-      // Layout and spacing
+      // Cohesive font sizes matching CSS variables
+      fontSize: {
+        'xs': ['0.75rem', { lineHeight: '1.5' }],
+        'sm': ['0.875rem', { lineHeight: '1.5' }],
+        'base': ['1rem', { lineHeight: '1.6' }],
+        'lg': ['1.125rem', { lineHeight: '1.4' }],
+        'xl': ['1.25rem', { lineHeight: '1.4' }],
+        '2xl': ['1.5rem', { lineHeight: '1.3' }],
+        '3xl': ['1.875rem', { lineHeight: '1.2' }],
+        '4xl': ['2.25rem', { lineHeight: '1.1' }],
+      },      // Layout and spacing - 8px base system
       spacing: {
-        '4.5': '1.125rem',  // 18px
-        '68': '17rem',      // 272px
-        '84': '21rem',      // 336px
-        '88': '22rem',      // 352px
-        '92': '23rem',      // 368px
-        '100': '25rem',     // 400px
-        '120': '30rem',     // 480px
+        '1': '0.25rem',   // 4px
+        '2': '0.5rem',    // 8px
+        '3': '0.75rem',   // 12px
+        '4': '1rem',      // 16px
+        '5': '1.25rem',   // 20px
+        '6': '1.5rem',    // 24px
+        '8': '2rem',      // 32px
+        '10': '2.5rem',   // 40px
+        '12': '3rem',     // 48px
+        '16': '4rem',     // 64px
+        '20': '5rem',     // 80px
+        '68': '17rem',    // 272px
+        '84': '21rem',    // 336px
+        '88': '22rem',    // 352px
+        '92': '23rem',    // 368px
+        '100': '25rem',   // 400px
+        '120': '30rem',   // 480px
       },
 
       // Animations and transitions

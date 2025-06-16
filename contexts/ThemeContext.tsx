@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 
 export type ColorTheme = 'light' | 'dark';
 export type AccentColor = 'blue' | 'purple' | 'pink' | 'orange' | 'green' | 'yellow' | 'red';
-export type FontFamily = 'inter' | 'lexend' | 'roboto' | 'poppins' | 'montserrat';
+export type FontFamily = 'inter' | 'lexend';
 export type BorderRadius = 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
 export type Animation = 'minimal' | 'subtle' | 'moderate' | 'playful' | 'intense';
 export type GlassEffect = 'none' | 'subtle' | 'medium' | 'heavy';
@@ -148,11 +148,10 @@ const themeOptions: ThemeOption[] = [
   },
   {
     name: 'elegant',
-    label: 'Premium',
-    settings: {
+    label: 'Premium', settings: {
       colorTheme: 'dark',
       accentColor: 'purple',
-      fontFamily: 'montserrat',
+      fontFamily: 'lexend',
       borderRadius: 'md',
       animation: 'moderate',
       glassEffect: 'medium',
@@ -171,11 +170,10 @@ const themeOptions: ThemeOption[] = [
   },
   {
     name: 'playful',
-    label: 'Playful',
-    settings: {
+    label: 'Playful', settings: {
       colorTheme: 'light',
       accentColor: 'orange',
-      fontFamily: 'poppins',
+      fontFamily: 'inter',
       borderRadius: 'xl',
       animation: 'playful',
       glassEffect: 'medium',
@@ -194,11 +192,10 @@ const themeOptions: ThemeOption[] = [
   },
   {
     name: 'corporate',
-    label: 'Enterprise',
-    settings: {
+    label: 'Enterprise', settings: {
       colorTheme: 'light',
       accentColor: 'green',
-      fontFamily: 'roboto',
+      fontFamily: 'inter',
       borderRadius: 'sm',
       animation: 'minimal',
       glassEffect: 'subtle',
@@ -238,11 +235,10 @@ const themeOptions: ThemeOption[] = [
   },
   {
     name: 'oceanic',
-    label: 'Deep Sea',
-    settings: {
+    label: 'Deep Sea', settings: {
       colorTheme: 'dark',
       accentColor: 'blue',
-      fontFamily: 'poppins',
+      fontFamily: 'lexend',
       borderRadius: 'xl',
       animation: 'subtle',
       glassEffect: 'heavy',
@@ -260,11 +256,10 @@ const themeOptions: ThemeOption[] = [
   },
   {
     name: 'monochrome',
-    label: 'Monochrome',
-    settings: {
+    label: 'Monochrome', settings: {
       colorTheme: 'light',
       accentColor: 'blue',
-      fontFamily: 'montserrat',
+      fontFamily: 'inter',
       borderRadius: 'md',
       animation: 'minimal',
       glassEffect: 'none',
