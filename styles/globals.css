@@ -59,6 +59,8 @@
   /* Popovers, tooltips */
   --z-toast: 1070;
   /* Notifications, toasts */
+  --z-tooltip: 1080;
+  /* Tooltips */
   --z-theme-switcher: 2000;
   /* Theme switcher container */
   --z-theme-dropdown: 2001;
@@ -102,6 +104,7 @@
   --bg: linear-gradient(135deg, #f8fafc, #f1f5f9);
   --hover-bg: rgba(0, 0, 0, 0.03);
   --active-bg: rgba(14, 165, 233, 0.08);
+  --border-hover: rgba(0, 0, 0, 0.15);
   --ring-color: rgba(14, 165, 233, 0.35);
   --tooltip-bg: rgba(15, 23, 42, 0.85);
   --tooltip-text: #ffffff;
@@ -124,6 +127,7 @@
   --bg: linear-gradient(135deg, #0f172a, #1e293b);
   --hover-bg: rgba(255, 255, 255, 0.05);
   --active-bg: rgba(56, 189, 248, 0.15);
+  --border-hover: rgba(255, 255, 255, 0.15);
   --ring-color: rgba(56, 189, 248, 0.5);
   --accent-glow: 0 0 10px rgba(56, 189, 248, 0.3);
   --accent-glow-strong: 0 0 15px rgba(56, 189, 248, 0.5), 0 0 20px rgba(56, 189, 248, 0.3);

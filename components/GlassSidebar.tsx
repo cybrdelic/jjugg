@@ -158,24 +158,19 @@ export default function GlassSidebar({
           </button>
         </div>
         <div className="footer-shadow"></div>
-      </div>
-
-      <style jsx>{`
+      </div>      <style jsx>{`
         .sidebar {
           height: 100vh;
-          border-right: 1px solid #e5e7eb;
+          border-right: 1px solid var(--border-thin);
           display: flex;
           flex-direction: column;
           position: fixed;
-          z-index: 1000;
-          transition: width 0.2s ease;
+          z-index: var(--z-fixed);
+          transition: width var(--transition-normal) var(--easing-standard);
           overflow: hidden;
-          background: #ffffff;
-        }
-
-        .dark .sidebar {
-          background: #1f2937;
-          border-right-color: #374151;
+          background: var(--glass-sidebar-bg);
+          backdrop-filter: blur(var(--blur-amount));
+          -webkit-backdrop-filter: blur(var(--blur-amount));
         }
 
         .sidebar.collapsed {
@@ -187,17 +182,13 @@ export default function GlassSidebar({
           justify-content: space-between;
           align-items: center;
           padding: 16px;
-          border-bottom: 1px solid #e5e7eb;
-        }
-
-        .dark .sidebar-header {
-          border-bottom-color: #374151;
+          border-bottom: 1px solid var(--border-divider);
         }
 
         .logo {
-          background: #3b82f6;
+          background: var(--accent-primary);
           padding: ${isCollapsed ? '8px' : '6px 12px'};
-          border-radius: 6px;
+          border-radius: var(--border-radius);
           font-weight: 600;
           font-size: ${isCollapsed ? '16px' : '18px'};
           color: white;
@@ -210,35 +201,25 @@ export default function GlassSidebar({
 
         .logo-text {
           line-height: 1;
-        }
-
-        .toggle-btn {
+        }        .toggle-btn {
           background: none;
           border: none;
-          color: #6b7280;
+          color: var(--text-secondary);
           cursor: pointer;
           padding: 6px;
-          border-radius: 4px;
-          transition: all 0.15s ease;
+          border-radius: var(--border-radius-sm);
+          transition: all var(--transition-fast) var(--easing-standard);
         }
 
         .toggle-btn:hover {
-          background: #f3f4f6;
-          color: #374151;
-        }
-
-        .dark .toggle-btn {
-          color: #9ca3af;
-        }
-
-        .dark .toggle-btn:hover {
-          background: #374151;
-          color: #d1d5db;
+          background: var(--hover-bg);
+          color: var(--text-primary);
+          transform: scale(1.05);
         }
 
         .toggle-icon {
           transform: ${isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)'};
-          transition: transform 0.2s ease;
+          transition: transform var(--transition-normal) var(--easing-standard);
         }
 
         .user-profile {
@@ -246,28 +227,18 @@ export default function GlassSidebar({
           align-items: center;
           gap: 12px;
           padding: 16px;
-          border-bottom: 1px solid #e5e7eb;
-          transition: background-color 0.15s ease;
-        }
-
-        .dark .user-profile {
-          border-bottom-color: #374151;
+          border-bottom: 1px solid var(--border-divider);
+          transition: background-color var(--transition-fast) var(--easing-standard);
         }
 
         .user-profile:hover {
-          background-color: #f9fafb;
-        }
-
-        .dark .user-profile:hover {
-          background-color: #374151;
-        }
-
-        .avatar {
+          background-color: var(--hover-bg);
+        }        .avatar {
           width: 36px;
           height: 36px;
           border-radius: 50%;
           overflow: hidden;
-          background: #3b82f6;
+          background: var(--accent-primary);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -295,34 +266,27 @@ export default function GlassSidebar({
           flex: 1;
           min-width: 0;
           overflow: hidden;
-        }
-
-        .user-name {
+        }        .user-name {
           display: flex;
           align-items: center;
           gap: 8px;
           font-weight: 500;
-          color: #1f2937;
+          color: var(--text-primary);
           margin-bottom: 2px;
           font-size: 14px;
-        }
-
-        .dark .user-name {
-          color: #f3f4f6;
         }
 
         .calendar-btn {
           background: none;
           border: none;
-          color: #6b7280;
+          color: var(--text-secondary);
           cursor: pointer;
-          padding: 2px;
-          border-radius: 3px;
-          transition: color 0.15s ease;
+          padding: 2px;          border-radius: var(--border-radius-sm);
+          transition: color var(--transition-fast) var(--easing-standard);
         }
 
         .calendar-btn:hover {
-          color: #3b82f6;
+          color: var(--accent-primary);
         }
 
         .user-status {
@@ -330,33 +294,33 @@ export default function GlassSidebar({
           align-items: center;
           gap: 6px;
           font-size: 12px;
-          color: #6b7280;
+          color: var(--text-secondary);
         }
 
         .status-dot.online {
           width: 6px;
           height: 6px;
           border-radius: 50%;
-          background-color: #10b981;
+          background-color: var(--accent-success);
         }
 
         .status-text {
           font-size: 11px;
-        }
-
-        .avatar-tooltip {
+        }        .avatar-tooltip {
           position: absolute;
           left: 60px;
           top: 50%;
           transform: translateY(-50%);
-          background: #1f2937;
-          color: white;
-          border-radius: 6px;
+          background: var(--tooltip-bg);
+          color: var(--tooltip-text);
+          border-radius: var(--border-radius);
           padding: 8px 12px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          box-shadow: var(--shadow);
           font-size: 12px;
           white-space: nowrap;
-          z-index: 1100;
+          z-index: var(--z-tooltip);
+          backdrop-filter: blur(var(--blur-amount));
+          -webkit-backdrop-filter: blur(var(--blur-amount));
         }
 
         .avatar-tooltip::before {
@@ -367,26 +331,24 @@ export default function GlassSidebar({
           transform: translateY(-50%) rotate(45deg);
           width: 8px;
           height: 8px;
-          background: #1f2937;
+          background: var(--tooltip-bg);
         }
 
         .tooltip-name {
           font-weight: 500;
           margin-bottom: 2px;
-        }
-
-        .tooltip-status {
+        }        .tooltip-status {
           display: flex;
           align-items: center;
           gap: 4px;
-          color: #9ca3af;
+          color: var(--text-tertiary);
         }
 
         .tooltip-dot {
           width: 4px;
           height: 4px;
           border-radius: 50%;
-          background-color: #10b981;
+          background-color: var(--accent-success);
         }
 
         .nav-scroll {
@@ -401,35 +363,19 @@ export default function GlassSidebar({
 
         .nav-scroll::-webkit-scrollbar-track {
           background: transparent;
-        }
-
-        .nav-scroll::-webkit-scrollbar-thumb {
-          background: #d1d5db;
+        }        .nav-scroll::-webkit-scrollbar-thumb {
+          background: var(--border-divider);
           border-radius: 2px;
         }
 
         .nav-scroll::-webkit-scrollbar-thumb:hover {
-          background: #9ca3af;
-        }
-
-        .dark .nav-scroll::-webkit-scrollbar-thumb {
-          background: #4b5563;
-        }
-
-        .dark .nav-scroll::-webkit-scrollbar-thumb:hover {
-          background: #6b7280;
-        }
-
-        .sidebar-footer {
+          background: var(--text-tertiary);
+        }        .sidebar-footer {
           padding: 16px;
-          border-top: 1px solid #e5e7eb;
+          border-top: 1px solid var(--border-divider);
           display: flex;
           justify-content: ${isCollapsed ? 'center' : 'space-between'};
           align-items: center;
-        }
-
-        .dark .sidebar-footer {
-          border-top-color: #374151;
         }
 
         .footer-content {
@@ -438,42 +384,31 @@ export default function GlassSidebar({
           align-items: center;
           width: 100%;
           justify-content: ${isCollapsed ? 'center' : 'space-between'};
-        }
-
-        .signin-btn {
+        }        .signin-btn {
           display: flex;
           align-items: center;
           gap: 6px;
-          background: #f3f4f6;
-          border: 1px solid #e5e7eb;
-          border-radius: 6px;
+          background: var(--glass-bg);
+          border: 1px solid var(--border-thin);
+          border-radius: var(--border-radius);
           padding: 6px 10px;
-          color: #374151;
+          color: var(--text-secondary);
           cursor: pointer;
-          transition: all 0.15s ease;
+          transition: all var(--transition-fast) var(--easing-standard);
           font-size: 12px;
+          backdrop-filter: blur(var(--blur-amount));
+          -webkit-backdrop-filter: blur(var(--blur-amount));
         }
 
         .signin-btn:hover {
-          background: #e5e7eb;
-          border-color: #d1d5db;
-        }
-
-        .dark .signin-btn {
-          background: #374151;
-          border-color: #4b5563;
-          color: #d1d5db;
-        }
-
-        .dark .signin-btn:hover {
-          background: #4b5563;
-          border-color: #6b7280;
-        }
-
-        @media (max-width: 1024px) {
+          background: var(--hover-bg);
+          border-color: var(--border-hover);
+          color: var(--text-primary);
+          transform: translateY(-1px);
+        }        @media (max-width: 1024px) {
           .sidebar {
             transform: ${isCollapsed ? 'translateX(-100%)' : 'translateX(0)'};
-            transition: transform 0.2s ease, width 0.2s ease;
+            transition: transform var(--transition-normal) var(--easing-standard), width var(--transition-normal) var(--easing-standard);
           }
         }
       `}</style>

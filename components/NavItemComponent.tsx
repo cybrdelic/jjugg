@@ -103,9 +103,7 @@ const NavItemComponent: React.FC<NavItemComponentProps> = ({
                         </div>
                     )}
                 </div>
-            )}
-
-            <style jsx>{`
+            )}            <style jsx>{`
                 .nav-item {
                     display: flex;
                     align-items: center;
@@ -114,37 +112,28 @@ const NavItemComponent: React.FC<NavItemComponentProps> = ({
                     margin-bottom: 2px;
                     position: relative;
                     cursor: pointer;
-                    border-radius: 6px;
-                    transition: all 0.15s ease;
-                    color: #6b7280;
+                    border-radius: var(--border-radius);
+                    transition: all var(--transition-fast) var(--easing-standard);
+                    color: var(--text-secondary);
                 }
 
                 .nav-item:hover {
-                    background-color: #f3f4f6;
-                    color: #374151;
+                    background-color: var(--hover-bg);
+                    color: var(--text-primary);
+                    transform: translateX(2px);
                 }
 
                 .nav-item.active {
-                    background-color: #dbeafe;
-                    color: #1d4ed8;
+                    background-color: var(--active-bg);
+                    color: var(--accent-primary);
                     font-weight: 500;
-                    border-left: 3px solid #3b82f6;
+                    border-left: 3px solid var(--accent-primary);
                     padding-left: ${isCollapsed ? '8px' : '9px'};
+                    box-shadow: var(--accent-glow);
                 }
 
-                .dark .nav-item {
-                    color: #9ca3af;
-                }
-
-                .dark .nav-item:hover {
-                    background-color: #374151;
-                    color: #d1d5db;
-                }
-
-                .dark .nav-item.active {
-                    background-color: #1e3a8a;
-                    color: #93c5fd;
-                    border-left-color: #3b82f6;
+                .nav-item.active:hover {
+                    transform: translateX(3px);
                 }
 
                 .icon-container {
@@ -185,25 +174,26 @@ const NavItemComponent: React.FC<NavItemComponentProps> = ({
 
                 .nav-item.active .label {
                     font-weight: 500;
-                }
-
-                .badge {
+                }                .badge {
                     display: inline-flex;
                     align-items: center;
                     justify-content: center;
                     min-width: 18px;
                     height: 18px;
                     padding: 0 6px;
-                    background-color: #ef4444;
+                    background-color: var(--accent-secondary);
                     color: white;
                     border-radius: 9px;
                     font-size: 11px;
                     font-weight: 500;
                     line-height: 1;
+                    transition: all var(--transition-fast) var(--easing-standard);
                 }
 
                 .nav-item.active .badge {
-                    background-color: #dc2626;
+                    background-color: var(--accent-primary);
+                    transform: scale(1.05);
+                    box-shadow: var(--accent-glow);
                 }
             `}</style>
         </div>
