@@ -107,14 +107,15 @@
   --border-radius-lg: 0.75rem;
   --border-radius-xl: 1rem;
   --border-radius-full: 9999px;
-
   /* Animation timing */
   --transition-fast: 100ms;
   --transition-normal: 200ms;
   --transition-slow: 400ms;
+  --transition-smooth: 300ms;
   --easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
   --easing-accelerate: cubic-bezier(0.4, 0, 1, 1);
   --easing-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --easing-smooth: cubic-bezier(0.25, 0.1, 0.25, 1);
   --parallax-speed: 30s;
 }
 
@@ -122,8 +123,20 @@
 .light {
   /* Flat solid backgrounds - no glass effects */
   --glass-bg: #ffffff;
-  --glass-sidebar-bg: #f8fafc;
+  --glass-sidebar-bg: rgba(248, 250, 252, 0.95);
   --glass-card-bg: #ffffff;
+  --glass-navbar-bg: rgba(255, 255, 255, 0.9);
+
+  /* Modern glass effects for revamped sidebar */
+  --glass-header-bg: rgba(255, 255, 255, 0.8);
+  --glass-header-bg-secondary: rgba(248, 250, 252, 0.6);
+  --glass-button-bg: rgba(255, 255, 255, 0.6);
+  --glass-button-hover-bg: rgba(255, 255, 255, 0.8);
+  --glass-input-bg: rgba(255, 255, 255, 0.7);
+  --glass-hover-bg: rgba(248, 250, 252, 0.5);
+  --glass-dropdown-bg: rgba(255, 255, 255, 0.95);
+  --glass-tooltip-bg: rgba(30, 41, 59, 0.9);
+  --glass-footer-bg: rgba(248, 250, 252, 0.8);
 
   /* Typography hierarchy */
   --text-primary: #1e293b;
@@ -136,19 +149,29 @@
   --border-thin: #e2e8f0;
   --border-divider: #f1f5f9;
   --border-accent: var(--accent-primary);
+  --border-hover: #cbd5e1;
 
   /* Minimal elevation - flat shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
   --shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.1);
   --shadow-xl: 0 10px 15px rgba(0, 0, 0, 0.1);
 
   /* Flat backgrounds and interaction states */
   --bg: #ffffff;
+  --background: #ffffff;
   --surface: #ffffff;
+  --card-bg: #ffffff;
   --hover-bg: #f8fafc;
   --active-bg: #f1f5f9;
   --focus-ring: var(--accent-primary);
+
+  /* Navbar specific */
+  --z-navbar: 100;
+  --accent-primary-hover: #0284c7;
+  --accent-primary-rgb: 14, 165, 233;
+  --accent-secondary-rgb: 139, 92, 246;
 
   /* Utility colors */
   --tooltip-bg: #1e293b;
@@ -160,8 +183,23 @@
 .dark {
   /* Flat solid backgrounds - no glass effects */
   --glass-bg: #1e293b;
-  --glass-sidebar-bg: #0f172a;
+  --glass-sidebar-bg: rgba(15, 23, 42, 0.95);
   --glass-card-bg: #1e293b;
+  --glass-navbar-bg: rgba(30, 41, 59, 0.9);
+
+  /* Modern glass effects for revamped sidebar */
+  --glass-header-bg: rgba(15, 23, 42, 0.8);
+  --glass-header-bg-secondary: rgba(30, 41, 59, 0.6);
+  --glass-button-bg: rgba(30, 41, 59, 0.6);
+  --glass-button-hover-bg: rgba(51, 65, 85, 0.8);
+  --glass-input-bg: rgba(30, 41, 59, 0.7);
+  --glass-hover-bg: rgba(51, 65, 85, 0.3);
+  --glass-dropdown-bg: rgba(15, 23, 42, 0.95);
+  --glass-tooltip-bg: rgba(248, 250, 252, 0.9);
+  --glass-footer-bg: rgba(15, 23, 42, 0.8);
+
+  /* Enhanced border system */
+  --border-subtle: rgba(51, 65, 85, 0.6);
 
   /* Typography hierarchy */
   --text-primary: #f8fafc;
@@ -174,19 +212,29 @@
   --border-thin: #334155;
   --border-divider: #1e293b;
   --border-accent: var(--accent-primary);
+  --border-hover: #475569;
 
   /* Minimal elevation - flat shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.4);
   --shadow-xl: 0 10px 15px rgba(0, 0, 0, 0.4);
 
   /* Flat backgrounds and interaction states */
   --bg: #0f172a;
+  --background: #0f172a;
   --surface: #1e293b;
+  --card-bg: #1e293b;
   --hover-bg: #334155;
   --active-bg: #475569;
   --focus-ring: var(--accent-primary);
+
+  /* Navbar specific */
+  --z-navbar: 100;
+  --accent-primary-hover: #0284c7;
+  --accent-primary-rgb: 14, 165, 233;
+  --accent-secondary-rgb: 139, 92, 246;
 
   /* Utility colors */
   --tooltip-bg: #374151;
@@ -462,23 +510,18 @@
   /* Main content area with refined blur effect */
   .glass-main {
     @apply flex-grow p-6 overflow-y-auto;
-    margin-left: 280px;
-    background: var(--glass-bg);
+    margin-left: 0;
+    background: transparent;
     backdrop-filter: blur(var(--blur-amount));
     -webkit-backdrop-filter: blur(var(--blur-amount));
-    box-shadow: var(--shadow);
-    border-left: 1px solid var(--border-thin);
+    box-shadow: none;
+    border-left: none;
     transition:
-      margin-left var(--transition-normal) var(--easing-standard),
       backdrop-filter var(--transition-normal) ease,
       background-color var(--transition-normal) ease;
     height: 100vh;
     position: relative;
     z-index: var(--z-base);
-  }
-
-  .glass-main.sidebar-collapsed {
-    margin-left: 70px;
   }
 
   @media (max-width: 1024px) {
@@ -510,7 +553,7 @@
   /* Enhanced Glass Card Component */
   .glass-card {
     @apply rounded-xl p-5 relative;
-    background: var(--glass-card-bg);
+    background: transparent;
     backdrop-filter: blur(var(--blur-amount));
     -webkit-backdrop-filter: blur(var(--blur-amount));
     border: 1px solid var(--border-thin);

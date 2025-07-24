@@ -1,11 +1,11 @@
 'use client';
 import React, { JSX, useState, useEffect, Suspense } from 'react';
-import GlassSidebar from '../components/GlassSidebar';
+import ModernNavbar from '../components/ModernNavbar';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useFeatureFlags } from '@/contexts/FeatureFlagContext';
 import type { SectionKey, NavItemType } from '@/types';
 import {
-  House, FileText, Bell, Users, User, Target, Clock, Menu, ChevronLeft, Calendar as CalendarIcon
+  House, FileText, Bell, Users, User, Target, Clock, Calendar as CalendarIcon
 } from 'lucide-react';
 import ProfileArtifacts from '@/components/sections/ProfileArtifacts';
 import Interviews from '@/components/sections/Interviews';
@@ -56,8 +56,7 @@ const sections: Record<SectionKey, () => JSX.Element> = {
 export default function Home(): JSX.Element {
   const { currentTheme } = useTheme();
   const [currentSection, setCurrentSection] = useState<SectionKey>('dashboard-home');
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [width, setWidth] = useState(280);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const {
@@ -84,75 +83,64 @@ export default function Home(): JSX.Element {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleResize = (newWidth: number) => {
-    setWidth(newWidth);
-    if (newWidth < 100) setIsCollapsed(true);
-    else setIsCollapsed(false);
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
   return (
     <div className={`app-container reveal-loaded ${isLoaded ? 'loaded' : ''}`}>
-      <GlassSidebar
+      {/* Modern Navbar */}
+      <ModernNavbar
         items={sidebarItems}
         currentSection={currentSection}
         setCurrentSection={setCurrentSection}
-        width={width}
-        isCollapsed={isCollapsed}
-        onResize={handleResize}
         userName={userProfile.name}
         userAvatar={userProfile.avatar}
+        onMobileMenuToggle={toggleMobileMenu}
+        isMobileMenuOpen={isMobileMenuOpen}
       />
-      <main className={`glass-main ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
-        <div className="reveal-element">
-          {/* Render sections based on feature flags */}
-          {currentSection === 'calendar-section' && !ENABLE_CALENDAR_VIEW && (
-            <div className="feature-disabled">
-              <h2>Calendar View</h2>
-              <p>This feature is currently disabled.</p>
-            </div>
-          )}
-          {currentSection === 'timeline-section' && !ENABLE_TIMELINE_SECTION && (
-            <div className="feature-disabled">
-              <h2>Timeline View</h2>
-              <p>This feature is currently disabled.</p>
-            </div>
-          )}
-          {currentSection === 'goals-section' && !ENABLE_GOALS_SECTION && (
-            <div className="feature-disabled">
-              <h2>Goals View</h2>
-              <p>This feature is currently disabled.</p>
-            </div>
-          )}
-          {currentSection === 'profile-artifacts-section' && !ENABLE_PROFILE_ARTIFACTS && (
-            <div className="feature-disabled">
-              <h2>Profile Artifacts View</h2>
-              <p>This feature is currently disabled.</p>
-            </div>
-          )}
-          {/* Render the section if it's enabled */}
-          {((currentSection === 'calendar-section' && ENABLE_CALENDAR_VIEW) ||
-            (currentSection === 'timeline-section' && ENABLE_TIMELINE_SECTION) ||
-            (currentSection === 'goals-section' && ENABLE_GOALS_SECTION) ||
-            (currentSection === 'profile-artifacts-section' && ENABLE_PROFILE_ARTIFACTS) ||
-            !(
-              currentSection === 'calendar-section' ||
-              currentSection === 'timeline-section' ||
-              currentSection === 'goals-section' ||
-              currentSection === 'profile-artifacts-section'
-            )) && sections[currentSection]()}
-        </div>
 
-        <button
-          className="mobile-menu-toggle"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          aria-label={isCollapsed ? "Open sidebar" : "Close sidebar"}
-        >
-          {isCollapsed ? (
-            <Menu size={20} className="mobile-menu-icon" />
-          ) : (
-            <ChevronLeft size={20} className="mobile-menu-icon" />
-          )}
-        </button>
+      <main className="glass-main">
+        <div className="main-content">
+          <div className="reveal-element">
+            {/* Render sections based on feature flags */}
+            {currentSection === 'calendar-section' && !ENABLE_CALENDAR_VIEW && (
+              <div className="feature-disabled">
+                <h2>Calendar View</h2>
+                <p>This feature is currently disabled.</p>
+              </div>
+            )}
+            {currentSection === 'timeline-section' && !ENABLE_TIMELINE_SECTION && (
+              <div className="feature-disabled">
+                <h2>Timeline View</h2>
+                <p>This feature is currently disabled.</p>
+              </div>
+            )}
+            {currentSection === 'goals-section' && !ENABLE_GOALS_SECTION && (
+              <div className="feature-disabled">
+                <h2>Goals View</h2>
+                <p>This feature is currently disabled.</p>
+              </div>
+            )}
+            {currentSection === 'profile-artifacts-section' && !ENABLE_PROFILE_ARTIFACTS && (
+              <div className="feature-disabled">
+                <h2>Profile Artifacts View</h2>
+                <p>This feature is currently disabled.</p>
+              </div>
+            )}
+            {/* Render the section if it's enabled */}
+            {((currentSection === 'calendar-section' && ENABLE_CALENDAR_VIEW) ||
+              (currentSection === 'timeline-section' && ENABLE_TIMELINE_SECTION) ||
+              (currentSection === 'goals-section' && ENABLE_GOALS_SECTION) ||
+              (currentSection === 'profile-artifacts-section' && ENABLE_PROFILE_ARTIFACTS) ||
+              !(
+                currentSection === 'calendar-section' ||
+                currentSection === 'timeline-section' ||
+                currentSection === 'goals-section' ||
+                currentSection === 'profile-artifacts-section'
+              )) && sections[currentSection]()}
+          </div>
+        </div>
       </main>
 
       <div className="floating-particles">
@@ -167,25 +155,34 @@ export default function Home(): JSX.Element {
       </div>
 
       <div className="bg-gradient-1"></div>
-      <div className="bg-gradient-2"></div>
-
-      <style jsx>{`
+      <div className="bg-gradient-2"></div>      <style jsx>{`
         .app-container {
           display: flex;
+          flex-direction: column;
           min-height: 100vh;
           background: var(--background);
           position: relative;
         }
 
         .glass-main {
-          margin-left: ${isCollapsed ? '70px' : `${width}px`};
           flex-grow: 1;
+          min-height: 100vh;
+          position: relative;
+          padding-top: 70px;
+          margin-left: 0 !important;
+        }
+
+        .main-content {
           padding: 20px;
-          transition: margin-left var(--transition-normal);
+          height: 100%;
+        }
+
+        .reveal-element {
+          background: transparent;
         }
 
         .feature-disabled {
-          background: var(--card-bg);
+          background: transparent;
           border-radius: var(--border-radius);
           padding: 48px 64px;
           text-align: center;
@@ -204,31 +201,6 @@ export default function Home(): JSX.Element {
         .feature-disabled p {
           color: var(--text-secondary);
           font-size: 16px;
-        }
-
-        .mobile-menu-toggle {
-          display: none;
-          position: fixed;
-          bottom: 24px;
-          right: 24px;
-          width: 48px;
-          height: 48px;
-          border-radius: 50%;
-          background: var(--glass-bg);
-          border: 1px solid var(--border-thin);
-          box-shadow: var(--shadow);
-          color: var(--text-primary);
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          z-index: var(--z-fixed);
-          transition: all var(--transition-normal);
-        }
-
-        .mobile-menu-toggle:hover {
-          transform: scale(1.05);
-          box-shadow: var(--shadow-lg);
-          border-color: var(--accent-primary);
         }
 
         .floating-particles {
@@ -296,9 +268,10 @@ export default function Home(): JSX.Element {
           100% { transform: translate(0, 0); }
         }
 
-        @media (max-width: 1024px) {
-          .mobile-menu-toggle {
-            display: flex;
+        /* Responsive Design */
+        @media (max-width: 768px) {
+          .main-content {
+            padding: 16px;
           }
         }
       `}</style>
