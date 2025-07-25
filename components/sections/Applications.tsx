@@ -15,7 +15,7 @@ import Tooltip from '../Tooltip';
 import Portal from '../Portal';
 import ApplicationDetailDrawer from '../applications/ApplicationDetailDrawer';
 import { Application, ApplicationStage, InterviewEvent, StatusUpdate } from '@/types';
-import { useApplications, useCompanies } from '../../hooks/useData';
+import { useDbData } from '../../hooks/useDatabaseData';
 
 // Helper Functions
 const formatDate = (date: Date): string =>
@@ -68,8 +68,14 @@ const isInputElement = (element: EventTarget | null): element is HTMLInputElemen
 
 export default function Applications() {
   const { currentTheme } = useTheme();
-  const applications = useApplications();
-  const companies = useCompanies();
+  const {
+    applications: applicationsData,
+    loading,
+    error,
+    createApplication,
+    updateApplication,
+    deleteApplication
+  } = useDbData();
 
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
@@ -114,10 +120,11 @@ export default function Applications() {
   }, []);
 
   const filteredApplications = useMemo(() => {
-    let filtered = [...applications.data];
+    if (!applicationsData) return [];
+    let filtered = [...applicationsData];
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
-      filtered = filtered.filter(app =>
+      filtered = filtered.filter((app: Application) =>
         app.position.toLowerCase().includes(search) ||
         app.company.name.toLowerCase().includes(search) ||
         app.location.toLowerCase().includes(search) ||
@@ -126,7 +133,7 @@ export default function Applications() {
     }
     Object.entries(columnFilters).forEach(([column, filterValue]) => {
       if (filterValue) {
-        filtered = filtered.filter(app => {
+        filtered = filtered.filter((app: Application) => {
           let value: string | undefined;
           switch (column) {
             case 'company': value = app.company.name; break;
@@ -141,8 +148,41 @@ export default function Applications() {
     });
     filtered.sort((a, b) => {
       const { column, direction } = sortConfig;
-      let valueA = column === 'company.name' ? a.company.name : a[column as keyof Application];
-      let valueB = column === 'company.name' ? b.company.name : b[column as keyof Application];
+      let valueA: any;
+      let valueB: any;
+
+      if (column === 'company.name') {
+        valueA = a.company.name;
+        valueB = b.company.name;
+      } else {
+        // Safe property access for known properties
+        switch (column) {
+          case 'position':
+            valueA = a.position;
+            valueB = b.position;
+            break;
+          case 'dateApplied':
+            valueA = a.dateApplied;
+            valueB = b.dateApplied;
+            break;
+          case 'stage':
+            valueA = a.stage;
+            valueB = b.stage;
+            break;
+          case 'location':
+            valueA = a.location;
+            valueB = b.location;
+            break;
+          case 'salary':
+            valueA = a.salary;
+            valueB = b.salary;
+            break;
+          default:
+            valueA = '';
+            valueB = '';
+        }
+      }
+
       if (valueA instanceof Date && valueB instanceof Date) {
         return direction === 'asc' ? valueA.getTime() - valueB.getTime() : valueB.getTime() - valueA.getTime();
       }
@@ -152,7 +192,7 @@ export default function Applications() {
       return 0;
     });
     return filtered;
-  }, [applications.data, searchTerm, columnFilters, sortConfig]);
+  }, [applicationsData, searchTerm, columnFilters, sortConfig]);
 
   const loadInitialApplications = () => {
     setVisibleApplications(filteredApplications.slice(0, ITEMS_PER_PAGE));
@@ -194,20 +234,20 @@ export default function Applications() {
   };
 
   const applicationStats = useMemo(() => ({
-    applications: applications.data.length,
-    interviews: applications.data.flatMap(app => app.interviews || []).filter(i => !i.completed && i.date > new Date()).length,
-  }), [applications.data]);
+    applications: applicationsData?.length || 0,
+    interviews: applicationsData?.flatMap((app: Application) => app.interviews || []).filter((i: any) => !i.completed && i.date > new Date()).length || 0,
+  }), [applicationsData]);
 
   const selectedAppData = useMemo(() =>
-    selectedApplication ? applications.data.find(app => app.id === selectedApplication) || null : null,
-    [selectedApplication, applications.data]
+    selectedApplication ? applicationsData?.find((app: Application) => app.id === selectedApplication) || null : null,
+    [selectedApplication, applicationsData]
   );
 
   const applicationsByStage = useMemo(() => {
     const stages: Record<ApplicationStage, Application[]> = {
       applied: [], screening: [], interview: [], offer: [], rejected: []
     };
-    filteredApplications.forEach(app => stages[app.stage].push(app));
+    filteredApplications.forEach((app: Application) => stages[app.stage as ApplicationStage]?.push(app));
     return stages;
   }, [filteredApplications]);
 
@@ -215,29 +255,41 @@ export default function Applications() {
   const toggleViewMode = () => setViewMode(prev => prev === 'table' ? 'kanban' : 'table');
   const stagesOrder: ApplicationStage[] = ['applied', 'screening', 'interview', 'offer', 'rejected'];
 
-  const handleStageChange = (appId: string, newStage: ApplicationStage) => {
-    const app = applications.data.find(a => a.id === appId);
-    if (app) {
-      applications.update(appId, { ...app, stage: newStage });
+  const handleStageChange = async (appId: string, newStage: ApplicationStage) => {
+    try {
+      await updateApplication(appId, { stage: newStage });
       addStatusUpdate(`Moved to ${getStageLabel(newStage)}`, appId);
+    } catch (error) {
+      console.error('Failed to update stage:', error);
+      addStatusUpdate(`Failed to update stage`, appId);
     }
   };
 
-  const handleIncrementStage = (appId: string) => {
-    const app = applications.data.find(a => a.id === appId);
-    if (app && stagesOrder.indexOf(app.stage) < stagesOrder.length - 1) {
-      const newStage = stagesOrder[stagesOrder.indexOf(app.stage) + 1];
-      applications.update(appId, { ...app, stage: newStage });
-      addStatusUpdate(`Progressed to ${getStageLabel(newStage)}`, appId);
+  const handleIncrementStage = async (appId: string) => {
+    const app = applicationsData?.find((a: Application) => a.id === appId);
+    if (app && stagesOrder.indexOf(app.stage as ApplicationStage) < stagesOrder.length - 1) {
+      const newStage = stagesOrder[stagesOrder.indexOf(app.stage as ApplicationStage) + 1];
+      try {
+        await updateApplication(appId, { stage: newStage });
+        addStatusUpdate(`Progressed to ${getStageLabel(newStage)}`, appId);
+      } catch (error) {
+        console.error('Failed to increment stage:', error);
+        addStatusUpdate(`Failed to update stage`, appId);
+      }
     }
   };
 
-  const handleDecrementStage = (appId: string) => {
-    const app = applications.data.find(a => a.id === appId);
-    if (app && stagesOrder.indexOf(app.stage) > 0) {
-      const newStage = stagesOrder[stagesOrder.indexOf(app.stage) - 1];
-      applications.update(appId, { ...app, stage: newStage });
-      addStatusUpdate(`Reverted to ${getStageLabel(newStage)}`, appId);
+  const handleDecrementStage = async (appId: string) => {
+    const app = applicationsData?.find((a: Application) => a.id === appId);
+    if (app && stagesOrder.indexOf(app.stage as ApplicationStage) > 0) {
+      const newStage = stagesOrder[stagesOrder.indexOf(app.stage as ApplicationStage) - 1];
+      try {
+        await updateApplication(appId, { stage: newStage });
+        addStatusUpdate(`Reverted to ${getStageLabel(newStage)}`, appId);
+      } catch (error) {
+        console.error('Failed to decrement stage:', error);
+        addStatusUpdate(`Failed to update stage`, appId);
+      }
     }
   };
 
@@ -246,16 +298,44 @@ export default function Applications() {
     console.log(`Edit application ${appId}`);
   };
 
-  const handleDeleteApplication = (appId: string) => {
+  const handleDeleteApplication = async (appId: string) => {
     if (confirm('Are you sure you want to delete this application?')) {
-      applications.remove(appId);
-      addStatusUpdate('Application Deleted', appId);
-      if (selectedApplication === appId) setIsDetailModalVisible(false);
-      setSelectedRows(prev => prev.filter(id => id !== appId));
+      try {
+        await deleteApplication(appId);
+        addStatusUpdate('Application Deleted', appId);
+        if (selectedApplication === appId) setIsDetailModalVisible(false);
+        setSelectedRows(prev => prev.filter(id => id !== appId));
+      } catch (error) {
+        console.error('Failed to delete application:', error);
+        addStatusUpdate('Failed to delete application', appId);
+      }
     }
   };
 
-  const handleAddApplication = () => { console.log('Add new application'); };
+  const handleAddApplication = async () => {
+    // For now, create a simple application with default values
+    // TODO: Replace with proper modal form
+    const position = prompt('Enter position title:');
+    const companyName = prompt('Enter company name:');
+
+    if (!position || !companyName) return;
+
+    try {
+      // First check if company exists, if not create it
+      const newApp = await createApplication({
+        position,
+        company_id: 1, // Default to first company for now - TODO: proper company handling
+        stage: 'applied',
+        date_applied: new Date().toISOString(),
+        notes: `Application for ${position} at ${companyName}`
+      });
+
+      addStatusUpdate('Application Added', newApp.id.toString());
+    } catch (error) {
+      console.error('Failed to create application:', error);
+      addStatusUpdate('Failed to add application', null);
+    }
+  };
   const handleOpenDetailModal = (appId: string) => {
     setSelectedApplication(appId);
     setIsDetailModalVisible(true);
@@ -307,13 +387,18 @@ export default function Applications() {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [contextMenu]);
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
     if (selectedRows.length === 0) return;
     if (confirm(`Are you sure you want to delete ${selectedRows.length} application(s)?`)) {
-      selectedRows.forEach(appId => applications.remove(appId));
-      addStatusUpdate(`Deleted ${selectedRows.length} applications`, null);
-      setSelectedRows([]);
-      if (selectedRows.includes(selectedApplication || '')) setIsDetailModalVisible(false);
+      try {
+        await Promise.all(selectedRows.map(appId => deleteApplication(appId)));
+        addStatusUpdate(`Deleted ${selectedRows.length} applications`, null);
+        setSelectedRows([]);
+        if (selectedRows.includes(selectedApplication || '')) setIsDetailModalVisible(false);
+      } catch (error) {
+        console.error('Failed to delete applications:', error);
+        addStatusUpdate('Failed to delete some applications', null);
+      }
     }
   };
   const handleExport = () => {
@@ -641,7 +726,7 @@ export default function Applications() {
                           </div>
                           {visibleColumns.includes('company') && (
                             <div className="cell" data-label="Company">
-                              <div className="checkbox-wrapper">
+                              <div className="checkbox-wrapper" onClick={e => e.stopPropagation()}>
                                 <input
                                   type="checkbox"
                                   id={`checkbox-${app.id}`}
@@ -650,7 +735,11 @@ export default function Applications() {
                                   onClick={e => e.stopPropagation()}
                                   className="custom-checkbox"
                                 />
-                                <label htmlFor={`checkbox-${app.id}`} className="checkbox-label"></label>
+                                <label
+                                  htmlFor={`checkbox-${app.id}`}
+                                  className="checkbox-label"
+                                  onClick={e => e.stopPropagation()}
+                                ></label>
                               </div>
                               <div className="company-cell">
                                 {app.company.logo ? (
@@ -987,8 +1076,8 @@ export default function Applications() {
           <div
             className="context-menu-item"
             onClick={() => {
-              const app = applications.data.find(a => a.id === contextMenu.id);
-              if (app && stagesOrder.indexOf(app.stage) > 0) {
+              const app = applicationsData?.find((a: Application) => a.id === contextMenu.id);
+              if (app && stagesOrder.indexOf(app.stage as ApplicationStage) > 0) {
                 handleDecrementStage(contextMenu.id);
               }
               setContextMenu(null);
@@ -997,8 +1086,8 @@ export default function Applications() {
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
-                const app = applications.data.find((a: Application) => a.id === contextMenu.id);
-                if (app && stagesOrder.indexOf(app.stage) > 0) {
+                const app = applicationsData?.find((a: Application) => a.id === contextMenu.id);
+                if (app && stagesOrder.indexOf(app.stage as ApplicationStage) > 0) {
                   handleDecrementStage(contextMenu.id);
                 }
                 setContextMenu(null);
@@ -1011,8 +1100,8 @@ export default function Applications() {
           <div
             className="context-menu-item"
             onClick={() => {
-              const app = applications.data.find((a: Application) => a.id === contextMenu.id);
-              if (app && stagesOrder.indexOf(app.stage) < stagesOrder.length - 1) {
+              const app = applicationsData?.find((a: Application) => a.id === contextMenu.id);
+              if (app && stagesOrder.indexOf(app.stage as ApplicationStage) < stagesOrder.length - 1) {
                 handleIncrementStage(contextMenu.id);
               }
               setContextMenu(null);
@@ -1021,8 +1110,8 @@ export default function Applications() {
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
-                const app = applications.data.find((a: Application) => a.id === contextMenu.id);
-                if (app && stagesOrder.indexOf(app.stage) < stagesOrder.length - 1) {
+                const app = applicationsData?.find((a: Application) => a.id === contextMenu.id);
+                if (app && stagesOrder.indexOf(app.stage as ApplicationStage) < stagesOrder.length - 1) {
                   handleIncrementStage(contextMenu.id);
                 }
                 setContextMenu(null);

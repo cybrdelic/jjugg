@@ -13,7 +13,7 @@ import Timeline from '@/components/sections/Timeline';
 import Goals from '@/components/sections/Goals';
 import Reminders from '@/components/sections/Reminders';
 import DashboardHome from '@/components/sections/DashboardHome';
-import { activities, applications, appStats, upcomingEvents, userProfile } from './data';
+import { useDbData } from '@/hooks/useDatabaseData';
 import Calendar from '@/components/sections/Calendar';
 
 // Section Components
@@ -59,7 +59,29 @@ export default function Home(): JSX.Element {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // Use database data
   const {
+    applications,
+    activities,
+    upcomingEvents,
+    appStats,
+    userProfile,
+    loading: dbLoading,
+    error: dbError
+  } = useDbData(); // No arguments needed
+
+  // Debug logging
+  useEffect(() => {
+    if (!dbLoading && !dbError) {
+      console.log('🎯 Database data loaded in UI:', {
+        applications: applications?.length || 0,
+        activities: activities?.length || 0,
+        upcomingEvents: upcomingEvents?.length || 0,
+        appStats,
+        userProfile: userProfile?.name
+      });
+    }
+  }, [dbLoading, dbError, applications, activities, upcomingEvents, appStats, userProfile]); const {
     ENABLE_CALENDAR_VIEW,
     ENABLE_TIMELINE_SECTION,
     ENABLE_GOALS_SECTION,
@@ -71,7 +93,7 @@ export default function Home(): JSX.Element {
     { id: 'dashboard-home', key: 'dashboard-home', label: 'Dashboard', icon: <House className="w-5 h-5" />, color: 'var(--accent-blue)', badge: { count: 3 } },
     { id: 'applications-section', key: 'applications-section', label: 'Applications', icon: <FileText className="w-5 h-5" />, color: 'var(--accent-purple)', badge: { count: applications.length } },
     { id: 'reminders-section', key: 'reminders-section', label: 'Reminders', icon: <Bell className="w-5 h-5" />, color: 'var(--accent-pink)', badge: { count: upcomingEvents.length } },
-    { id: 'interviews-section', key: 'interviews-section', label: 'Interviews', icon: <Users className="w-5 h-5" />, color: 'var(--accent-orange)', badge: { count: appStats.interviewsScheduled } },
+    { id: 'interviews-section', key: 'interviews-section', label: 'Interviews', icon: <Users className="w-5 h-5" />, color: 'var(--accent-orange)', badge: { count: appStats?.interviewsScheduled || 0 } },
     ...(ENABLE_PROFILE_ARTIFACTS ? [{ id: 'profile-artifacts-section' as SectionKey, key: 'profile-artifacts-section' as SectionKey, label: 'Profile', icon: <User className="w-5 h-5" />, color: 'var(--accent-green)' }] : []),
     ...(ENABLE_GOALS_SECTION ? [{ id: 'goals-section' as SectionKey, key: 'goals-section' as SectionKey, label: 'Goals', icon: <Target className="w-5 h-5" />, color: 'var(--accent-yellow)' }] : []),
     ...(ENABLE_TIMELINE_SECTION ? [{ id: 'timeline-section' as SectionKey, key: 'timeline-section' as SectionKey, label: 'Timeline', icon: <Clock className="w-5 h-5" />, color: 'var(--accent-red)', badge: { count: activities.length } }] : []),
@@ -103,42 +125,64 @@ export default function Home(): JSX.Element {
       <main className="glass-main">
         <div className="main-content">
           <div className="reveal-element">
-            {/* Render sections based on feature flags */}
-            {currentSection === 'calendar-section' && !ENABLE_CALENDAR_VIEW && (
-              <div className="feature-disabled">
-                <h2>Calendar View</h2>
-                <p>This feature is currently disabled.</p>
+            {/* Show loading state */}
+            {dbLoading && (
+              <div className="loading-state">
+                <div className="loading-spinner"></div>
+                <p>Loading data from database...</p>
               </div>
             )}
-            {currentSection === 'timeline-section' && !ENABLE_TIMELINE_SECTION && (
-              <div className="feature-disabled">
-                <h2>Timeline View</h2>
-                <p>This feature is currently disabled.</p>
+
+            {/* Show error state */}
+            {dbError && (
+              <div className="error-state">
+                <h2>Database Error</h2>
+                <p>{dbError}</p>
+                <p>Please make sure the database is seeded by running: <code>npm run db:reset</code></p>
               </div>
             )}
-            {currentSection === 'goals-section' && !ENABLE_GOALS_SECTION && (
-              <div className="feature-disabled">
-                <h2>Goals View</h2>
-                <p>This feature is currently disabled.</p>
-              </div>
+
+            {/* Show content when data is loaded */}
+            {!dbLoading && !dbError && (
+              <>
+                {/* Render sections based on feature flags */}
+                {currentSection === 'calendar-section' && !ENABLE_CALENDAR_VIEW && (
+                  <div className="feature-disabled">
+                    <h2>Calendar View</h2>
+                    <p>This feature is currently disabled.</p>
+                  </div>
+                )}
+                {currentSection === 'timeline-section' && !ENABLE_TIMELINE_SECTION && (
+                  <div className="feature-disabled">
+                    <h2>Timeline View</h2>
+                    <p>This feature is currently disabled.</p>
+                  </div>
+                )}
+                {currentSection === 'goals-section' && !ENABLE_GOALS_SECTION && (
+                  <div className="feature-disabled">
+                    <h2>Goals View</h2>
+                    <p>This feature is currently disabled.</p>
+                  </div>
+                )}
+                {currentSection === 'profile-artifacts-section' && !ENABLE_PROFILE_ARTIFACTS && (
+                  <div className="feature-disabled">
+                    <h2>Profile Artifacts View</h2>
+                    <p>This feature is currently disabled.</p>
+                  </div>
+                )}
+                {/* Render the section if it's enabled */}
+                {((currentSection === 'calendar-section' && ENABLE_CALENDAR_VIEW) ||
+                  (currentSection === 'timeline-section' && ENABLE_TIMELINE_SECTION) ||
+                  (currentSection === 'goals-section' && ENABLE_GOALS_SECTION) ||
+                  (currentSection === 'profile-artifacts-section' && ENABLE_PROFILE_ARTIFACTS) ||
+                  !(
+                    currentSection === 'calendar-section' ||
+                    currentSection === 'timeline-section' ||
+                    currentSection === 'goals-section' ||
+                    currentSection === 'profile-artifacts-section'
+                  )) && sections[currentSection]()}
+              </>
             )}
-            {currentSection === 'profile-artifacts-section' && !ENABLE_PROFILE_ARTIFACTS && (
-              <div className="feature-disabled">
-                <h2>Profile Artifacts View</h2>
-                <p>This feature is currently disabled.</p>
-              </div>
-            )}
-            {/* Render the section if it's enabled */}
-            {((currentSection === 'calendar-section' && ENABLE_CALENDAR_VIEW) ||
-              (currentSection === 'timeline-section' && ENABLE_TIMELINE_SECTION) ||
-              (currentSection === 'goals-section' && ENABLE_GOALS_SECTION) ||
-              (currentSection === 'profile-artifacts-section' && ENABLE_PROFILE_ARTIFACTS) ||
-              !(
-                currentSection === 'calendar-section' ||
-                currentSection === 'timeline-section' ||
-                currentSection === 'goals-section' ||
-                currentSection === 'profile-artifacts-section'
-              )) && sections[currentSection]()}
           </div>
         </div>
       </main>
@@ -201,6 +245,43 @@ export default function Home(): JSX.Element {
         .feature-disabled p {
           color: var(--text-secondary);
           font-size: 16px;
+        }
+
+        .loading-state, .error-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 48px;
+          text-align: center;
+          min-height: 300px;
+        }
+
+        .loading-spinner {
+          width: 40px;
+          height: 40px;
+          border: 3px solid var(--border-thin);
+          border-top: 3px solid var(--accent-primary);
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin-bottom: 16px;
+        }
+
+        .error-state h2 {
+          color: var(--accent-red);
+          margin-bottom: 16px;
+        }
+
+        .error-state code {
+          background: var(--hover-bg);
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-family: monospace;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
 
         .floating-particles {

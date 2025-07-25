@@ -1837,3 +1837,70 @@
     transition: none !important;
   }
 }
+
+/* Stage Badge Dropdown Styles */
+.stage-badge-container {
+  position: relative;
+  display: inline-block;
+}
+
+.stage-badge.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+.stage-badge.clickable:hover {
+  background-color: var(--glass-background);
+  backdrop-filter: blur(12px);
+}
+
+.stage-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 120px;
+  background: var(--glass-card);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  padding: 4px;
+}
+
+.stage-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.stage-option:hover {
+  background-color: var(--glass-background-hover);
+}
+
+.stage-option.active {
+  font-weight: 600;
+}
+
+.stage-option .badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Quick Action Z-Index Fix */
+.quick-actions,
+.action-button,
+.context-menu {
+  z-index: 1100 !important;
+  position: relative;
+}

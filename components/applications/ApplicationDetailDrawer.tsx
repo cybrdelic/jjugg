@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X, Clock, Building, MapPin, DollarSign, Briefcase,
   CalendarDays, Phone, Mail, Link, ChevronLeft, ChevronRight,
@@ -58,7 +58,25 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
   onStageChange
 }) => {
   const [selectedTab, setSelectedTab] = useState<'overview' | 'timeline' | 'contacts' | 'documents' | 'notes'>('overview');
+  const [showStageDropdown, setShowStageDropdown] = useState(false);
   const { ENABLE_ADVANCED_APPLICATION_FEATURES } = useFeatureFlags();
+  const stageDropdownRef = useRef<HTMLDivElement>(null);
+
+  const allStages: ApplicationStage[] = ['applied', 'screening', 'interview', 'offer', 'rejected'];
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (stageDropdownRef.current && !stageDropdownRef.current.contains(event.target as Node)) {
+        setShowStageDropdown(false);
+      }
+    };
+
+    if (showStageDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showStageDropdown]);
 
   // Format date
   const formatDate = (date: Date): string => {
@@ -168,12 +186,43 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
               </div>
             </div>
 
-            <div className="stage-badge" style={{ color: getStageColor(stage) }}>
+            <div className="stage-badge-container" ref={stageDropdownRef}>
               <div
-                className="badge-dot"
-                style={{ backgroundColor: getStageColor(stage) }}
-              />
-              <span>{getStageLabel(stage)}</span>
+                className="stage-badge clickable"
+                style={{ color: getStageColor(stage) }}
+                onClick={() => setShowStageDropdown(!showStageDropdown)}
+              >
+                <div
+                  className="badge-dot"
+                  style={{ backgroundColor: getStageColor(stage) }}
+                />
+                <span>{getStageLabel(stage)}</span>
+              </div>
+
+              {showStageDropdown && (
+                <div className="stage-dropdown">
+                  {allStages.map((stageOption) => (
+                    <div
+                      key={stageOption}
+                      className={`stage-option ${stageOption === stage ? 'active' : ''}`}
+                      style={{
+                        color: getStageColor(stageOption),
+                        backgroundColor: stageOption === stage ? 'var(--glass-background)' : 'transparent'
+                      }}
+                      onClick={() => {
+                        onStageChange(stageOption);
+                        setShowStageDropdown(false);
+                      }}
+                    >
+                      <div
+                        className="badge-dot"
+                        style={{ backgroundColor: getStageColor(stageOption) }}
+                      />
+                      <span>{getStageLabel(stageOption)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </header>
