@@ -1,8 +1,8 @@
 import { db } from './connection';
 
 export const createTables = () => {
-    // Users table
-    db.exec(`
+  // Users table
+  db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -13,8 +13,8 @@ export const createTables = () => {
     )
   `);
 
-    // Companies table
-    db.exec(`
+  // Companies table
+  db.exec(`
     CREATE TABLE IF NOT EXISTS companies (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -27,8 +27,8 @@ export const createTables = () => {
     )
   `);
 
-    // Applications table
-    db.exec(`
+  // Applications table
+  db.exec(`
     CREATE TABLE IF NOT EXISTS applications (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -39,6 +39,12 @@ export const createTables = () => {
       salary_range TEXT,
       job_description TEXT,
       notes TEXT,
+      location TEXT DEFAULT '',
+      remote BOOLEAN DEFAULT FALSE,
+      bonus TEXT,
+      benefits TEXT, -- JSON string of benefits array
+      is_shortlisted BOOLEAN DEFAULT FALSE,
+      shortlisted_at DATETIME,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
@@ -46,8 +52,8 @@ export const createTables = () => {
     )
   `);
 
-    // Interviews table
-    db.exec(`
+  // Interviews table
+  db.exec(`
     CREATE TABLE IF NOT EXISTS interviews (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       application_id INTEGER NOT NULL,
@@ -65,8 +71,8 @@ export const createTables = () => {
     )
   `);
 
-    // Activities table (for timeline/history tracking)
-    db.exec(`
+  // Activities table (for timeline/history tracking)
+  db.exec(`
     CREATE TABLE IF NOT EXISTS activities (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -83,8 +89,8 @@ export const createTables = () => {
     )
   `);
 
-    // Reminders/Events table
-    db.exec(`
+  // Reminders/Events table
+  db.exec(`
     CREATE TABLE IF NOT EXISTS events (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -101,8 +107,8 @@ export const createTables = () => {
     )
   `);
 
-    // Goals table
-    db.exec(`
+  // Goals table
+  db.exec(`
     CREATE TABLE IF NOT EXISTS goals (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -119,8 +125,8 @@ export const createTables = () => {
     )
   `);
 
-    // Contacts table (for networking)
-    db.exec(`
+  // Contacts table (for networking)
+  db.exec(`
     CREATE TABLE IF NOT EXISTS contacts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -139,15 +145,15 @@ export const createTables = () => {
     )
   `);
 
-    console.log('✅ Database tables created successfully');
+  console.log('✅ Database tables created successfully');
 };
 
 export const dropTables = () => {
-    const tables = ['contacts', 'goals', 'events', 'activities', 'interviews', 'applications', 'companies', 'users'];
+  const tables = ['contacts', 'goals', 'events', 'activities', 'interviews', 'applications', 'companies', 'users'];
 
-    tables.forEach(table => {
-        db.exec(`DROP TABLE IF EXISTS ${table}`);
-    });
+  tables.forEach(table => {
+    db.exec(`DROP TABLE IF EXISTS ${table}`);
+  });
 
-    console.log('🗑️ Database tables dropped successfully');
+  console.log('🗑️ Database tables dropped successfully');
 };

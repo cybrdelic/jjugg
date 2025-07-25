@@ -126,6 +126,8 @@ export interface Application {
   tasks?: Task[]; // Optional array of tasks
   documents?: Document[]; // Optional array of documents
   allNotes?: Note[]; // Optional array of notes
+  isShortlisted?: boolean; // Whether the application is shortlisted
+  shortlistedAt?: Date; // Date when shortlisted
 }
 
 export interface StatusUpdate {

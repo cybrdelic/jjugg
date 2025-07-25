@@ -31,6 +31,12 @@ export interface Application {
     salary_range?: string;
     job_description?: string;
     notes?: string;
+    location?: string;
+    remote?: boolean;
+    bonus?: string;
+    benefits?: string;
+    is_shortlisted?: boolean;
+    shortlisted_at?: string;
     created_at: string;
     updated_at: string;
     company?: Company;
@@ -266,6 +272,30 @@ export class DatabaseService {
         if (data.notes !== undefined) {
             updates.push('notes = ?');
             values.push(data.notes);
+        }
+        if (data.location !== undefined) {
+            updates.push('location = ?');
+            values.push(data.location);
+        }
+        if (data.remote !== undefined) {
+            updates.push('remote = ?');
+            values.push(data.remote);
+        }
+        if (data.bonus !== undefined) {
+            updates.push('bonus = ?');
+            values.push(data.bonus);
+        }
+        if (data.benefits !== undefined) {
+            updates.push('benefits = ?');
+            values.push(data.benefits);
+        }
+        if (data.is_shortlisted !== undefined) {
+            updates.push('is_shortlisted = ?');
+            values.push(data.is_shortlisted);
+        }
+        if (data.shortlisted_at !== undefined) {
+            updates.push('shortlisted_at = ?');
+            values.push(data.shortlisted_at);
         }
 
         if (updates.length === 0) {

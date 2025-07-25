@@ -10,12 +10,18 @@
     "tailwind:init": "tailwindcss init -p",
     "db:seed": "tsx database/scripts/seed.ts",
     "db:unseed": "tsx database/scripts/unseed.ts",
-    "db:reset": "npm run db:unseed && npm run db:seed"
+    "db:reset": "npm run db:unseed && npm run db:seed",
+    "db:setup": "tsx database/scripts/setup.ts",
+    "db:migrate": "tsx database/scripts/migrate-runner.ts up",
+    "db:migrate:down": "tsx database/scripts/migrate-runner.ts down",
+    "db:migrate:status": "tsx database/scripts/migrate-runner.ts status",
+    "db:migrate:create": "tsx database/scripts/migrate-runner.ts create"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@types/better-sqlite3": "^7.6.13",
     "better-sqlite3": "^12.2.0",
+    "commander": "^12.1.0",
     "lucide-react": "^0.482.0",
     "next": "15.2.2",
     "openai": "^4.88.0",

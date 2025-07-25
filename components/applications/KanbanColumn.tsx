@@ -10,6 +10,8 @@ interface KanbanColumnProps {
   children: React.ReactNode;
   onAddNew?: () => void;
   onCollapseToggle?: (collapsed: boolean) => void;
+  onDrop?: (draggedItemId: string) => void;
+  stage?: string;
 }
 
 const KanbanColumn: React.FC<KanbanColumnProps> = ({
@@ -18,18 +20,20 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
   color,
   children,
   onAddNew,
-  onCollapseToggle
+  onCollapseToggle,
+  onDrop,
+  stage
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  
+
   // Calculate RGB value for backgrounds
   const rgbMatch = color.match(/var\(--accent-(.*)-rgb\)/);
-  const rgbVar = rgbMatch 
-    ? color.replace(')', '-rgb)') 
+  const rgbVar = rgbMatch
+    ? color.replace(')', '-rgb)')
     : color.replace('var(--accent-', 'var(--accent-').replace(')', '-rgb)');
-  
+
   // Toggle column collapse state
   const toggleCollapse = () => {
     const newState = !isCollapsed;
@@ -38,15 +42,37 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
       onCollapseToggle(newState);
     }
   };
-  
+
+  // Handle drag over
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  // Handle drag leave
+  const handleDragLeave = (e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false);
+    }
+  };
+
+  // Handle drop
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+
+    const draggedItemId = e.dataTransfer.getData('text/plain');
+    if (draggedItemId && onDrop) {
+      onDrop(draggedItemId);
+    }
+  };
+
   return (
-    <div 
-      className={`kanban-column ${isCollapsed ? 'collapsed' : ''} ${isHovered ? 'hovered' : ''}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setIsMenuOpen(false);
-      }}
+    <div
+      className={`kanban-column ${isCollapsed ? 'collapsed' : ''} ${isDragOver ? 'drag-over' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
       style={{
         '--column-color': color,
         '--column-color-rgb': rgbVar
@@ -58,27 +84,27 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           <h3 className="column-title">{title}</h3>
           <span className="column-count">{count}</span>
         </div>
-        
+
         <div className="header-actions">
           {onAddNew && (
             <button className="action-button add-button" onClick={onAddNew} title="Add new application">
               <PlusCircle size={16} />
             </button>
           )}
-          
+
           <button className="action-button collapse-button" onClick={toggleCollapse} title={isCollapsed ? 'Expand' : 'Collapse'}>
             {isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
           </button>
-          
+
           <div className="menu-container">
-            <button 
-              className="action-button menu-button" 
+            <button
+              className="action-button menu-button"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               title="More options"
             >
               <MoreHorizontal size={16} />
             </button>
-            
+
             {isMenuOpen && (
               <div className="column-menu">
                 <button className="menu-item">Sort by newest</button>
@@ -91,10 +117,10 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           </div>
         </div>
       </div>
-      
+
       <div className="column-content">
         {children}
-        
+
         {count === 0 && (
           <div className="empty-column">
             <p>No applications yet</p>
@@ -107,7 +133,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           </div>
         )}
       </div>
-      
+
       <style jsx>{`
         .kanban-column {
           display: flex;
@@ -123,7 +149,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           position: relative;
           overflow: hidden;
         }
-        
+
         .kanban-column::before {
           content: '';
           position: absolute;
@@ -135,18 +161,18 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           opacity: 0.8;
           transition: all 0.3s var(--easing-standard);
         }
-        
+
         .kanban-column.hovered {
           transform: translateY(-3px);
           box-shadow: var(--shadow-lg), 0 0 15px rgba(var(--column-color-rgb), 0.1);
           border-color: rgba(var(--column-color-rgb), 0.3);
         }
-        
+
         .kanban-column.hovered::before {
           height: 6px;
           opacity: 1;
         }
-        
+
         .column-header {
           display: flex;
           justify-content: space-between;
@@ -155,17 +181,17 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           border-bottom: 1px solid var(--border-divider);
           transition: all 0.3s var(--easing-standard);
         }
-        
+
         .kanban-column.collapsed {
           height: auto;
         }
-        
+
         .header-left {
           display: flex;
           align-items: center;
           gap: 10px;
         }
-        
+
         .header-indicator {
           width: 12px;
           height: 12px;
@@ -173,12 +199,12 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           background-color: var(--column-color);
           transition: all 0.3s var(--easing-standard);
         }
-        
+
         .kanban-column.hovered .header-indicator {
           transform: scale(1.2);
           box-shadow: 0 0 8px rgba(var(--column-color-rgb), 0.5);
         }
-        
+
         .column-title {
           margin: 0;
           font-size: 16px;
@@ -186,11 +212,11 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           color: var(--text-primary);
           transition: color 0.3s var(--easing-standard);
         }
-        
+
         .kanban-column.hovered .column-title {
           color: var(--column-color);
         }
-        
+
         .column-count {
           display: flex;
           align-items: center;
@@ -205,18 +231,18 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           font-weight: 500;
           transition: all 0.3s var(--easing-standard);
         }
-        
+
         .kanban-column.hovered .column-count {
           background-color: rgba(var(--column-color-rgb), 0.1);
           color: var(--column-color);
         }
-        
+
         .header-actions {
           display: flex;
           align-items: center;
           gap: 4px;
         }
-        
+
         .action-button {
           display: flex;
           align-items: center;
@@ -230,20 +256,20 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           cursor: pointer;
           transition: all 0.2s var(--easing-standard);
         }
-        
+
         .action-button:hover {
           background: var(--hover-bg);
           color: var(--text-primary);
         }
-        
+
         .add-button:hover {
           color: var(--column-color);
         }
-        
+
         .menu-container {
           position: relative;
         }
-        
+
         .column-menu {
           position: absolute;
           top: calc(100% + 5px);
@@ -257,7 +283,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           overflow: hidden;
           animation: fadeInDown 0.2s var(--easing-standard);
         }
-        
+
         .menu-item {
           display: flex;
           width: 100%;
@@ -270,18 +296,18 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           cursor: pointer;
           transition: all 0.2s var(--easing-standard);
         }
-        
+
         .menu-item:hover {
           background: var(--hover-bg);
           color: var(--text-primary);
         }
-        
+
         .menu-divider {
           height: 1px;
           background: var(--border-divider);
           margin: 5px 0;
         }
-        
+
         .column-content {
           display: flex;
           flex-direction: column;
@@ -291,13 +317,13 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           max-height: calc(100vh - 220px);
           transition: all 0.3s var(--easing-standard);
         }
-        
+
         .kanban-column.collapsed .column-content {
           max-height: 0;
           padding: 0 16px;
           overflow: hidden;
         }
-        
+
         .empty-column {
           display: flex;
           flex-direction: column;
@@ -306,13 +332,13 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           padding: 30px 0;
           text-align: center;
         }
-        
+
         .empty-column p {
           margin: 0 0 15px 0;
           color: var(--text-tertiary);
           font-size: 14px;
         }
-        
+
         .add-card-button {
           display: flex;
           align-items: center;
@@ -326,12 +352,12 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           cursor: pointer;
           transition: all 0.2s var(--easing-standard);
         }
-        
+
         .add-card-button:hover {
           background: rgba(var(--column-color-rgb), 0.15);
           transform: translateY(-1px);
         }
-        
+
         @keyframes fadeInDown {
           from {
             opacity: 0;

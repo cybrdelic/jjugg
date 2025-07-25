@@ -21,6 +21,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
                 break;
 
             case 'PUT':
+            case 'PATCH':
                 const updates = req.body;
                 const updatedApp = DatabaseService.updateApplication(appId, updates);
                 res.status(200).json(updatedApp);
@@ -32,7 +33,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
                 break;
 
             default:
-                res.setHeader('Allow', ['GET', 'PUT', 'DELETE']);
+                res.setHeader('Allow', ['GET', 'PUT', 'PATCH', 'DELETE']);
                 res.status(405).end(`Method ${req.method} Not Allowed`);
         }
     } catch (error) {

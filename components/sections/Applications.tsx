@@ -16,6 +16,7 @@ import Portal from '../Portal';
 import ApplicationDetailDrawer from '../applications/ApplicationDetailDrawer';
 import { Application, ApplicationStage, InterviewEvent, StatusUpdate } from '@/types';
 import { useDbData } from '../../hooks/useDatabaseData';
+import EnhancedSearch from '../EnhancedSearch';
 
 // Helper Functions
 const formatDate = (date: Date): string =>
@@ -98,6 +99,18 @@ export default function Applications() {
   const [contextMenu, setContextMenu] = useState<{ id: string, x: number, y: number } | null>(null);
   const [isMobileView, setIsMobileView] = useState<boolean>(false);
   const [isAutosizeEnabled, setIsAutosizeEnabled] = useState<boolean>(false);
+  const [tableViewDensity, setTableViewDensity] = useState<'compact' | 'comfortable' | 'spacious'>('comfortable');
+  const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
+  const [quickFilters, setQuickFilters] = useState<{
+    stage: ApplicationStage | 'all',
+    dateRange: '7d' | '30d' | '90d' | 'all',
+    salary: 'with' | 'without' | 'all'
+  }>({
+    stage: 'all',
+    dateRange: 'all',
+    salary: 'all'
+  });
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState<boolean>(false);
   const tableRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
@@ -293,6 +306,45 @@ export default function Applications() {
     }
   };
 
+  // Handle kanban drag and drop
+  const handleKanbanDrop = async (draggedItemId: string, targetStage: ApplicationStage) => {
+    try {
+      const draggedApp = applicationsData?.find((app: Application) => app.id === draggedItemId);
+      if (!draggedApp) return;
+
+      if (draggedApp.stage !== targetStage) {
+        await updateApplication(draggedItemId, { stage: targetStage });
+        addStatusUpdate(`Moved to ${getStageLabel(targetStage)}`, draggedItemId);
+      }
+    } catch (error) {
+      console.error('Failed to update stage via drag and drop:', error);
+      addStatusUpdate('Failed to update stage', draggedItemId);
+    }
+  };
+
+  const handleToggleShortlist = async (appId: string) => {
+    try {
+      const app = applicationsData?.find((a: Application) => a.id === appId);
+      if (!app) return;
+
+      const newShortlistStatus = !app.isShortlisted;
+
+      // Update via the database hook
+      await updateApplication(appId, {
+        isShortlisted: newShortlistStatus,
+        shortlistedAt: newShortlistStatus ? new Date().toISOString() : null
+      });
+
+      addStatusUpdate(
+        newShortlistStatus ? 'Added to shortlist' : 'Removed from shortlist',
+        appId
+      );
+    } catch (error) {
+      console.error('Error toggling shortlist:', error);
+      addStatusUpdate('Failed to update shortlist status', appId);
+    }
+  };
+
   const handleEditApplication = (appId: string) => {
     setSelectedApplication(appId);
     console.log(`Edit application ${appId}`);
@@ -449,16 +501,12 @@ export default function Applications() {
         variant="default"
       >
         <div className="header-actions">
-          <div className="search-bar">
-            <Search size={18} className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search by position, company, or notes..."
-              value={searchTerm}
-              onChange={handleSearch}
-              className="search-input"
-            />
-          </div>
+          <EnhancedSearch
+            applications={applicationsData || []}
+            onSearch={setSearchTerm}
+            placeholder="Search applications, companies, positions..."
+            className="search-bar"
+          />
           {selectedRows.length > 0 && (
             <ActionButton
               label={`Delete ${selectedRows.length}`}
@@ -519,6 +567,71 @@ export default function Applications() {
                 </button>
               </Tooltip>
             </div>
+
+            {/* Density Controls */}
+            <div className="density-controls">
+              <Tooltip content="Table Density" placement="bottom">
+                <div className="density-selector">
+                  <button
+                    className={`density-btn ${tableViewDensity === 'compact' ? 'active' : ''}`}
+                    onClick={() => setTableViewDensity('compact')}
+                    title="Compact"
+                  >
+                    <Minus size={12} />
+                  </button>
+                  <button
+                    className={`density-btn ${tableViewDensity === 'comfortable' ? 'active' : ''}`}
+                    onClick={() => setTableViewDensity('comfortable')}
+                    title="Comfortable"
+                  >
+                    <Grid3x3 size={12} />
+                  </button>
+                  <button
+                    className={`density-btn ${tableViewDensity === 'spacious' ? 'active' : ''}`}
+                    onClick={() => setTableViewDensity('spacious')}
+                    title="Spacious"
+                  >
+                    <Plus size={12} />
+                  </button>
+                </div>
+              </Tooltip>
+            </div>
+
+            {/* Quick Filters */}
+            <div className="quick-filters">
+              <select
+                value={quickFilters.stage}
+                onChange={(e) => setQuickFilters({ ...quickFilters, stage: e.target.value as ApplicationStage | 'all' })}
+                className="quick-filter-select"
+              >
+                <option value="all">All Stages</option>
+                <option value="applied">Applied</option>
+                <option value="screening">Screening</option>
+                <option value="interview">Interview</option>
+                <option value="offer">Offer</option>
+                <option value="rejected">Rejected</option>
+              </select>
+
+              <select
+                value={quickFilters.dateRange}
+                onChange={(e) => setQuickFilters({ ...quickFilters, dateRange: e.target.value as '7d' | '30d' | '90d' | 'all' })}
+                className="quick-filter-select"
+              >
+                <option value="all">All Time</option>
+                <option value="7d">Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+                <option value="90d">Last 90 days</option>
+              </select>
+
+              <button
+                className={`control-btn ${showAdvancedFilters ? 'active' : ''}`}
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                title="Advanced Filters"
+              >
+                <SlidersHorizontal size={14} />
+              </button>
+            </div>
+
             <div className="control-actions">
               <Tooltip
                 content="Customize Columns"
@@ -556,8 +669,10 @@ export default function Applications() {
                   title={getStageLabel(stage)}
                   count={applicationsByStage[stage].length}
                   color={getStageColor(stage)}
+                  stage={stage}
                   onAddNew={() => { console.log(`Add new in ${stage}`); }}
                   onCollapseToggle={(collapsed) => console.log(`${stage} column ${collapsed ? 'collapsed' : 'expanded'}`)}
+                  onDrop={(draggedItemId) => handleKanbanDrop(draggedItemId, stage as ApplicationStage)}
                 >
                   {applicationsByStage[stage].map(app => (
                     <div key={app.id} className="application-wrapper">
@@ -576,9 +691,10 @@ export default function Applications() {
                         location={app.location}
                         remote={app.remote}
                         notes={app.notes}
+                        isShortlisted={app.isShortlisted}
                         onEdit={() => handleEditApplication(app.id)}
                         onDelete={() => handleDeleteApplication(app.id)}
-                        onStageChange={(newStage) => handleStageChange(app.id, newStage)}
+                        onShortlistToggle={() => handleToggleShortlist(app.id)}
                         onClick={() => handleOpenDetailModal(app.id)}
                       />
                       <div
@@ -714,7 +830,7 @@ export default function Applications() {
                         <div
                           key={app.id}
                           ref={index === visibleApplications.length - 1 ? lastRowRef : null}
-                          className={`table-row ${selectedRows.includes(app.id) ? 'selected' : ''} ${mounted ? 'animate-in' : ''} ${isMobileView ? 'mobile-view' : ''} ${isAutosizeEnabled ? 'autosize' : ''}`}
+                          className={`table-row ${selectedRows.includes(app.id) ? 'selected' : ''} ${mounted ? 'animate-in' : ''} ${isMobileView ? 'mobile-view' : ''} ${isAutosizeEnabled ? 'autosize' : ''} density-${tableViewDensity} ${inlineEditingId === app.id ? 'editing' : ''}`}
                           style={{ animationDelay: `${index * 0.05}s` }}
                           onClick={(e) => handleRowClick(app.id, e)}
                           onContextMenu={(e) => handleContextMenu(app.id, e)}
@@ -959,23 +1075,51 @@ export default function Applications() {
                             </div>
                           )}
                           <div className="row-actions-menu" onClick={e => e.stopPropagation()}>
+                            <div className="quick-actions">
+                              <Tooltip content={app.isShortlisted ? "Remove from shortlist" : "Add to shortlist"} placement="top">
+                                <button
+                                  className={`quick-action-btn shortlist-btn ${app.isShortlisted ? 'active' : ''}`}
+                                  onClick={() => handleToggleShortlist(app.id)}
+                                >
+                                  <CheckSquare size={12} />
+                                </button>
+                              </Tooltip>
+                              <Tooltip content="Edit inline" placement="top">
+                                <button
+                                  className="quick-action-btn edit-btn"
+                                  onClick={() => setInlineEditingId(inlineEditingId === app.id ? null : app.id)}
+                                >
+                                  <Edit2 size={12} />
+                                </button>
+                              </Tooltip>
+                              <Tooltip content="Add note" placement="top">
+                                <button
+                                  className="quick-action-btn note-btn"
+                                  onClick={() => console.log('Add note for', app.id)}
+                                >
+                                  <Plus size={12} />
+                                </button>
+                              </Tooltip>
+                            </div>
                             <div className="row-stage-controls">
-                              <button
-                                className="stage-control-btn prev-stage"
-                                onClick={() => handleDecrementStage(app.id)}
-                                disabled={stagesOrder.indexOf(app.stage) === 0}
-                                title="Move to previous stage"
-                              >
-                                <ArrowLeft size={14} />
-                              </button>
-                              <button
-                                className="stage-control-btn next-stage"
-                                onClick={() => handleIncrementStage(app.id)}
-                                disabled={stagesOrder.indexOf(app.stage) === stagesOrder.length - 1}
-                                title="Move to next stage"
-                              >
-                                <ArrowRight size={14} />
-                              </button>
+                              <Tooltip content="Previous stage" placement="top">
+                                <button
+                                  className="stage-control-btn prev-stage"
+                                  onClick={() => handleDecrementStage(app.id)}
+                                  disabled={stagesOrder.indexOf(app.stage) === 0}
+                                >
+                                  <ArrowLeft size={12} />
+                                </button>
+                              </Tooltip>
+                              <Tooltip content="Next stage" placement="top">
+                                <button
+                                  className="stage-control-btn next-stage"
+                                  onClick={() => handleIncrementStage(app.id)}
+                                  disabled={stagesOrder.indexOf(app.stage) === stagesOrder.length - 1}
+                                >
+                                  <ArrowRight size={12} />
+                                </button>
+                              </Tooltip>
                             </div>
                           </div>
                         </div>
@@ -1282,6 +1426,79 @@ export default function Applications() {
           }
         }
 
+        /* Density Controls */
+        .density-controls {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-left: 12px;
+          padding-left: 12px;
+          border-left: 1px solid var(--border-thin);
+        }
+
+        .density-selector {
+          display: flex;
+          align-items: center;
+          gap: 2px;
+          background: var(--glass-bg);
+          border-radius: 6px;
+          padding: 2px;
+          border: 1px solid var(--border-thin);
+        }
+
+        .density-btn {
+          padding: 4px 6px;
+          border: none;
+          background: transparent;
+          border-radius: 4px;
+          color: var(--text-secondary);
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 28px;
+          height: 28px;
+        }
+
+        .density-btn:hover {
+          background: var(--hover-bg);
+          color: var(--text-primary);
+        }
+
+        .density-btn.active {
+          background: var(--accent-blue);
+          color: white;
+        }
+
+        /* Quick Filters */
+        .quick-filters {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          margin-left: 12px;
+          padding-left: 12px;
+          border-left: 1px solid var(--border-thin);
+        }
+
+        .quick-filter-select {
+          padding: 4px 8px;
+          border: 1px solid var(--border-thin);
+          border-radius: 6px;
+          background: var(--glass-bg);
+          color: var(--text-primary);
+          font-size: 12px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          min-width: 100px;
+        }
+
+        .quick-filter-select:focus {
+          outline: none;
+          border-color: var(--accent-blue);
+          box-shadow: 0 0 0 2px rgba(var(--accent-blue-rgb), 0.1);
+        }
+
         .control-actions {
           margin-left: auto;
           position: relative;
@@ -1337,32 +1554,54 @@ export default function Applications() {
         }
 
         .dashboard-card {
-          background: var(--glass-bg);
-          border: 1px solid var(--border-thin);
-          border-radius: 8px;
+          background: #ffffff;
+          border: 1px solid #e5e7eb;
+          border-radius: 16px;
           padding: 0;
           overflow: hidden;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        :global(.dark) .dashboard-card {
+          background: #1f2937;
+          border-color: #374151;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
         }
 
         .table-wrapper {
           position: relative;
-          padding-top: 40px;
+          background: #ffffff;
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          border: 1px solid #e5e7eb;
+        }
+
+        :global(.dark) .table-wrapper {
+          background: #1f2937;
+          border-color: #374151;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
         }
 
         .table-header {
           display: grid;
-          grid-template-columns: 1.5fr 2fr 1fr 1.2fr 1fr 1.5fr 1.2fr 1fr;
-          padding: 10px 12px;
-          border-bottom: 1px solid var(--border-divider);
-          background: var(--glass-bg);
+          grid-template-columns: 1.8fr 2.2fr 1fr 1.5fr 0.8fr 1.2fr 1fr 1fr;
+          padding: 20px 24px;
+          background: #f8fafc;
+          border-bottom: 1px solid #e5e7eb;
+          font-size: 13px;
+          font-weight: 600;
+          color: #374151;
           position: sticky;
           top: 0;
-          z-index: 9;
-          font-size: 12px;
-          font-weight: 600;
-          color: var(--text-secondary);
-          width: 100%;
-          transition: all 0.3s ease;
+          z-index: 10;
+          gap: 8px;
+        }
+
+        :global(.dark) .table-header {
+          background: #374151;
+          border-bottom-color: #4b5563;
+          color: #d1d5db;
         }
 
         .table-header.autosize {
@@ -1394,49 +1633,105 @@ export default function Applications() {
         }
 
         .header-cell {
-          padding: 8px 10px;
           display: flex;
           flex-direction: column;
-          gap: 4px;
+          gap: 8px;
           cursor: pointer;
-          transition: all 0.2s ease;
-          justify-content: flex-start;
-          align-items: flex-start;
-          text-align: left;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .header-cell span {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.025em;
+          font-size: 11px;
+          color: #6b7280;
+          transition: color 0.2s ease;
+        }
+
+        :global(.dark) .header-cell span {
+          color: #9ca3af;
         }
 
         .header-cell:hover span {
-          color: var(--accent-blue);
+          color: #667eea;
         }
 
         .header-cell.sorted span {
-          color: var(--accent-blue);
+          color: #667eea;
+        }
+
+        .filter-input {
+          padding: 6px 8px;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          font-size: 12px;
+          background: #ffffff;
+          color: #374151;
+          transition: all 0.2s ease;
+        }
+
+        :global(.dark) .filter-input {
+          background: #4b5563;
+          border-color: #6b7280;
+          color: #f3f4f6;
+        }
+
+        .filter-input:focus {
+          outline: none;
+          border-color: #667eea;
+          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
         .table-body {
           max-height: calc(100vh - 300px);
           overflow-y: auto;
-          background: var(--background);
-          padding: 0 12px 12px;
+          background: #ffffff;
+        }
+
+        :global(.dark) .table-body {
+          background: #1f2937;
         }
 
         .table-row {
           display: grid;
-          grid-template-columns: 1.5fr 2fr 1fr 1.2fr 1fr 1.5fr 1.2fr 1fr;
-          width: 100%;
+          grid-template-columns: 1.8fr 2.2fr 1fr 1.5fr 0.8fr 1.2fr 1fr 1fr;
           align-items: center;
-          padding: 16px 14px;
-          border-bottom: 1px solid var(--border-divider);
-          background: var(--glass-bg);
-          transition: all 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+          padding: 16px 20px;
+          border-bottom: 1px solid #f1f5f9;
+          background: #ffffff;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
           position: relative;
-          opacity: 0;
-          transform: translateY(10px);
           cursor: pointer;
-          border-radius: 10px;
-          margin: 6px 0;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-          overflow: hidden;
+          min-height: 60px;
+          gap: 8px;
+        }
+
+        /* Density Variations */
+        .table-row.density-compact {
+          padding: 8px 16px;
+          min-height: 44px;
+          gap: 6px;
+        }
+
+        .table-row.density-comfortable {
+          padding: 16px 20px;
+          min-height: 60px;
+          gap: 8px;
+        }
+
+        .table-row.density-spacious {
+          padding: 24px 28px;
+          min-height: 76px;
+          gap: 12px;
+        }
+
+        :global(.dark) .table-row {
+          background: #1f2937;
+          border-bottom-color: #374151;
         }
 
         .table-row.autosize {
@@ -1470,40 +1765,55 @@ export default function Applications() {
         .table-row::before {
           content: '';
           position: absolute;
-          top: 0;
           left: 0;
+          top: 0;
           width: 4px;
           height: 100%;
           background: transparent;
-          transition: all 0.2s ease;
-        }
-
-        .table-row:last-child {
-          border-bottom: none;
-        }
-
-        .table-row.animate-in {
-          animation: rowEnter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+          transition: background 0.2s ease;
         }
 
         .table-row:hover {
-          background: var(--hover-bg);
-          box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-          transform: translateY(-3px) scale(1.01);
+          background: #f8fafc;
+          border-left: 4px solid #667eea;
+          padding-left: 20px;
+        }
+
+        :global(.dark) .table-row:hover {
+          background: #374151;
         }
 
         .table-row:hover::before {
-          background: var(--accent-blue);
+          background: #667eea;
         }
 
         .table-row.selected {
-          background: rgba(var(--accent-blue-rgb), 0.08);
-          box-shadow: 0 6px 15px rgba(var(--accent-blue-rgb), 0.15);
-          border: 1px solid rgba(var(--accent-blue-rgb), 0.2);
+          background: #eff6ff;
+          border-left: 4px solid #667eea;
+          padding-left: 20px;
+        }
+
+        :global(.dark) .table-row.selected {
+          background: #1e3a8a;
         }
 
         .table-row.selected::before {
-          background: var(--accent-blue);
+          background: #667eea;
+        }
+
+        .table-row.animate-in {
+          animation: rowSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes rowSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
         /* Mobile view styles */
@@ -1629,27 +1939,39 @@ export default function Applications() {
         }
 
         .cell {
-          padding: 8px 10px;
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 10px;
           font-size: 14px;
-          color: var(--text-primary);
+          color: #1f2937;
           position: relative;
-          justify-content: flex-start;
-          text-align: left;
-          overflow: hidden;
+          min-height: 40px;
+        }
+
+        :global(.dark) .cell {
+          color: #f3f4f6;
         }
 
         .cell-icon {
-          color: var(--text-tertiary);
+          color: #9ca3af;
           flex-shrink: 0;
+          width: 16px;
+          height: 16px;
+        }
+
+        .cell-value {
+          font-weight: 500;
+          color: #1f2937;
+        }
+
+        :global(.dark) .cell-value {
+          color: #f9fafb;
         }
 
         .checkbox-wrapper {
           position: relative;
-          width: 18px;
-          height: 18px;
+          width: 20px;
+          height: 20px;
           margin-right: 12px;
         }
 
@@ -1664,76 +1986,110 @@ export default function Applications() {
           position: absolute;
           top: 0;
           left: 0;
-          width: 18px;
-          height: 18px;
-          background: var(--glass-bg);
-          border: 1px solid var(--border-thin);
-          border-radius: 4px;
+          width: 20px;
+          height: 20px;
+          background: #ffffff;
+          border: 2px solid #d1d5db;
+          border-radius: 6px;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        :global(.dark) .checkbox-label {
+          background: #374151;
+          border-color: #6b7280;
         }
 
         .custom-checkbox:checked + .checkbox-label {
-          background: var(--accent-blue);
-          border-color: var(--accent-blue);
+          background: #667eea;
+          border-color: #667eea;
         }
 
         .custom-checkbox:checked + .checkbox-label::after {
-          content: '';
-          position: absolute;
-          top: 4px;
-          left: 6px;
-          width: 5px;
-          height: 8px;
-          border: solid white;
-          border-width: 0 2px 2px 0;
-          transform: rotate(45deg);
+          content: '✓';
+          color: white;
+          font-weight: bold;
+          font-size: 12px;
         }
 
         .company-cell {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 12px;
+          min-width: 0;
         }
 
         .company-logo {
-          width: 28px;
-          height: 28px;
-          border-radius: 6px;
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
           object-fit: cover;
-          border: 1px solid var(--border-thin);
+          border: 1px solid #e5e7eb;
+          flex-shrink: 0;
+        }
+
+        :global(.dark) .company-logo {
+          border-color: #4b5563;
         }
 
         .company-logo-placeholder {
-          width: 28px;
-          height: 28px;
-          border-radius: 6px;
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
           display: flex;
           align-items: center;
           justify-content: center;
           color: white;
-          font-weight: 600;
+          font-weight: 700;
           font-size: 14px;
+          flex-shrink: 0;
         }
 
         .company-name {
           font-weight: 600;
-          letter-spacing: -0.2px;
+          color: #1f2937;
+          font-size: 14px;
+          truncate: ellipsis;
+          white-space: nowrap;
+          overflow: hidden;
+        }
+
+        :global(.dark) .company-name {
+          color: #f9fafb;
         }
 
         .position-cell {
           display: flex;
           flex-direction: column;
           gap: 4px;
-          width: 100%;
+          min-width: 0;
         }
 
         .position-title {
           font-weight: 600;
-          color: var(--text-primary);
-          max-width: 100%;
+          color: #1f2937;
+          font-size: 14px;
           white-space: nowrap;
           overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        :global(.dark) .position-title {
+          color: #f9fafb;
+        }
+
+        .position-description {
+          font-size: 12px;
+          color: #6b7280;
+          line-height: 1.4;
+        }
+
+        :global(.dark) .position-description {
+          color: #9ca3af;
+        }
           text-overflow: ellipsis;
         }
 
@@ -1802,71 +2158,120 @@ export default function Applications() {
         .stage-container {
           display: flex;
           flex-direction: column;
-          gap: 6px;
+          gap: 8px;
           width: 100%;
         }
 
         .stage-badge {
-          display: flex;
+          display: inline-flex;
           align-items: center;
-          gap: 8px;
-          padding: 6px 10px;
-          border-radius: 6px;
-          border: 1px solid transparent;
-          background: var(--glass-bg);
-          min-width: 120px;
+          gap: 6px;
+          padding: 6px 12px;
+          border-radius: 20px;
+          font-size: 12px;
+          font-weight: 600;
+          text-transform: capitalize;
           transition: all 0.2s ease;
+          border: 1px solid transparent;
+          max-width: fit-content;
+        }
+
+        .stage-applied {
+          background: #eff6ff;
+          color: #1d4ed8;
+          border-color: #93c5fd;
+        }
+
+        :global(.dark) .stage-applied {
+          background: #1e3a8a;
+          color: #93c5fd;
+          border-color: #3730a3;
+        }
+
+        .stage-screening {
+          background: #fdf4ff;
+          color: #a21caf;
+          border-color: #d8b4fe;
+        }
+
+        :global(.dark) .stage-screening {
+          background: #581c87;
+          color: #d8b4fe;
+          border-color: #6b21a8;
+        }
+
+        .stage-interview {
+          background: #ecfdf5;
+          color: #059669;
+          border-color: #6ee7b7;
+        }
+
+        :global(.dark) .stage-interview {
+          background: #064e3b;
+          color: #6ee7b7;
+          border-color: #047857;
+        }
+
+        .stage-offer {
+          background: #f0fdf4;
+          color: #16a34a;
+          border-color: #86efac;
+        }
+
+        :global(.dark) .stage-offer {
+          background: #14532d;
+          color: #86efac;
+          border-color: #15803d;
+        }
+
+        .stage-rejected {
+          background: #fef2f2;
+          color: #dc2626;
+          border-color: #fca5a5;
+        }
+
+        :global(.dark) .stage-rejected {
+          background: #7f1d1d;
+          color: #fca5a5;
+          border-color: #991b1b;
         }
 
         .stage-indicator {
-          width: 8px;
-          height: 8px;
+          width: 6px;
+          height: 6px;
           border-radius: 50%;
           flex-shrink: 0;
+          background: currentColor;
         }
 
         .stage-label {
-          font-size: 13px;
           font-weight: 600;
-          color: var(--text-primary);
-        }
-
-        .stage-offer .stage-label {
-          color: var(--accent-green);
-        }
-
-        .stage-rejected .stage-label {
-          color: var(--accent-red);
-        }
-
-        .table-row:hover .stage-badge {
-          background: rgba(var(--accent-blue-rgb), 0.05);
-          transform: translateY(-1px);
+          color: inherit;
         }
 
         .stage-progress-container {
           width: 100%;
-          margin-top: 2px;
+          margin-top: 6px;
         }
 
         .stage-progress-background {
-          display: flex;
           width: 100%;
-          height: 6px;
-          border-radius: 3px;
+          height: 4px;
+          border-radius: 2px;
+          background: #e5e7eb;
           overflow: hidden;
-          background: var(--glass-bg);
-          gap: 4px;
+          position: relative;
         }
 
-        .stage-step {
-          flex: 1;
+        :global(.dark) .stage-progress-background {
+          background: #4b5563;
+        }
+
+        .stage-progress-fill {
           height: 100%;
-          transition: all 0.3s ease;
-        }
-
-        .stage-step.completed {
-          box-shadow: 0 0 4px rgba(0,0,0,0.2);
+          background: linear-gradient(90deg, #667eea, #764ba2);
+          border-radius: 2px;
+          transition: width 0.3s ease;
         }
 
         .interview-cell {
@@ -2196,7 +2601,7 @@ export default function Applications() {
           gap: 4px;
         }
 
-        .stage-control-btn {
+        .quick-action-btn {
           width: 24px;
           height: 24px;
           border-radius: 4px;
@@ -2209,6 +2614,28 @@ export default function Applications() {
           cursor: pointer;
           transition: all 0.2s ease;
           padding: 0;
+        }
+
+        .quick-action-btn:hover {
+          background: var(--hover-bg);
+          color: var(--text-primary);
+          transform: scale(1.1);
+        }
+
+        .quick-action-btn.shortlist-btn.active {
+          background: rgba(var(--accent-green-rgb), 0.1);
+          color: var(--accent-green);
+          border-color: var(--accent-green);
+        }
+
+        .edit-btn:hover {
+          background: rgba(var(--accent-blue-rgb), 0.1);
+          color: var(--accent-blue);
+        }
+
+        .note-btn:hover {
+          background: rgba(var(--accent-purple-rgb), 0.1);
+          color: var(--accent-purple);
         }
 
         .stage-control-btn:hover:not(:disabled) {

@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  Calendar, MoreVertical, MapPin, Building, 
-  DollarSign, Globe, Clock, Edit, Trash2, ExternalLink
+import {
+  Calendar, MoreVertical, MapPin, Building,
+  DollarSign, Globe, Clock, Edit, Trash2, ExternalLink, Star
 } from 'lucide-react';
 import { Company, ApplicationStage } from '@/types';
 
@@ -17,9 +17,11 @@ interface ApplicationCardProps {
   location?: string;
   remote?: boolean;
   notes?: string;
+  isShortlisted?: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
   onStageChange?: (stage: ApplicationStage) => void;
+  onShortlistToggle?: (isShortlisted: boolean) => void;
   onClick?: () => void;
 }
 
@@ -33,15 +35,18 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
   location,
   remote,
   notes,
+  isShortlisted = false,
   onEdit,
   onDelete,
   onStageChange,
+  onShortlistToggle,
   onClick
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  
+  const [isDragging, setIsDragging] = useState(false);
+
   // Format date
   const formatDate = (date: Date): string => {
     return new Intl.DateTimeFormat('en-US', {
@@ -50,7 +55,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
       year: 'numeric'
     }).format(date);
   };
-  
+
   // Get stage color
   const getStageColor = (stage: ApplicationStage): string => {
     switch (stage) {
@@ -62,24 +67,46 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
       default: return 'var(--text-secondary)';
     }
   };
-  
+
   // Get stage display name
   const getStageLabel = (stage: ApplicationStage): string => {
     return stage.charAt(0).toUpperCase() + stage.slice(1);
   };
-  
+
   const stageColor = getStageColor(stage);
   const stageLabel = getStageLabel(stage);
-  
+
   // Calculate RGB value for effects
   const rgbMatch = stageColor.match(/var\(--accent-(.*)-rgb\)/);
-  const rgbVar = rgbMatch 
-    ? stageColor.replace(')', '-rgb)') 
+  const rgbVar = rgbMatch
+    ? stageColor.replace(')', '-rgb)')
     : stageColor.replace('var(--accent-', 'var(--accent-').replace(')', '-rgb)');
-  
+
+  // Handle drag start
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData('text/plain', id);
+    setIsDragging(true);
+  };
+
+  // Handle drag end
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
+  // Handle shortlist toggle
+  const handleShortlistToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onShortlistToggle) {
+      onShortlistToggle(!isShortlisted);
+    }
+  };
+
   return (
-    <div 
-      className={`app-card ${isHovered ? 'hovered' : ''} ${isExpanded ? 'expanded' : ''}`}
+    <div
+      className={`app-card ${isHovered ? 'hovered' : ''} ${isExpanded ? 'expanded' : ''} ${isDragging ? 'dragging' : ''}`}
+      draggable={true}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
         setIsHovered(false);
@@ -101,7 +128,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
       } as React.CSSProperties}
     >
       <div className="card-highlight"></div>
-      
+
       <div className="card-header">
         <div className="company-logo">
           {company.logo ? (
@@ -110,7 +137,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
             company.name.charAt(0)
           )}
         </div>
-        
+
         <div className="card-title-container">
           <h3 className="card-position">{position}</h3>
           <div className="card-company">
@@ -118,17 +145,17 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
             <span>{company.name}</span>
           </div>
         </div>
-        
+
         <div className="card-stage" onClick={(e) => e.stopPropagation()}>
           <div className="stage-indicator"></div>
           <span className="stage-label">{stageLabel}</span>
-          
+
           {isHovered && onStageChange && (
             <div className="stage-dropdown">
               <div className="stage-dropdown-arrow"></div>
               <div className="stage-dropdown-content">
                 {['applied', 'screening', 'interview', 'offer', 'rejected'].map((s) => (
-                  <button 
+                  <button
                     key={s}
                     className={`stage-option ${s === stage ? 'active' : ''}`}
                     onClick={() => onStageChange(s as ApplicationStage)}
@@ -144,9 +171,17 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
             </div>
           )}
         </div>
-        
+
+        <button
+          className={`shortlist-button ${isShortlisted ? 'shortlisted' : ''}`}
+          onClick={handleShortlistToggle}
+          title={isShortlisted ? 'Remove from shortlist' : 'Add to shortlist'}
+        >
+          <Star size={16} fill={isShortlisted ? 'currentColor' : 'none'} />
+        </button>
+
         <div className="card-menu">
-          <button 
+          <button
             className="menu-button"
             onClick={(e) => {
               e.stopPropagation();
@@ -155,7 +190,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           >
             <MoreVertical size={16} />
           </button>
-          
+
           {isMenuOpen && (
             <div className="menu-dropdown">
               {onEdit && (
@@ -190,14 +225,14 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           )}
         </div>
       </div>
-      
+
       <div className="card-content">
         <div className="card-meta">
           <div className="meta-item">
             <Calendar size={14} />
             <span>{formatDate(dateApplied)}</span>
           </div>
-          
+
           {location && (
             <div className="meta-item">
               <MapPin size={14} />
@@ -205,7 +240,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
               {remote && <span className="remote-badge">Remote</span>}
             </div>
           )}
-          
+
           {salary && (
             <div className="meta-item">
               <DollarSign size={14} />
@@ -213,14 +248,14 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
             </div>
           )}
         </div>
-        
+
         {notes && (
           <div className={`card-notes ${isExpanded ? 'expanded' : ''}`}>
             <p>{notes}</p>
           </div>
         )}
       </div>
-      
+
       {isHovered && (
         <div className="card-actions">
           <button className="action-button edit" onClick={(e) => {
@@ -237,7 +272,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           </button>
         </div>
       )}
-      
+
       <style jsx>{`
         .app-card {
           background: var(--glass-card-bg);
@@ -249,7 +284,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           cursor: pointer;
           padding: 20px;
         }
-        
+
         .app-card::before {
           content: '';
           position: absolute;
@@ -258,25 +293,25 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           width: 100%;
           height: 100%;
           background: linear-gradient(
-            135deg, 
-            rgba(var(--stage-color-rgb), 0.03) 0%, 
+            135deg,
+            rgba(var(--stage-color-rgb), 0.03) 0%,
             transparent 70%
           );
           z-index: -1;
           opacity: 0;
           transition: opacity 0.5s var(--easing-standard);
         }
-        
+
         .app-card.hovered {
           transform: translateY(-3px);
           box-shadow: var(--shadow-lg);
           border-color: rgba(var(--stage-color-rgb), 0.3);
         }
-        
+
         .app-card.hovered::before {
           opacity: 1;
         }
-        
+
         .card-highlight {
           position: absolute;
           top: 0;
@@ -287,12 +322,12 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           opacity: 0.7;
           transition: all 0.3s var(--easing-standard);
         }
-        
+
         .app-card.hovered .card-highlight {
           width: 7px;
           opacity: 1;
         }
-        
+
         .card-header {
           display: flex;
           align-items: flex-start;
@@ -300,7 +335,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           position: relative;
           z-index: 1;
         }
-        
+
         .company-logo {
           width: 45px;
           height: 45px;
@@ -317,23 +352,23 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           overflow: hidden;
           box-shadow: 0 3px 8px rgba(var(--stage-color-rgb), 0.2);
         }
-        
+
         .company-logo img {
           width: 100%;
           height: 100%;
           object-fit: cover;
         }
-        
+
         .app-card.hovered .company-logo {
           transform: scale(1.05) rotate(3deg);
           box-shadow: 0 5px 12px rgba(var(--stage-color-rgb), 0.4);
         }
-        
+
         .card-title-container {
           flex: 1;
           min-width: 0;
         }
-        
+
         .card-position {
           margin: 0 0 5px 0;
           font-size: 16px;
@@ -344,11 +379,11 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           overflow: hidden;
           text-overflow: ellipsis;
         }
-        
+
         .app-card.hovered .card-position {
           color: var(--stage-color);
         }
-        
+
         .card-company {
           display: flex;
           align-items: center;
@@ -356,11 +391,11 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           font-size: 14px;
           color: var(--text-secondary);
         }
-        
+
         .card-company svg {
           color: var(--text-tertiary);
         }
-        
+
         .card-stage {
           display: flex;
           align-items: center;
@@ -372,25 +407,25 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           position: relative;
           flex-shrink: 0;
         }
-        
+
         .app-card.hovered .card-stage {
           background-color: rgba(var(--stage-color-rgb), 0.2);
           transform: translateY(-2px);
         }
-        
+
         .stage-indicator {
           width: 8px;
           height: 8px;
           border-radius: 50%;
           background-color: var(--stage-color);
         }
-        
+
         .stage-label {
           font-size: 13px;
           font-weight: 500;
           color: var(--stage-color);
         }
-        
+
         .stage-dropdown {
           position: absolute;
           top: 100%;
@@ -406,7 +441,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           opacity: 0;
           animation: fadeInDown 0.2s var(--easing-standard) forwards;
         }
-        
+
         .stage-dropdown-arrow {
           position: absolute;
           top: -5px;
@@ -418,14 +453,14 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           border-top: 1px solid var(--border-thin);
           border-left: 1px solid var(--border-thin);
         }
-        
+
         .stage-dropdown-content {
           display: flex;
           flex-direction: column;
           width: 100%;
           padding: 5px;
         }
-        
+
         .stage-option {
           display: flex;
           align-items: center;
@@ -439,37 +474,37 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           position: relative;
           text-align: left;
         }
-        
+
         .stage-option:hover {
           background: var(--hover-bg);
         }
-        
+
         .stage-option.active {
           background: rgba(var(--option-color-rgb), 0.1);
         }
-        
+
         .option-indicator {
           width: 8px;
           height: 8px;
           border-radius: 50%;
           background-color: var(--option-color, var(--text-tertiary));
         }
-        
+
         .stage-option span {
           font-size: 13px;
           color: var(--text-primary);
         }
-        
+
         .stage-option.active span {
           color: var(--option-color);
           font-weight: 500;
         }
-        
+
         .card-menu {
           position: relative;
           z-index: 5;
         }
-        
+
         .menu-button {
           display: flex;
           align-items: center;
@@ -483,12 +518,41 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           cursor: pointer;
           transition: all 0.2s var(--easing-standard);
         }
-        
+
         .menu-button:hover {
           background: var(--hover-bg);
           color: var(--text-secondary);
         }
-        
+
+        .shortlist-button {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          background: transparent;
+          border: none;
+          color: var(--text-tertiary);
+          cursor: pointer;
+          transition: all 0.2s var(--easing-standard);
+          margin-right: 8px;
+        }
+
+        .shortlist-button:hover {
+          background: var(--hover-bg);
+          color: var(--accent-yellow);
+          transform: scale(1.1);
+        }
+
+        .shortlist-button.shortlisted {
+          color: var(--accent-yellow);
+        }
+
+        .shortlist-button.shortlisted:hover {
+          color: var(--accent-orange);
+        }
+
         .menu-dropdown {
           position: absolute;
           top: 100%;
@@ -504,7 +568,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           opacity: 0;
           animation: fadeInDown 0.2s var(--easing-standard) forwards;
         }
-        
+
         .menu-item {
           display: flex;
           align-items: center;
@@ -518,33 +582,33 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           cursor: pointer;
           transition: all 0.2s var(--easing-standard);
         }
-        
+
         .menu-item:hover {
           background: var(--hover-bg);
           color: var(--text-primary);
         }
-        
+
         .menu-item.delete {
           color: var(--accent-red);
         }
-        
+
         .menu-item.delete:hover {
           background: rgba(var(--accent-red-rgb), 0.1);
         }
-        
+
         .card-content {
           margin-top: 16px;
           position: relative;
           z-index: 1;
         }
-        
+
         .card-meta {
           display: flex;
           flex-wrap: wrap;
           gap: 14px;
           margin-bottom: 12px;
         }
-        
+
         .meta-item {
           display: flex;
           align-items: center;
@@ -553,11 +617,11 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           font-size: 13px;
           transition: all 0.3s var(--easing-standard);
         }
-        
+
         .app-card.hovered .meta-item {
           color: var(--text-secondary);
         }
-        
+
         .remote-badge {
           display: inline-block;
           padding: 2px 6px;
@@ -568,7 +632,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           font-weight: 500;
           margin-left: 4px;
         }
-        
+
         .card-notes {
           font-size: 14px;
           color: var(--text-tertiary);
@@ -578,7 +642,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           position: relative;
           transition: all 0.3s var(--easing-standard);
         }
-        
+
         .card-notes::after {
           content: '';
           position: absolute;
@@ -591,15 +655,15 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           opacity: 1;
           transition: opacity 0.3s var(--easing-standard);
         }
-        
+
         .card-notes.expanded {
           max-height: 200px;
         }
-        
+
         .card-notes.expanded::after {
           opacity: 0;
         }
-        
+
         .card-actions {
           position: absolute;
           bottom: -30px;
@@ -610,7 +674,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           opacity: 0;
           animation: slideUp 0.3s var(--easing-standard) forwards;
         }
-        
+
         .action-button {
           display: flex;
           align-items: center;
@@ -623,29 +687,29 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           transition: all 0.2s var(--easing-standard);
           box-shadow: var(--shadow);
         }
-        
+
         .action-button.edit {
           background: rgba(var(--accent-blue-rgb), 0.9);
           color: white;
         }
-        
+
         .action-button.edit:hover {
           background: var(--accent-blue);
           transform: translateY(-2px);
           box-shadow: 0 4px 8px rgba(var(--accent-blue-rgb), 0.4);
         }
-        
+
         .action-button.delete {
           background: rgba(var(--accent-red-rgb), 0.9);
           color: white;
         }
-        
+
         .action-button.delete:hover {
           background: var(--accent-red);
           transform: translateY(-2px);
           box-shadow: 0 4px 8px rgba(var(--accent-red-rgb), 0.4);
         }
-        
+
         @keyframes fadeInDown {
           from {
             opacity: 0;
@@ -656,7 +720,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
             transform: translateY(0) translateX(-50%);
           }
         }
-        
+
         @keyframes slideUp {
           from {
             opacity: 0;

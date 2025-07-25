@@ -4,9 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SectionKey, NavItemType } from '@/types';
 import {
-  Menu, X, Search, Bell, Settings, User, ChevronDown,
-  Zap, Sparkles, Home, FileText, Calendar, Target,
-  Plus, Filter, MoreHorizontal
+  Menu, X, Search, Bell, Plus, Command, User, LogOut, Settings
 } from 'lucide-react';
 import ThemeSwitcher from './ThemeSwitcher';
 
@@ -58,9 +56,18 @@ export default function ModernNavbar({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const getActiveItem = () => {
-    return items.find(item => item.key === currentSection);
-  };
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        searchRef.current?.querySelector('input')?.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const getTotalNotifications = () => {
     return items.reduce((total, item) => {
@@ -71,11 +78,10 @@ export default function ModernNavbar({
     }, 0);
   };
 
-  const quickActions = [
-    { icon: FileText, label: 'New Application', action: () => console.log('New Application') },
-    { icon: Calendar, label: 'Schedule Interview', action: () => console.log('Schedule Interview') },
-    { icon: Target, label: 'Set Goal', action: () => console.log('Set Goal') },
-    { icon: Bell, label: 'Add Reminder', action: () => console.log('Add Reminder') },
+  const notifications = [
+    { id: 1, title: 'New application response', time: '2 minutes ago', unread: true },
+    { id: 2, title: 'Interview scheduled', time: '1 hour ago', unread: true },
+    { id: 3, title: 'Follow-up reminder', time: '3 hours ago', unread: false },
   ];
 
   if (!mounted) {
@@ -85,889 +91,603 @@ export default function ModernNavbar({
   return (
     <>
       <nav className="modern-navbar">
-        {/* Left Section */}
-        <div className="navbar-left">
-          {/* Mobile Menu Toggle */}
-          <button
-            className="mobile-menu-btn"
-            onClick={onMobileMenuToggle}
-            aria-label="Toggle mobile menu"
-          >
-            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+        <div className="navbar-container">
+          {/* Left: Logo and Navigation */}
+          <div className="navbar-left">
+            {/* Mobile Menu */}
+            <button
+              className="mobile-menu-btn"
+              onClick={onMobileMenuToggle}
+              aria-label="Toggle menu"
+            >
+              {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
 
-          {/* Logo/Brand */}
-          <div className="navbar-brand">
-            <div className="brand-icon">
-              <Sparkles size={24} />
+            {/* Logo */}
+            <div className="navbar-logo">
+              <div className="logo-icon">J</div>
+              <span className="logo-text">jjugg</span>
             </div>
-            <span className="brand-text">jjugg</span>
+
+            {/* Desktop Navigation */}
+            <nav className="desktop-nav">
+              {items.map((item) => {
+                const isActive = currentSection === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    className={`nav-item ${isActive ? 'active' : ''}`}
+                    onClick={() => setCurrentSection(item.key)}
+                  >
+                    <span className="nav-icon">{item.icon}</span>
+                    <span className="nav-label">{item.label}</span>
+                    {item.badge && 'count' in item.badge && item.badge.count > 0 && (
+                      <span className="nav-badge">{item.badge.count}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
           </div>
 
-          {/* Current Section Indicator */}
-          <div className="current-section">
-            <div className="section-icon">
-              {getActiveItem()?.icon}
+          {/* Right: Search and Actions */}
+          <div className="navbar-right">
+            {/* Search */}
+            <div
+              ref={searchRef}
+              className={`search-container ${isSearchFocused ? 'focused' : ''}`}
+            >
+              <Search size={16} className="search-icon" />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setIsSearchFocused(false)}
+                className="search-input"
+              />
+              <div className="search-shortcut">
+                <Command size={10} />
+                <span>K</span>
+              </div>
             </div>
-            <span className="section-label">{getActiveItem()?.label}</span>
-          </div>
-        </div>
 
-        {/* Center Section - Search & Navigation */}
-        <div className="navbar-center">
-          {/* Enhanced Search */}
-          <div
-            ref={searchRef}
-            className={`navbar-search ${isSearchFocused ? 'focused' : ''}`}
-          >
-            <Search size={18} className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search applications, contacts, tasks..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setIsSearchFocused(true)}
-              onBlur={() => setIsSearchFocused(false)}
-              className="search-input"
-            />
-            {searchQuery && (
-              <button
-                className="clear-search"
-                onClick={() => setSearchQuery('')}
-              >
-                <X size={16} />
-              </button>
-            )}
-          </div>
-
-          {/* Quick Navigation Pills */}
-          <div className="nav-pills">
-            {items.slice(0, 4).map((item) => (
-              <button
-                key={item.key}
-                className={`nav-pill ${currentSection === item.key ? 'active' : ''}`}
-                onClick={() => setCurrentSection(item.key)}
-                title={item.label}
-              >
-                <span className="pill-icon">{item.icon}</span>
-                <span className="pill-label">{item.label}</span>
-                {item.badge && 'count' in item.badge && item.badge.count > 0 && (
-                  <span className="pill-badge">{item.badge.count}</span>
-                )}
-              </button>
-            ))}
-
-            {items.length > 4 && (
-              <button className="nav-pill more-items">
-                <MoreHorizontal size={16} />
-                <span className="pill-label">More</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Right Section */}
-        <div className="navbar-right">
-          {/* Quick Actions Dropdown */}
-          <div className="quick-actions">
-            <button className="action-btn primary">
+            {/* Quick Add */}
+            <button className="quick-add-btn">
               <Plus size={16} />
-              <span>Quick Add</span>
-            </button>
-          </div>
-
-          {/* Notifications */}
-          <div ref={notificationRef} className="notification-wrapper">
-            <button
-              className="icon-btn notification-btn"
-              onClick={() => setIsNotificationMenuOpen(!isNotificationMenuOpen)}
-              aria-label="Notifications"
-            >
-              <Bell size={18} />
-              {getTotalNotifications() > 0 && (
-                <span className="notification-count">{getTotalNotifications()}</span>
-              )}
+              <span>New</span>
             </button>
 
-            {isNotificationMenuOpen && (
-              <div className="notification-dropdown">
-                <div className="dropdown-header">
-                  <h3>Notifications</h3>
-                  <button className="mark-all-read">Mark all read</button>
-                </div>
-                <div className="notification-list">
-                  <div className="notification-item">
-                    <div className="notification-icon">
-                      <FileText size={16} />
-                    </div>
-                    <div className="notification-content">
-                      <p className="notification-title">New application response</p>
-                      <p className="notification-time">2 minutes ago</p>
-                    </div>
-                  </div>
-                  <div className="notification-item">
-                    <div className="notification-icon">
-                      <Calendar size={16} />
-                    </div>
-                    <div className="notification-content">
-                      <p className="notification-title">Interview scheduled</p>
-                      <p className="notification-time">1 hour ago</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="dropdown-footer">
-                  <button className="view-all-btn">View all notifications</button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Settings */}
-          <button className="icon-btn settings-btn" aria-label="Settings">
-            <Settings size={18} />
-          </button>
-
-          {/* Theme Switcher */}
-          <div className="theme-switcher-wrapper">
-            <ThemeSwitcher />
-          </div>
-
-          {/* User Profile */}
-          <div ref={profileRef} className="profile-wrapper">
-            <button
-              className="profile-btn"
-              onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-              aria-label="User menu"
-            >
-              <div className="profile-avatar">
-                {userAvatar ? (
-                  <img src={userAvatar} alt={userName} className="avatar-img" />
-                ) : (
-                  <span className="avatar-text">{userName.charAt(0)}</span>
+            {/* Notifications */}
+            <div ref={notificationRef} className="dropdown-container">
+              <button
+                className="icon-btn"
+                onClick={() => setIsNotificationMenuOpen(!isNotificationMenuOpen)}
+                aria-label="Notifications"
+              >
+                <Bell size={18} />
+                {getTotalNotifications() > 0 && (
+                  <span className="badge">{getTotalNotifications()}</span>
                 )}
-              </div>
-              <div className="profile-info">
-                <span className="profile-name">{userName}</span>
-                <div className="profile-status">
-                  <span className="status-dot"></span>
-                  <span className="status-text">Online</span>
-                </div>
-              </div>
-              <ChevronDown size={16} className="profile-chevron" />
-            </button>
+              </button>
 
-            {isProfileMenuOpen && (
-              <div className="profile-dropdown">
-                <div className="dropdown-header">
-                  <div className="profile-details">
-                    <div className="profile-avatar-large">
+              {isNotificationMenuOpen && (
+                <div className="dropdown notifications-dropdown">
+                  <div className="dropdown-header">
+                    <h3>Notifications</h3>
+                    <button className="text-btn">Clear all</button>
+                  </div>
+                  <div className="notifications-list">
+                    {notifications.map((notif) => (
+                      <div
+                        key={notif.id}
+                        className={`notification-item ${notif.unread ? 'unread' : ''}`}
+                      >
+                        <div className="notification-content">
+                          <p className="notification-title">{notif.title}</p>
+                          <span className="notification-time">{notif.time}</span>
+                        </div>
+                        {notif.unread && <div className="unread-dot" />}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Theme Toggle */}
+            <ThemeSwitcher />
+
+            {/* Profile */}
+            <div ref={profileRef} className="dropdown-container">
+              <button
+                className="profile-btn"
+                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                aria-label="Profile menu"
+              >
+                <div className="avatar">
+                  {userAvatar ? (
+                    <img src={userAvatar} alt={userName} />
+                  ) : (
+                    <span>{userName.charAt(0).toUpperCase()}</span>
+                  )}
+                </div>
+              </button>
+
+              {isProfileMenuOpen && (
+                <div className="dropdown profile-dropdown">
+                  <div className="profile-info">
+                    <div className="avatar large">
                       {userAvatar ? (
                         <img src={userAvatar} alt={userName} />
                       ) : (
-                        <span>{userName.charAt(0)}</span>
+                        <span>{userName.charAt(0).toUpperCase()}</span>
                       )}
                     </div>
                     <div>
-                      <h3>{userName}</h3>
-                      <p>Premium Member</p>
+                      <p className="user-name">{userName}</p>
+                      <p className="user-email">user@example.com</p>
                     </div>
                   </div>
-                </div>
-                <div className="dropdown-menu">
-                  <button className="menu-item">
+                  <div className="dropdown-divider" />
+                  <button className="dropdown-item">
                     <User size={16} />
-                    <span>Profile Settings</span>
+                    <span>Profile</span>
                   </button>
-                  <button className="menu-item">
+                  <button className="dropdown-item">
                     <Settings size={16} />
-                    <span>Preferences</span>
+                    <span>Settings</span>
                   </button>
-                  <button className="menu-item">
-                    <Zap size={16} />
-                    <span>Upgrade Plan</span>
-                  </button>
-                  <div className="menu-divider"></div>
-                  <button className="menu-item sign-out">
-                    <span>Sign Out</span>
+                  <div className="dropdown-divider" />
+                  <button className="dropdown-item danger">
+                    <LogOut size={16} />
+                    <span>Sign out</span>
                   </button>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </nav>
 
-      {/* Mobile Navigation Overlay */}
+      {/* Mobile Navigation */}
       {isMobileMenuOpen && (
-        <div className="mobile-nav-overlay">
-          <div className="mobile-nav-content">
-            <div className="mobile-nav-header">
-              <h2>Navigation</h2>
-              <button onClick={onMobileMenuToggle}>
-                <X size={24} />
+        <div className="mobile-nav">
+          {items.map((item) => {
+            const isActive = currentSection === item.key;
+            return (
+              <button
+                key={item.key}
+                className={`mobile-nav-item ${isActive ? 'active' : ''}`}
+                onClick={() => {
+                  setCurrentSection(item.key);
+                  onMobileMenuToggle?.();
+                }}
+              >
+                <span className="nav-icon">{item.icon}</span>
+                <span className="nav-label">{item.label}</span>
+                {item.badge && 'count' in item.badge && item.badge.count > 0 && (
+                  <span className="nav-badge">{item.badge.count}</span>
+                )}
               </button>
-            </div>
-            <div className="mobile-nav-items">
-              {items.map((item) => (
-                <button
-                  key={item.key}
-                  className={`mobile-nav-item ${currentSection === item.key ? 'active' : ''}`}
-                  onClick={() => {
-                    setCurrentSection(item.key);
-                    onMobileMenuToggle?.();
-                  }}
-                >
-                  <span className="mobile-nav-icon">{item.icon}</span>
-                  <span className="mobile-nav-label">{item.label}</span>
-                  {item.badge && 'count' in item.badge && item.badge.count > 0 && (
-                    <span className="mobile-nav-badge">{item.badge.count}</span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
+            );
+          })}
         </div>
       )}
 
       <style jsx>{`
+        /* Base Navbar Styles */
         .modern-navbar {
           position: fixed;
           top: 0;
           left: 0;
           right: 0;
-          height: 70px;
-          background: rgba(0, 0, 0, 0.1);
-          backdrop-filter: blur(var(--blur-amount, 20px));
-          -webkit-backdrop-filter: blur(var(--blur-amount, 20px));
-          border-bottom: 1px solid var(--border-thin);
+          height: 68px;
+          background: rgba(255, 255, 255, 0.98);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+          z-index: 1000;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        :global(.dark) .modern-navbar {
+          background: rgba(17, 24, 39, 0.98);
+          border-bottom-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .navbar-container {
+          height: 100%;
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 0 32px;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 0 24px;
-          z-index: var(--z-navbar, 100);
-          transition: all 0.3s var(--easing-standard);
+          gap: 32px;
         }
 
+        /* Left Section */
         .navbar-left {
           display: flex;
           align-items: center;
-          gap: 20px;
-          flex-shrink: 0;
+          gap: 40px;
+          flex: 0 1 auto;
         }
 
         .mobile-menu-btn {
           display: none;
+          padding: 8px;
           background: none;
           border: none;
-          color: var(--text-secondary);
+          color: #666;
           cursor: pointer;
-          padding: 8px;
-          border-radius: var(--border-radius-sm);
-          transition: all 0.2s var(--easing-standard);
+          border-radius: 8px;
+          transition: all 0.2s ease;
+        }
+
+        :global(.dark) .mobile-menu-btn {
+          color: #999;
         }
 
         .mobile-menu-btn:hover {
-          background: var(--hover-bg);
-          color: var(--text-primary);
+          background: rgba(0, 0, 0, 0.05);
         }
 
-        .navbar-brand {
+        :global(.dark) .mobile-menu-btn:hover {
+          background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Logo */
+        .navbar-logo {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 10px;
           font-weight: 700;
           font-size: 20px;
-          color: var(--text-primary);
+          color: #000;
         }
 
-        .brand-icon {
-          width: 36px;
-          height: 36px;
-          background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-          border-radius: var(--border-radius);
+        :global(.dark) .navbar-logo {
+          color: #fff;
+        }
+
+        .logo-icon {
+          width: 32px;
+          height: 32px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-radius: 8px;
           display: flex;
           align-items: center;
           justify-content: center;
           color: white;
-          box-shadow: var(--shadow-sm);
+          font-size: 18px;
+          font-weight: 700;
         }
 
-        .brand-text {
-          background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+        .logo-text {
+          font-size: 18px;
+          letter-spacing: -0.5px;
         }
 
-        .current-section {
+        /* Desktop Navigation */
+        .desktop-nav {
           display: flex;
           align-items: center;
-          gap: 8px;
-          padding: 6px 12px;
-          background: var(--glass-bg);
-          border: 1px solid var(--border-thin);
-          border-radius: var(--border-radius);
-          color: var(--text-secondary);
-          font-size: 14px;
-        }
-
-        .section-icon {
-          display: flex;
-          align-items: center;
-          color: var(--accent-primary);
-        }
-
-        .navbar-center {
-          display: flex;
-          align-items: center;
-          gap: 20px;
-          flex: 1;
-          justify-content: center;
-          max-width: 800px;
-        }
-
-        .navbar-search {
-          position: relative;
-          width: 400px;
-          max-width: 100%;
-          transition: all 0.3s var(--easing-standard);
-        }
-
-        .navbar-search.focused {
-          width: 450px;
-        }
-
-        .search-icon {
-          position: absolute;
-          left: 12px;
-          top: 50%;
-          transform: translateY(-50%);
-          color: var(--text-tertiary);
-          transition: color 0.3s var(--easing-standard);
-        }
-
-        .navbar-search.focused .search-icon {
-          color: var(--accent-primary);
-        }
-
-        .search-input {
-          width: 100%;
-          height: 42px;
-          padding: 0 40px 0 40px;
-          border: 1px solid var(--border-thin);
-          border-radius: var(--border-radius-lg);
-          background: var(--glass-bg);
-          color: var(--text-primary);
-          font-size: 14px;
-          transition: all 0.3s var(--easing-standard);
-        }
-
-        .search-input::placeholder {
-          color: var(--text-tertiary);
-        }
-
-        .search-input:focus {
-          outline: none;
-          border-color: var(--accent-primary);
-          box-shadow: 0 0 0 3px rgba(var(--accent-primary-rgb), 0.1);
-        }
-
-        .clear-search {
-          position: absolute;
-          right: 12px;
-          top: 50%;
-          transform: translateY(-50%);
-          background: none;
-          border: none;
-          color: var(--text-tertiary);
-          cursor: pointer;
-          padding: 2px;
-          border-radius: 50%;
-          transition: all 0.2s var(--easing-standard);
-        }
-
-        .clear-search:hover {
-          background: var(--hover-bg);
-          color: var(--text-secondary);
-        }
-
-        .nav-pills {
-          display: flex;
-          align-items: center;
-          gap: 8px;
+          gap: 2px;
+          background: #f1f5f9;
+          border-radius: 12px;
           padding: 4px;
-          background: var(--glass-bg);
-          border: 1px solid var(--border-thin);
-          border-radius: var(--border-radius-lg);
         }
 
-        .nav-pill {
+        :global(.dark) .desktop-nav {
+          background: #374151;
+        }
+
+        .nav-item {
+          position: relative;
           display: flex;
           align-items: center;
-          gap: 6px;
-          padding: 8px 12px;
+          gap: 8px;
+          padding: 10px 16px;
           background: none;
           border: none;
-          border-radius: var(--border-radius);
-          color: var(--text-secondary);
-          font-size: 13px;
+          border-radius: 8px;
+          color: #64748b;
+          font-size: 14px;
           font-weight: 500;
           cursor: pointer;
-          transition: all 0.2s var(--easing-standard);
-          position: relative;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          white-space: nowrap;
         }
 
-        .nav-pill:hover {
-          background: var(--hover-bg);
-          color: var(--text-primary);
+        :global(.dark) .nav-item {
+          color: #9ca3af;
         }
 
-        .nav-pill.active {
-          background: var(--accent-primary);
-          color: white;
-          box-shadow: var(--shadow-sm);
+        .nav-item:hover {
+          background: rgba(255, 255, 255, 0.8);
+          color: #1e293b;
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
-        .pill-icon {
+        :global(.dark) .nav-item:hover {
+          background: rgba(55, 65, 81, 0.8);
+          color: #f3f4f6;
+        }
+
+        .nav-item.active {
+          background: #ffffff;
+          color: #667eea;
+          box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        :global(.dark) .nav-item.active {
+          background: #4b5563;
+          color: #818cf8;
+          box-shadow: 0 2px 8px rgba(129, 140, 248, 0.2), 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-icon {
           display: flex;
           align-items: center;
+          font-size: 16px;
+          transition: transform 0.2s ease;
         }
 
-        .pill-badge {
+        .nav-item.active .nav-icon {
+          transform: scale(1.1);
+        }
+
+        .nav-label {
+          white-space: nowrap;
+          font-weight: 500;
+        }
+
+        .nav-badge {
           position: absolute;
-          top: -2px;
-          right: -2px;
-          min-width: 16px;
-          height: 16px;
-          background: var(--accent-red);
+          top: 2px;
+          right: 2px;
+          min-width: 18px;
+          height: 18px;
+          background: linear-gradient(135deg, #ef4444, #dc2626);
           color: white;
-          border-radius: 8px;
+          border-radius: 9px;
           font-size: 10px;
-          font-weight: 600;
+          font-weight: 700;
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 0 4px;
+          padding: 0 5px;
+          box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
         }
 
+        /* Right Section */
         .navbar-right {
           display: flex;
           align-items: center;
           gap: 12px;
-          flex-shrink: 0;
+          flex: 0 0 auto;
         }
 
-        .action-btn {
+        /* Search */
+        .search-container {
+          position: relative;
+          width: 280px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .search-container.focused {
+          width: 350px;
+        }
+
+        .search-icon {
+          position: absolute;
+          left: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #9ca3af;
+          pointer-events: none;
+          transition: color 0.2s ease;
+        }
+
+        .search-container.focused .search-icon {
+          color: #667eea;
+        }
+
+        .search-input {
+          width: 100%;
+          height: 40px;
+          padding: 0 60px 0 42px;
+          border: none;
+          border-radius: 20px;
+          background: #f8fafc;
+          color: #1f2937;
+          font-size: 14px;
+          font-weight: 400;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        :global(.dark) .search-input {
+          background: #374151;
+          color: #f9fafb;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .search-input::placeholder {
+          color: #9ca3af;
+          font-weight: 400;
+        }
+
+        :global(.dark) .search-input::placeholder {
+          color: #6b7280;
+        }
+
+        .search-input:focus {
+          outline: none;
+          background: #ffffff;
+          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1), 0 4px 12px rgba(0, 0, 0, 0.15);
+          transform: translateY(-1px);
+        }
+
+        :global(.dark) .search-input:focus {
+          background: #4b5563;
+          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2), 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .search-shortcut {
+          position: absolute;
+          right: 12px;
+          top: 50%;
+          transform: translateY(-50%);
           display: flex;
           align-items: center;
-          gap: 6px;
-          padding: 8px 16px;
-          background: var(--accent-primary);
+          gap: 3px;
+          padding: 3px 6px;
+          background: #e5e7eb;
+          border-radius: 6px;
+          color: #6b7280;
+          font-size: 10px;
+          font-weight: 600;
+          pointer-events: none;
+          transition: all 0.2s ease;
+          opacity: 0.8;
+        }
+
+        :global(.dark) .search-shortcut {
+          background: #4b5563;
+          color: #9ca3af;
+        }
+
+        .search-container.focused .search-shortcut {
+          opacity: 1;
+          background: #667eea;
+          color: white;
+        }
+
+        /* Quick Add Button */
+        .quick-add-btn {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 20px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           color: white;
           border: none;
-          border-radius: var(--border-radius);
+          border-radius: 12px;
           font-size: 14px;
-          font-weight: 500;
+          font-weight: 600;
           cursor: pointer;
-          transition: all 0.2s var(--easing-standard);
-          box-shadow: var(--shadow-sm);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
         }
 
-        .action-btn:hover {
-          background: var(--accent-primary-hover);
-          transform: translateY(-1px);
-          box-shadow: var(--shadow-md);
+        .quick-add-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(102, 126, 234, 0.35);
+          background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
         }
 
+        .quick-add-btn:active {
+          transform: translateY(0);
+        }
+
+        .quick-add-btn span {
+          white-space: nowrap;
+          font-weight: 600;
+        }
+
+        /* Icon Buttons */
         .icon-btn {
+          position: relative;
+          width: 40px;
+          height: 40px;
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 40px;
-          height: 40px;
-          background: var(--glass-bg);
-          border: 1px solid var(--border-thin);
-          border-radius: var(--border-radius);
-          color: var(--text-secondary);
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 10px;
+          color: #64748b;
           cursor: pointer;
-          transition: all 0.2s var(--easing-standard);
-          position: relative;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        :global(.dark) .icon-btn {
+          background: #374151;
+          border-color: #4b5563;
+          color: #9ca3af;
         }
 
         .icon-btn:hover {
-          background: var(--hover-bg);
-          color: var(--text-primary);
-          border-color: var(--border-hover);
+          background: #ffffff;
+          border-color: #cbd5e1;
+          color: #1e293b;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
-        .notification-wrapper,
-        .profile-wrapper {
-          position: relative;
+        :global(.dark) .icon-btn:hover {
+          background: #4b5563;
+          border-color: #6b7280;
+          color: #f3f4f6;
         }
 
-        .notification-count {
+        .badge {
           position: absolute;
-          top: -2px;
-          right: -2px;
-          min-width: 18px;
-          height: 18px;
-          background: var(--accent-red);
-          color: white;
-          border-radius: 9px;
-          font-size: 11px;
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0 4px;
-        }
-
-        .profile-btn {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 6px 12px;
-          background: var(--glass-bg);
-          border: 1px solid var(--border-thin);
-          border-radius: var(--border-radius-lg);
-          cursor: pointer;
-          transition: all 0.2s var(--easing-standard);
-        }
-
-        .profile-btn:hover {
-          background: var(--hover-bg);
-          border-color: var(--border-hover);
-        }
-
-        .profile-avatar {
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
-          overflow: hidden;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: var(--accent-primary);
-          color: white;
-          font-weight: 600;
-          font-size: 14px;
-        }
-
-        .avatar-img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .profile-info {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 2px;
-        }
-
-        .profile-name {
-          font-weight: 500;
-          font-size: 14px;
-          color: var(--text-primary);
-        }
-
-        .profile-status {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          font-size: 12px;
-          color: var(--text-tertiary);
-        }
-
-        .status-dot {
-          width: 6px;
-          height: 6px;
-          background: var(--accent-green);
-          border-radius: 50%;
-        }
-
-        .profile-chevron {
-          color: var(--text-tertiary);
-          transition: transform 0.2s var(--easing-standard);
-        }
-
-        .profile-btn:hover .profile-chevron {
-          transform: rotate(180deg);
-        }
-
-        .notification-dropdown,
-        .profile-dropdown {
-          position: absolute;
-          top: calc(100% + 8px);
-          right: 0;
-          min-width: 300px;
-          background: var(--glass-card-bg);
-          border: 1px solid var(--border-thin);
-          border-radius: var(--border-radius-lg);
-          box-shadow: var(--shadow-lg);
-          backdrop-filter: blur(var(--blur-amount));
-          -webkit-backdrop-filter: blur(var(--blur-amount));
-          z-index: 1000;
-          animation: slideDown 0.2s var(--easing-standard);
-        }
-
-        .dropdown-header {
-          padding: 16px;
-          border-bottom: 1px solid var(--border-divider);
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-
-        .dropdown-header h3 {
-          margin: 0;
-          font-size: 16px;
-          font-weight: 600;
-          color: var(--text-primary);
-        }
-
-        .mark-all-read {
-          background: none;
-          border: none;
-          color: var(--accent-primary);
-          font-size: 13px;
-          cursor: pointer;
-        }
-
-        .notification-list {
-          max-height: 300px;
-          overflow-y: auto;
-        }
-
-        .notification-item {
-          display: flex;
-          align-items: flex-start;
-          gap: 12px;
-          padding: 12px 16px;
-          border-bottom: 1px solid var(--border-divider);
-          transition: background 0.2s var(--easing-standard);
-        }
-
-        .notification-item:hover {
-          background: var(--hover-bg);
-        }
-
-        .notification-icon {
-          width: 32px;
-          height: 32px;
-          background: var(--glass-bg);
-          border-radius: var(--border-radius);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: var(--accent-primary);
-          flex-shrink: 0;
-        }
-
-        .notification-content {
-          flex: 1;
-        }
-
-        .notification-title {
-          margin: 0 0 4px 0;
-          font-size: 14px;
-          font-weight: 500;
-          color: var(--text-primary);
-        }
-
-        .notification-time {
-          margin: 0;
-          font-size: 12px;
-          color: var(--text-tertiary);
-        }
-
-        .dropdown-footer {
-          padding: 12px 16px;
-          border-top: 1px solid var(--border-divider);
-        }
-
-        .view-all-btn {
-          width: 100%;
-          padding: 8px;
-          background: none;
-          border: 1px solid var(--border-thin);
-          border-radius: var(--border-radius);
-          color: var(--text-secondary);
-          font-size: 14px;
-          cursor: pointer;
-          transition: all 0.2s var(--easing-standard);
-        }
-
-        .view-all-btn:hover {
-          background: var(--hover-bg);
-          color: var(--text-primary);
-        }
-
-        .profile-details {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .profile-avatar-large {
-          width: 48px;
-          height: 48px;
-          border-radius: 50%;
-          overflow: hidden;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: var(--accent-primary);
-          color: white;
-          font-weight: 600;
-          font-size: 18px;
-        }
-
-        .profile-avatar-large img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .dropdown-menu {
-          padding: 8px;
-        }
-
-        .menu-item {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          width: 100%;
-          padding: 10px 12px;
-          background: none;
-          border: none;
-          border-radius: var(--border-radius);
-          color: var(--text-secondary);
-          font-size: 14px;
-          cursor: pointer;
-          transition: all 0.2s var(--easing-standard);
-          text-align: left;
-        }
-
-        .menu-item:hover {
-          background: var(--hover-bg);
-          color: var(--text-primary);
-        }
-
-        .menu-item.sign-out {
-          color: var(--accent-red);
-        }
-
-        .menu-divider {
-          height: 1px;
-          background: var(--border-divider);
-          margin: 8px 0;
-        }
-
-        .mobile-nav-overlay {
-          position: fixed;
-          top: 70px;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.5);
-          backdrop-filter: blur(10px);
-          z-index: 999;
-          display: none;
-        }
-
-        .mobile-nav-content {
-          background: var(--glass-card-bg);
-          margin: 20px;
-          border-radius: var(--border-radius-lg);
-          border: 1px solid var(--border-thin);
-          overflow: hidden;
-        }
-
-        .mobile-nav-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 20px;
-          border-bottom: 1px solid var(--border-divider);
-        }
-
-        .mobile-nav-header h2 {
-          margin: 0;
-          font-size: 18px;
-          font-weight: 600;
-          color: var(--text-primary);
-        }
-
-        .mobile-nav-header button {
-          background: none;
-          border: none;
-          color: var(--text-secondary);
-          cursor: pointer;
-        }
-
-        .mobile-nav-items {
-          padding: 20px;
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .mobile-nav-item {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 12px 16px;
-          background: none;
-          border: none;
-          border-radius: var(--border-radius);
-          color: var(--text-secondary);
-          font-size: 16px;
-          cursor: pointer;
-          transition: all 0.2s var(--easing-standard);
-          text-align: left;
-          position: relative;
-        }
-
-        .mobile-nav-item:hover {
-          background: var(--hover-bg);
-          color: var(--text-primary);
-        }
-
-        .mobile-nav-item.active {
-          background: var(--accent-primary);
-          color: white;
-        }
-
-        .mobile-nav-icon {
-          display: flex;
-          align-items: center;
-          flex-shrink: 0;
-        }
-
-        .mobile-nav-label {
-          flex: 1;
-        }
-
-        .mobile-nav-badge {
+          top: -6px;
+          right: -6px;
           min-width: 20px;
           height: 20px;
-          background: var(--accent-red);
+          background: linear-gradient(135deg, #ef4444, #dc2626);
           color: white;
           border-radius: 10px;
-          font-size: 12px;
-          font-weight: 600;
+          font-size: 11px;
+          font-weight: 700;
           display: flex;
           align-items: center;
           justify-content: center;
           padding: 0 6px;
+          box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+          border: 2px solid white;
         }
 
-        @keyframes slideDown {
+        :global(.dark) .badge {
+          border-color: #111827;
+        }
+
+        /* Dropdowns */
+        .dropdown-container {
+          position: relative;
+        }
+
+        .dropdown {
+          position: absolute;
+          top: calc(100% + 8px);
+          right: 0;
+          min-width: 240px;
+          background: white;
+          border: 1px solid rgba(0, 0, 0, 0.1);
+          border-radius: 12px;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+          overflow: hidden;
+          z-index: 1001;
+          animation: dropdownIn 0.2s ease;
+        }
+
+        :global(.dark) .dropdown {
+          background: #1a1a1a;
+          border-color: rgba(255, 255, 255, 0.1);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+
+        @keyframes dropdownIn {
           from {
             opacity: 0;
-            transform: translateY(-10px);
+            transform: translateY(-8px);
           }
           to {
             opacity: 1;
@@ -975,31 +695,319 @@ export default function ModernNavbar({
           }
         }
 
+        .dropdown-header {
+          padding: 16px;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        :global(.dark) .dropdown-header {
+          border-bottom-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .dropdown-header h3 {
+          margin: 0;
+          font-size: 14px;
+          font-weight: 600;
+          color: #000;
+        }
+
+        :global(.dark) .dropdown-header h3 {
+          color: #fff;
+        }
+
+        .text-btn {
+          background: none;
+          border: none;
+          color: #667eea;
+          font-size: 12px;
+          font-weight: 500;
+          cursor: pointer;
+        }
+
+        .text-btn:hover {
+          text-decoration: underline;
+        }
+
+        /* Notifications */
+        .notifications-dropdown {
+          width: 360px;
+        }
+
+        .notifications-list {
+          max-height: 400px;
+          overflow-y: auto;
+        }
+
+        .notification-item {
+          position: relative;
+          padding: 16px;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+          cursor: pointer;
+          transition: background 0.2s ease;
+        }
+
+        :global(.dark) .notification-item {
+          border-bottom-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .notification-item:hover {
+          background: rgba(0, 0, 0, 0.02);
+        }
+
+        :global(.dark) .notification-item:hover {
+          background: rgba(255, 255, 255, 0.02);
+        }
+
+        .notification-item.unread {
+          background: rgba(102, 126, 234, 0.05);
+        }
+
+        :global(.dark) .notification-item.unread {
+          background: rgba(102, 126, 234, 0.1);
+        }
+
+        .notification-content {
+          padding-right: 20px;
+        }
+
+        .notification-title {
+          margin: 0 0 4px 0;
+          font-size: 14px;
+          font-weight: 500;
+          color: #000;
+        }
+
+        :global(.dark) .notification-title {
+          color: #fff;
+        }
+
+        .notification-time {
+          font-size: 12px;
+          color: #666;
+        }
+
+        :global(.dark) .notification-time {
+          color: #999;
+        }
+
+        .unread-dot {
+          position: absolute;
+          right: 16px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 8px;
+          height: 8px;
+          background: #667eea;
+          border-radius: 50%;
+        }
+
+        /* Profile */
+        .profile-btn {
+          padding: 4px;
+          background: none;
+          border: none;
+          cursor: pointer;
+        }
+
+        .avatar {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #667eea;
+          color: white;
+          font-size: 14px;
+          font-weight: 600;
+          transition: transform 0.2s ease;
+        }
+
+        .profile-btn:hover .avatar {
+          transform: scale(1.05);
+        }
+
+        .avatar img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .avatar.large {
+          width: 48px;
+          height: 48px;
+          font-size: 18px;
+        }
+
+        .profile-dropdown {
+          width: 280px;
+        }
+
+        .profile-info {
+          padding: 16px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        :global(.dark) .profile-info {
+          border-bottom-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .user-name {
+          margin: 0 0 2px 0;
+          font-size: 14px;
+          font-weight: 600;
+          color: #000;
+        }
+
+        :global(.dark) .user-name {
+          color: #fff;
+        }
+
+        .user-email {
+          margin: 0;
+          font-size: 12px;
+          color: #666;
+        }
+
+        :global(.dark) .user-email {
+          color: #999;
+        }
+
+        .dropdown-divider {
+          height: 1px;
+          background: rgba(0, 0, 0, 0.08);
+          margin: 8px 0;
+        }
+
+        :global(.dark) .dropdown-divider {
+          background: rgba(255, 255, 255, 0.08);
+        }
+
+        .dropdown-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          width: 100%;
+          padding: 10px 16px;
+          background: none;
+          border: none;
+          color: #333;
+          font-size: 14px;
+          cursor: pointer;
+          transition: background 0.2s ease;
+          text-align: left;
+        }
+
+        :global(.dark) .dropdown-item {
+          color: #ccc;
+        }
+
+        .dropdown-item:hover {
+          background: rgba(0, 0, 0, 0.05);
+        }
+
+        :global(.dark) .dropdown-item:hover {
+          background: rgba(255, 255, 255, 0.05);
+        }
+
+        .dropdown-item.danger {
+          color: #ef4444;
+        }
+
+        /* Mobile Navigation */
+        .mobile-nav {
+          position: fixed;
+          top: 68px;
+          left: 0;
+          right: 0;
+          background: rgba(255, 255, 255, 0.98);
+          backdrop-filter: blur(20px);
+          border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+          padding: 12px 16px;
+          display: none;
+          z-index: 999;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        :global(.dark) .mobile-nav {
+          background: rgba(17, 24, 39, 0.98);
+          border-bottom-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .mobile-nav-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          width: 100%;
+          padding: 14px 16px;
+          background: none;
+          border: none;
+          border-radius: 12px;
+          color: #64748b;
+          font-size: 15px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          text-align: left;
+          margin-bottom: 4px;
+        }
+
+        :global(.dark) .mobile-nav-item {
+          color: #9ca3af;
+        }
+
+        .mobile-nav-item:hover {
+          background: #f1f5f9;
+          color: #1e293b;
+        }
+
+        :global(.dark) .mobile-nav-item:hover {
+          background: #374151;
+          color: #f3f4f6;
+        }
+
+        .mobile-nav-item.active {
+          background: linear-gradient(135deg, #667eea, #764ba2);
+          color: white;
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
         /* Responsive Design */
         @media (max-width: 1024px) {
-          .navbar-center {
+          .navbar-container {
             gap: 16px;
           }
 
-          .nav-pills {
+          .desktop-nav {
+            gap: 2px;
+          }
+
+          .nav-label {
             display: none;
           }
 
-          .navbar-search {
-            width: 300px;
+          .nav-item {
+            padding: 8px 12px;
           }
 
-          .navbar-search.focused {
-            width: 350px;
+          .search-container {
+            width: 200px;
           }
 
-          .profile-info {
-            display: none;
+          .search-container.focused {
+            width: 280px;
           }
         }
 
         @media (max-width: 768px) {
-          .modern-navbar {
+          .navbar-container {
             padding: 0 16px;
           }
 
@@ -1007,38 +1015,41 @@ export default function ModernNavbar({
             display: flex;
           }
 
-          .current-section {
+          .desktop-nav {
             display: none;
           }
 
-          .navbar-search {
-            width: 250px;
-          }
-
-          .navbar-search.focused {
-            width: 280px;
-          }
-
-          .action-btn span {
+          .search-container {
             display: none;
           }
 
-          .mobile-nav-overlay {
+          .quick-add-btn span {
+            display: none;
+          }
+
+          .quick-add-btn {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            justify-content: center;
+          }
+
+          .mobile-nav {
             display: block;
           }
         }
 
         @media (max-width: 480px) {
-          .navbar-search {
-            width: 200px;
+          .navbar-container {
+            padding: 0 12px;
           }
 
-          .theme-switcher-wrapper {
+          .logo-text {
             display: none;
           }
 
-          .settings-btn {
-            display: none;
+          .navbar-right {
+            gap: 8px;
           }
         }
       `}</style>
