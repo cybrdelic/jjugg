@@ -3,6 +3,7 @@ import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { FeatureFlagProvider } from '@/contexts/FeatureFlagContext';
+import { AppDataProvider } from '@/contexts/AppDataContext';
 import getFeatureFlags from '@/config/featureFlags';
 import { useEffect } from 'react';
 
@@ -22,7 +23,9 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <ThemeProvider>
       <FeatureFlagProvider flags={featureFlags}>
-        <Component {...pageProps} />
+        <AppDataProvider>
+          <Component {...pageProps} />
+        </AppDataProvider>
       </FeatureFlagProvider>
     </ThemeProvider>
   );

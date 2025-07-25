@@ -17,7 +17,7 @@ import ActionsTab from '../ActionsTab';
 import { useFeatureFlags } from '@/contexts/FeatureFlagContext';
 import SkillsTab from '../SkillsTab'; // Import the new SkillsTab component
 import EnhancedDropdown from '../EnhancedDropdown';
-import { useDbData } from '../../hooks/useDbData';
+import { useAppData } from '../../contexts/AppDataContext';
 
 // Types
 interface Company {
@@ -86,7 +86,7 @@ interface SkillGap {
 
 export default function DashboardHome() {
   const { ENABLE_DEVELOPMENT_FEATURES } = useFeatureFlags();
-  const { applications, activities, upcomingEvents, appStats, userProfile, loading, error } = useDbData();
+  const { applications, activities, upcomingEvents, appStats, userProfile, loading, error } = useAppData();
 
   // Extract individual data sets for easier access
   const applicationsData = applications;

@@ -15,7 +15,7 @@ import Tooltip from '../Tooltip';
 import Portal from '../Portal';
 import ApplicationDetailDrawer from '../applications/ApplicationDetailDrawer';
 import { Application, ApplicationStage, InterviewEvent, StatusUpdate } from '@/types';
-import { useDbData } from '../../hooks/useDatabaseData';
+import { useAppData } from '../../contexts/AppDataContext';
 import EnhancedSearch from '../EnhancedSearch';
 
 // Helper Functions
@@ -76,7 +76,7 @@ export default function Applications() {
     createApplication,
     updateApplication,
     deleteApplication
-  } = useDbData();
+  } = useAppData();
 
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');

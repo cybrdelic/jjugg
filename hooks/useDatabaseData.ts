@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 
+// Simple in-memory cache to prevent redundant API calls
+const cache = new Map();
+const CACHE_DURATION = 30000; // 30 seconds
+
 // Hook to fetch data from the database API
 export function useDbData() {
     const [applications, setApplications] = useState([]);
@@ -16,6 +20,20 @@ export function useDbData() {
         try {
             setLoading(true);
             setError(null);
+
+            const cacheKey = `user-${userId}`;
+            const cachedData = cache.get(cacheKey);
+
+            // Return cached data if it's fresh
+            if (cachedData && Date.now() - cachedData.timestamp < CACHE_DURATION) {
+                setApplications(cachedData.applications);
+                setActivities(cachedData.activities);
+                setUpcomingEvents(cachedData.upcomingEvents);
+                setAppStats(cachedData.appStats);
+                setInterviews(cachedData.interviews);
+                setLoading(false);
+                return;
+            }
 
             // Fetch all data in parallel
             const [
@@ -58,6 +76,16 @@ export function useDbData() {
             setUpcomingEvents(eventsData);
             setAppStats(statsData);
             setInterviews(interviewsData);
+
+            // Cache the data
+            cache.set(cacheKey, {
+                applications: applicationsData,
+                activities: activitiesData,
+                upcomingEvents: eventsData,
+                appStats: statsData,
+                interviews: interviewsData,
+                timestamp: Date.now()
+            });
 
             console.log('✅ Database data loaded successfully:', {
                 applications: applicationsData.length,
@@ -231,7 +259,7 @@ export function useDbData() {
             id: userId.toString(),
             name: 'Alex Foster',
             email: 'alex.foster@example.com',
-            avatar: '/avatar.jpg',
+            avatar: '/avatar.svg',
             jobTitle: 'Software Developer',
             yearsExperience: 5,
             location: 'Remote',
