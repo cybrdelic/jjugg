@@ -14,6 +14,7 @@ import ActionButton from '../dashboard/ActionButton';
 import TabButton, { TabGroup } from '../TabButton';
 import EnhancedDropdown from '../EnhancedDropdown';
 import { useFeatureFlags } from '@/contexts/FeatureFlagContext';
+import ModernSearchBar from '../ModernSearchBar';
 
 interface MonthlyGoal {
   id: string;
@@ -707,16 +708,12 @@ export default function Goals() {
         {/* Search Bar and Controls */}
         <div className="goals-controls reveal-element">
           <div className="controls-top-row">
-            <div className="search-bar">
-              <Search size={18} className="search-icon" />
-              <input
-                type="text"
-                placeholder="Search goals..."
-                value={searchQuery}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-                aria-label="Search goals"
-              />
-            </div>
+            <ModernSearchBar
+              applications={[]}
+              onSearch={(query) => setSearchQuery(query)}
+              placeholder="Search goals..."
+              className="goals-search"
+            />
 
             <div className="view-options">
               <ActionButton
@@ -987,7 +984,7 @@ export default function Goals() {
         .goals-section { display: flex; flex-direction: column; gap: 24px; position: relative; }
         .header-actions { display: flex; gap: 12px; }
         .refresh-goals-btn, .add-goal-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: var(--border-radius); font-size: 14px; font-weight: 500; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; }
-        .refresh-goals-btn { background: var(--glass-bg); color: var(--text-primary); border: 1px solid var(--border-thin); }
+        .refresh-goals-btn { background: var(--glass-button-bg, var(--card)); color: var(--text-primary); border: 1px solid var(--border-thin); }
         .refresh-goals-btn:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); border-color: var(--accent-yellow); }
         .refresh-goals-btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .add-goal-btn { background: var(--accent-yellow); color: white; border: none; box-shadow: 0 2px 6px rgba(var(--accent-yellow-rgb), 0.25); }
@@ -1086,31 +1083,13 @@ export default function Goals() {
         .goals-controls { display: flex; flex-direction: column; gap: 16px; margin-bottom: 16px; }
         .controls-top-row { display: flex; justify-content: space-between; width: 100%; }
         .filter-container { display: inline-flex; align-items: center; }
-        .search-bar {
-          position: relative;
-          display: flex;
-          align-items: center;
-          background: var(--glass-bg);
-          border: 1px solid var(--border-thin);
-          border-radius: var(--border-radius);
-          padding: 8px;
+        .goals-search {
           width: 100%;
           max-width: 400px;
         }
-        .search-bar input {
-          border: none;
-          background: transparent;
-          color: var(--text-primary);
-          font-size: 14px;
-          width: 100%;
-          padding-left: 8px;
-          outline: none;
-        }
-        .search-bar input::placeholder { color: var(--text-tertiary); }
-        .search-icon { color: var(--text-secondary); }
         .filter-tab-group { background: transparent; border: none; box-shadow: none; }
         .view-options { display: flex; align-items: center; gap: 12px; align-self: flex-end; }
-        .sort-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: var(--border-radius); border: 1px solid var(--border-thin); background: var(--glass-bg); color: var(--text-primary); font-size: 14px; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .sort-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: var(--border-radius); border: 1px solid var(--border-thin); background: var(--glass-button-bg, var(--card)); color: var(--text-primary); font-size: 14px; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; }
         .sort-btn:hover { transform: scale(1.05); box-shadow: 0 2px 6px rgba(var(--accent-yellow-rgb), 0.15); border-color: var(--accent-yellow); }
         .goals-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; position: relative; }
         .category-section { display: flex; flex-direction: column; gap: 16px; }
@@ -1284,7 +1263,7 @@ export default function Goals() {
           .header-actions { flex-direction: column; width: 100%; }
           .refresh-goals-btn, .add-goal-btn { width: 100%; justify-content: center; }
           .goals-controls { flex-direction: column; align-items: stretch; }
-          .search-bar { max-width: 100%; }
+          .goals-search { max-width: 100%; }
           .filter-tabs { overflow-x: auto; }
           .view-options { align-self: flex-end; }
           .goals-grid { grid-template-columns: 1fr; }

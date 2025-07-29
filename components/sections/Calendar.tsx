@@ -1257,16 +1257,19 @@ export default function Calendar() {
         }
 
         .nav-btn, .today-btn, .add-event-btn {
-          background: var(--glass-bg);
-          border: 1px solid var(--border-thin);
-          border-radius: 6px;
-          padding: 6px 8px;
+          background: var(--glass-period-selector-bg, rgba(255, 255, 255, 0.1));
+          border: var(--navbar-border, 1px solid rgba(0, 0, 0, 0.1));
+          border-radius: var(--button-border-radius, 6px);
+          padding: var(--button-padding, 6px 8px);
           color: var(--text-secondary);
           cursor: pointer;
           transition: all 0.2s ease;
           display: flex;
           align-items: center;
           justify-content: center;
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          box-shadow: var(--button-shadow, 0 2px 4px rgba(0, 0, 0, 0.1));
         }
 
         .today-btn, .add-event-btn {

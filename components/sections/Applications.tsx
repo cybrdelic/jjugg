@@ -16,7 +16,7 @@ import Portal from '../Portal';
 import ApplicationDetailDrawer from '../applications/ApplicationDetailDrawer';
 import { Application, ApplicationStage, InterviewEvent, StatusUpdate } from '@/types';
 import { useAppData } from '../../contexts/AppDataContext';
-import EnhancedSearch from '../EnhancedSearch';
+import ModernSearchBar from '../ModernSearchBar';
 
 // Helper Functions
 const formatDate = (date: Date): string =>
@@ -501,32 +501,34 @@ export default function Applications() {
         variant="default"
       >
         <div className="header-actions">
-          <EnhancedSearch
+          <ModernSearchBar
             applications={applicationsData || []}
             onSearch={setSearchTerm}
             placeholder="Search applications, companies, positions..."
-            className="search-bar"
+            className="search-component"
           />
-          {selectedRows.length > 0 && (
+          <div className="action-buttons">
+            {selectedRows.length > 0 && (
+              <ActionButton
+                label={`Delete ${selectedRows.length}`}
+                icon={Trash2}
+                variant="danger"
+                onClick={handleBulkDelete}
+              />
+            )}
             <ActionButton
-              label={`Delete ${selectedRows.length}`}
-              icon={Trash2}
-              variant="danger"
-              onClick={handleBulkDelete}
+              label="New Application"
+              icon={PlusCircle}
+              variant="primary"
+              onClick={handleAddApplication}
             />
-          )}
-          <ActionButton
-            label="New Application"
-            icon={PlusCircle}
-            variant="primary"
-            onClick={handleAddApplication}
-          />
-          <ActionButton
-            label="Export CSV"
-            icon={Download}
-            variant="ghost"
-            onClick={handleExport}
-          />
+            <ActionButton
+              label="Export CSV"
+              icon={Download}
+              variant="ghost"
+              onClick={handleExport}
+            />
+          </div>
         </div>
       </CardHeader>
 
@@ -1293,7 +1295,7 @@ export default function Applications() {
           flex-direction: column;
           gap: 12px;
           padding: 16px;
-          background: var(--background);
+          background: var(--actual-background, var(--background));
           border-radius: 8px;
           transition: all 0.3s ease;
           --glass-bg-rgb: 255, 255, 255;
@@ -1306,20 +1308,43 @@ export default function Applications() {
 
         .header-actions {
           display: flex;
-          gap: 8px;
           align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          margin-top: 16px;
+          padding: 0;
           flex-wrap: wrap;
-          margin-top: 8px;
+        }
+
+        .search-component {
+          flex: 1;
+          min-width: 280px;
+          max-width: 450px;
+        }
+
+        .action-buttons {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-shrink: 0;
         }
 
         @media (max-width: 768px) {
           .header-actions {
             flex-direction: column;
             align-items: stretch;
+            gap: 12px;
           }
 
-          .search-bar {
-            max-width: 100%;
+          .search-component {
+            min-width: auto;
+            max-width: none;
+            width: 100%;
+          }
+
+          .action-buttons {
+            justify-content: center;
+            flex-wrap: wrap;
           }
         }
 
@@ -1378,7 +1403,7 @@ export default function Applications() {
           align-items: center;
           gap: 8px;
           flex-wrap: wrap;
-          background: var(--glass-bg);
+          background: var(--glass-card-container-bg, var(--surface));
           padding: 6px 10px;
           border-radius: 6px;
           border: 1px solid var(--border-thin);
@@ -1391,7 +1416,7 @@ export default function Applications() {
 
         .control-btn {
           padding: 6px 10px;
-          background: var(--glass-bg);
+          background: var(--glass-button-bg, var(--card));
           border: 1px solid var(--border-thin);
           border-radius: 6px;
           color: var(--text-secondary);
@@ -1400,7 +1425,7 @@ export default function Applications() {
         }
 
         .control-btn:hover {
-          background: var(--hover-bg);
+          background: var(--glass-hover-bg, var(--hover-bg));
           color: var(--text-primary);
         }
 
@@ -1440,7 +1465,7 @@ export default function Applications() {
           display: flex;
           align-items: center;
           gap: 2px;
-          background: var(--glass-bg);
+          background: var(--glass-card-container-bg, var(--surface));
           border-radius: 6px;
           padding: 2px;
           border: 1px solid var(--border-thin);
@@ -1554,44 +1579,48 @@ export default function Applications() {
         }
 
         .dashboard-card {
-          background: #ffffff;
-          border: 1px solid #e5e7eb;
-          border-radius: 16px;
-          padding: 0;
+          background: var(--glass-card-container-bg, rgba(255, 255, 255, 0.1));
+          border: var(--card-border-radius, 1px solid rgba(0, 0, 0, 0.1));
+          border-radius: var(--card-border-radius, 16px);
+          padding: var(--card-padding, 0);
           overflow: hidden;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          box-shadow: var(--card-shadow, 0 1px 3px rgba(0, 0, 0, 0.1));
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
         }
 
         :global(.dark) .dashboard-card {
-          background: #1f2937;
-          border-color: #374151;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+          background: var(--glass-card-container-bg, rgba(31, 41, 55, 0.1));
+          border: var(--card-border-radius, 1px solid rgba(255, 255, 255, 0.1));
+          box-shadow: var(--card-shadow, 0 1px 3px rgba(0, 0, 0, 0.3));
         }
 
         .table-wrapper {
           position: relative;
-          background: #ffffff;
-          border-radius: 16px;
+          background: var(--glass-container-bg, rgba(255, 255, 255, 0.05));
+          border-radius: var(--table-border-radius, 16px);
           overflow: hidden;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-          border: 1px solid #e5e7eb;
+          box-shadow: var(--card-shadow, 0 1px 3px rgba(0, 0, 0, 0.1));
+          border: var(--card-border-radius, 1px solid rgba(0, 0, 0, 0.1));
+          backdrop-filter: blur(15px);
+          -webkit-backdrop-filter: blur(15px);
         }
 
         :global(.dark) .table-wrapper {
-          background: #1f2937;
-          border-color: #374151;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+          background: var(--glass-container-bg, rgba(31, 41, 55, 0.05));
+          border: var(--card-border-radius, 1px solid rgba(255, 255, 255, 0.1));
+          box-shadow: var(--card-shadow, 0 1px 3px rgba(0, 0, 0, 0.3));
         }
 
         .table-header {
           display: grid;
           grid-template-columns: 1.8fr 2.2fr 1fr 1.5fr 0.8fr 1.2fr 1fr 1fr;
           padding: 20px 24px;
-          background: #f8fafc;
-          border-bottom: 1px solid #e5e7eb;
+          background: var(--glass-container-bg, var(--surface));
+          border-bottom: 1px solid var(--border-thin);
           font-size: 13px;
           font-weight: 600;
-          color: #374151;
+          color: var(--text-secondary);
           position: sticky;
           top: 0;
           z-index: 10;
@@ -1599,9 +1628,9 @@ export default function Applications() {
         }
 
         :global(.dark) .table-header {
-          background: #374151;
-          border-bottom-color: #4b5563;
-          color: #d1d5db;
+          background: var(--glass-container-bg, var(--surface));
+          border-bottom-color: var(--border-thin);
+          color: var(--text-secondary);
         }
 
         .table-header.autosize {
@@ -1648,52 +1677,38 @@ export default function Applications() {
           text-transform: uppercase;
           letter-spacing: 0.025em;
           font-size: 11px;
-          color: #6b7280;
+          color: var(--text-secondary);
           transition: color 0.2s ease;
         }
 
-        :global(.dark) .header-cell span {
-          color: #9ca3af;
-        }
-
         .header-cell:hover span {
-          color: #667eea;
+          color: var(--primary);
         }
 
         .header-cell.sorted span {
-          color: #667eea;
+          color: var(--primary);
         }
 
         .filter-input {
           padding: 6px 8px;
-          border: 1px solid #d1d5db;
+          border: 1px solid var(--border-thin);
           border-radius: 6px;
           font-size: 12px;
-          background: #ffffff;
-          color: #374151;
+          background: var(--glass-input-bg, var(--card));
+          color: var(--text-primary);
           transition: all 0.2s ease;
-        }
-
-        :global(.dark) .filter-input {
-          background: #4b5563;
-          border-color: #6b7280;
-          color: #f3f4f6;
         }
 
         .filter-input:focus {
           outline: none;
-          border-color: #667eea;
-          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+          border-color: var(--primary);
+          box-shadow: 0 0 0 3px rgba(var(--accent-primary-rgb), 0.1);
         }
 
         .table-body {
           max-height: calc(100vh - 300px);
           overflow-y: auto;
-          background: #ffffff;
-        }
-
-        :global(.dark) .table-body {
-          background: #1f2937;
+          background: var(--glass-container-bg, var(--background));
         }
 
         .table-row {
@@ -1701,8 +1716,8 @@ export default function Applications() {
           grid-template-columns: 1.8fr 2.2fr 1fr 1.5fr 0.8fr 1.2fr 1fr 1fr;
           align-items: center;
           padding: 16px 20px;
-          border-bottom: 1px solid #f1f5f9;
-          background: #ffffff;
+          border-bottom: 1px solid var(--border-light);
+          background: var(--surface, var(--background-secondary));
           transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
           position: relative;
           cursor: pointer;
@@ -1730,8 +1745,8 @@ export default function Applications() {
         }
 
         :global(.dark) .table-row {
-          background: #1f2937;
-          border-bottom-color: #374151;
+          background: var(--surface, var(--background-secondary));
+          border-bottom-color: var(--border-light);
         }
 
         .table-row.autosize {
@@ -1774,31 +1789,23 @@ export default function Applications() {
         }
 
         .table-row:hover {
-          background: #f8fafc;
-          border-left: 4px solid #667eea;
+          background: var(--hover-bg, var(--surface-elevated));
+          border-left: 4px solid var(--primary);
           padding-left: 20px;
-        }
-
-        :global(.dark) .table-row:hover {
-          background: #374151;
         }
 
         .table-row:hover::before {
-          background: #667eea;
+          background: var(--primary);
         }
 
         .table-row.selected {
-          background: #eff6ff;
-          border-left: 4px solid #667eea;
+          background: var(--selected-bg, var(--card-hover));
+          border-left: 4px solid var(--primary);
           padding-left: 20px;
         }
 
-        :global(.dark) .table-row.selected {
-          background: #1e3a8a;
-        }
-
         .table-row.selected::before {
-          background: #667eea;
+          background: var(--primary);
         }
 
         .table-row.animate-in {
@@ -1943,17 +1950,13 @@ export default function Applications() {
           align-items: center;
           gap: 10px;
           font-size: 14px;
-          color: #1f2937;
+          color: var(--text-primary);
           position: relative;
           min-height: 40px;
         }
 
-        :global(.dark) .cell {
-          color: #f3f4f6;
-        }
-
         .cell-icon {
-          color: #9ca3af;
+          color: var(--text-tertiary);
           flex-shrink: 0;
           width: 16px;
           height: 16px;
@@ -1961,11 +1964,7 @@ export default function Applications() {
 
         .cell-value {
           font-weight: 500;
-          color: #1f2937;
-        }
-
-        :global(.dark) .cell-value {
-          color: #f9fafb;
+          color: var(--text-primary);
         }
 
         .checkbox-wrapper {
@@ -1988,8 +1987,8 @@ export default function Applications() {
           left: 0;
           width: 20px;
           height: 20px;
-          background: #ffffff;
-          border: 2px solid #d1d5db;
+          background: var(--glass-input-bg, var(--card));
+          border: 2px solid var(--border-thin);
           border-radius: 6px;
           cursor: pointer;
           transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1998,14 +1997,9 @@ export default function Applications() {
           justify-content: center;
         }
 
-        :global(.dark) .checkbox-label {
-          background: #374151;
-          border-color: #6b7280;
-        }
-
         .custom-checkbox:checked + .checkbox-label {
-          background: #667eea;
-          border-color: #667eea;
+          background: var(--primary);
+          border-color: var(--primary);
         }
 
         .custom-checkbox:checked + .checkbox-label::after {
@@ -2027,12 +2021,8 @@ export default function Applications() {
           height: 32px;
           border-radius: 8px;
           object-fit: cover;
-          border: 1px solid #e5e7eb;
+          border: 1px solid var(--border-thin);
           flex-shrink: 0;
-        }
-
-        :global(.dark) .company-logo {
-          border-color: #4b5563;
         }
 
         .company-logo-placeholder {
@@ -2050,15 +2040,11 @@ export default function Applications() {
 
         .company-name {
           font-weight: 600;
-          color: #1f2937;
+          color: var(--text-primary);
           font-size: 14px;
           truncate: ellipsis;
           white-space: nowrap;
           overflow: hidden;
-        }
-
-        :global(.dark) .company-name {
-          color: #f9fafb;
         }
 
         .position-cell {
@@ -2070,33 +2056,18 @@ export default function Applications() {
 
         .position-title {
           font-weight: 600;
-          color: #1f2937;
+          color: var(--text-primary);
           font-size: 14px;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
         }
 
-        :global(.dark) .position-title {
-          color: #f9fafb;
-        }
-
         .position-description {
           font-size: 12px;
-          color: #6b7280;
+          color: var(--text-secondary);
           line-height: 1.4;
-        }
-
-        :global(.dark) .position-description {
-          color: #9ca3af;
-        }
           text-overflow: ellipsis;
-        }
-
-        .position-description {
-          font-size: 12px;
-          color: var(--text-tertiary);
-          line-height: 1.3;
           max-height: 32px;
           overflow: hidden;
           display: -webkit-box;
@@ -2177,63 +2148,33 @@ export default function Applications() {
         }
 
         .stage-applied {
-          background: #eff6ff;
-          color: #1d4ed8;
-          border-color: #93c5fd;
-        }
-
-        :global(.dark) .stage-applied {
-          background: #1e3a8a;
-          color: #93c5fd;
-          border-color: #3730a3;
+          background: var(--glass-accent-blue-light, var(--application-applied));
+          color: var(--glass-accent-blue, var(--application-applied));
+          border-color: var(--glass-accent-blue-border, var(--application-applied));
         }
 
         .stage-screening {
-          background: #fdf4ff;
-          color: #a21caf;
-          border-color: #d8b4fe;
-        }
-
-        :global(.dark) .stage-screening {
-          background: #581c87;
-          color: #d8b4fe;
-          border-color: #6b21a8;
+          background: var(--glass-accent-purple-light, var(--application-screening));
+          color: var(--glass-accent-purple, var(--application-screening));
+          border-color: var(--glass-accent-purple-border, var(--application-screening));
         }
 
         .stage-interview {
-          background: #ecfdf5;
-          color: #059669;
-          border-color: #6ee7b7;
-        }
-
-        :global(.dark) .stage-interview {
-          background: #064e3b;
-          color: #6ee7b7;
-          border-color: #047857;
+          background: var(--glass-accent-green-light, var(--application-interview));
+          color: var(--glass-accent-green, var(--application-interview));
+          border-color: var(--glass-accent-green-border, var(--application-interview));
         }
 
         .stage-offer {
-          background: #f0fdf4;
-          color: #16a34a;
-          border-color: #86efac;
-        }
-
-        :global(.dark) .stage-offer {
-          background: #14532d;
-          color: #86efac;
-          border-color: #15803d;
+          background: var(--glass-accent-success-light, var(--application-offer));
+          color: var(--glass-accent-success, var(--application-offer));
+          border-color: var(--glass-accent-success-border, var(--application-offer));
         }
 
         .stage-rejected {
-          background: #fef2f2;
-          color: #dc2626;
-          border-color: #fca5a5;
-        }
-
-        :global(.dark) .stage-rejected {
-          background: #7f1d1d;
-          color: #fca5a5;
-          border-color: #991b1b;
+          background: var(--glass-accent-red-light, var(--application-rejected));
+          color: var(--glass-accent-red, var(--application-rejected));
+          border-color: var(--glass-accent-red-border, var(--application-rejected));
         }
 
         .stage-indicator {
@@ -2258,18 +2199,14 @@ export default function Applications() {
           width: 100%;
           height: 4px;
           border-radius: 2px;
-          background: #e5e7eb;
+          background: var(--glass-progress-bg, var(--surface));
           overflow: hidden;
           position: relative;
         }
 
-        :global(.dark) .stage-progress-background {
-          background: #4b5563;
-        }
-
         .stage-progress-fill {
           height: 100%;
-          background: linear-gradient(90deg, #667eea, #764ba2);
+          background: var(--glass-progress-fill, var(--primary));
           border-radius: 2px;
           transition: width 0.3s ease;
         }

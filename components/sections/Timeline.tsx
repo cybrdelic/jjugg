@@ -8,6 +8,7 @@ import {
 import CardHeader from '../CardHeader';
 import confetti from 'canvas-confetti';
 import Modal from '../Modal';
+import ModernSearchBar from '../ModernSearchBar';
 import TabButton, { TabGroup } from '../TabButton';
 import EnhancedDropdown from '../EnhancedDropdown';
 import { useFeatureFlags } from '@/contexts/FeatureFlagContext';
@@ -373,16 +374,12 @@ export default function Timeline() {
         variant="default"
       >
         <div className="header-actions">
-          <div className="search-bar">
-            <Search size={18} className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search activities..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              aria-label="Search activities"
-            />
-          </div>
+          <ModernSearchBar
+            applications={[]}
+            onSearch={(query) => setSearchQuery(query)}
+            placeholder="Search activities..."
+            className="timeline-search"
+          />
           <button
             className="add-btn"
             onClick={() => setShowAddModal(true)}
@@ -645,30 +642,12 @@ export default function Timeline() {
           align-items: center;
           gap: 12px;
         }
-        .search-bar {
-          display: flex;
-          align-items: center;
-          background: var(--glass-card-bg);
-          border: 1px solid var(--border-thin);
-          border-radius: var(--border-radius);
-          padding: 6px 12px;
-          width: 250px;
+
+        .timeline-search {
+          flex: 1;
+          max-width: 300px;
         }
-        .search-bar input {
-          border: none;
-          outline: none;
-          width: 100%;
-          font-size: 14px;
-          color: var(--text-primary);
-          background: transparent;
-        }
-        .search-bar input::placeholder {
-          color: var(--text-tertiary);
-        }
-        .search-icon {
-          color: var(--text-secondary);
-          margin-right: 8px;
-        }
+
         .add-btn {
           display: flex;
           align-items: center;
@@ -1098,7 +1077,7 @@ export default function Timeline() {
           .timeline-container { padding: 0 20px; }
           .timeline-card { max-width: 100%; }
           .header-actions { flex-direction: column; align-items: stretch; }
-          .search-bar { width: 100%; }
+          .timeline-search { width: 100%; }
           .filter-tabs { justify-content: center; }
           .meta { flex-direction: column; gap: 4px; }
         }

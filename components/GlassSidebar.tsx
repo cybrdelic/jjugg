@@ -41,7 +41,7 @@ export default function GlassSidebar({
   userName,
   userAvatar
 }: GlassSidebarProps) {
-  const { currentTheme, toggleColorTheme } = useTheme();
+  const { currentTheme, toggleColorMode } = useTheme();
   const sidebarRef = useRef<HTMLDivElement>(null);
   const [expandedWidth, setExpandedWidth] = useState(width);
   const [sections, setSections] = useState<Record<string, NavItemType[]>>({ main: items });

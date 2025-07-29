@@ -177,14 +177,14 @@ module.exports = {
     function ({ addUtilities }) {
       const newUtilities = {
         '.glass': {
-          backgroundColor: 'rgba(255, 255, 255, 0.35)',
+          backgroundColor: 'rgba(250, 13, 13, 0.96)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           borderColor: 'rgba(255, 255, 255, 0.18)',
           boxShadow: '0 4px 12px 0 rgba(0, 0, 0, 0.1)'
         },
         '.glass-dark': {
-          backgroundColor: 'rgba(17, 24, 39, 0.75)',
+          backgroundColor: 'rgba(0, 81, 255, 1)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           borderColor: 'rgba(255, 255, 255, 0.08)',

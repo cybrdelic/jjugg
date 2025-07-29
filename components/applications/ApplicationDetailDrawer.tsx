@@ -107,11 +107,11 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
   // Get stage color
   const getStageColor = (stage: ApplicationStage): string => {
     switch (stage) {
-      case 'applied': return 'var(--accent-blue)';
-      case 'screening': return 'var(--accent-purple)';
-      case 'interview': return 'var(--accent-green)';
-      case 'offer': return 'var(--accent-success)';
-      case 'rejected': return 'var(--accent-red)';
+      case 'applied': return 'var(--application-applied)';
+      case 'screening': return 'var(--application-screening)';
+      case 'interview': return 'var(--application-interview)';
+      case 'offer': return 'var(--application-offer)';
+      case 'rejected': return 'var(--application-rejected)';
       default: return 'var(--text-secondary)';
     }
   };

@@ -4,35 +4,35 @@
 import React from 'react';
 
 interface GlassCardProps {
-    children: React.ReactNode;
-    className?: string;
-    onClick?: () => void;
-    ariaLabel?: string;
-    completed?: boolean;
-    approved?: boolean;
+  children: React.ReactNode;
+  className?: string;
+  onClick?: () => void;
+  ariaLabel?: string;
+  completed?: boolean;
+  approved?: boolean;
 }
 
 const GlassCard: React.FC<GlassCardProps> = ({
-    children,
-    className = '',
-    onClick,
-    ariaLabel,
-    completed,
-    approved,
+  children,
+  className = '',
+  onClick,
+  ariaLabel,
+  completed,
+  approved,
 }) => {
-    return (
-        <div
-            className={`glass-card ${completed ? 'completed' : ''} ${approved ? 'approved' : 'pending'} ${className}`}
-            onClick={onClick}
-            role={onClick ? 'button' : undefined}
-            aria-label={ariaLabel}
-            tabIndex={onClick ? 0 : undefined}
-        >
-            {children}
-            <style jsx>{`
+  return (
+    <div
+      className={`glass-card ${completed ? 'completed' : ''} ${approved ? 'approved' : 'pending'} ${className}`}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      aria-label={ariaLabel}
+      tabIndex={onClick ? 0 : undefined}
+    >
+      {children}
+      <style jsx>{`
         .glass-card {
           position: relative;
-          background: var(--glass-card-bg);
+          background: var(--glass-card-bg, var(--card));
           backdrop-filter: blur(var(--blur-amount)); /* Blur behind card */
           border: 1px solid var(--border-thin);
           border-radius: var(--border-radius);
@@ -64,8 +64,8 @@ const GlassCard: React.FC<GlassCardProps> = ({
           }
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 };
 
 export default GlassCard;

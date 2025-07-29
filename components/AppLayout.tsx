@@ -5,139 +5,140 @@ import { useFeatureFlags } from '@/contexts/FeatureFlagContext';
 import { useAppData } from '@/contexts/AppDataContext';
 import type { SectionKey, NavItemType } from '@/types';
 import {
-    House, FileText, Bell, Users, User, Target, Clock, Calendar as CalendarIcon
+  House, FileText, Bell, Users, User, Target, Clock, Calendar as CalendarIcon
 } from 'lucide-react';
 
 interface AppLayoutProps {
-    children: ReactNode;
-    currentSection: SectionKey;
+  children: ReactNode;
+  currentSection: SectionKey;
 }
 
 export default function AppLayout({ children, currentSection }: AppLayoutProps) {
-    const router = useRouter();
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [isLoaded, setIsLoaded] = useState(false);
+  const router = useRouter();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-    // Use shared app data from context
-    const {
-        applications,
-        activities,
-        upcomingEvents,
-        appStats,
-        userProfile,
-        loading: dbLoading,
-        error: dbError
-    } = useAppData();
+  // Use shared app data from context
+  const {
+    applications,
+    activities,
+    upcomingEvents,
+    appStats,
+    userProfile,
+    loading: dbLoading,
+    error: dbError
+  } = useAppData();
 
-    const {
-        ENABLE_CALENDAR_VIEW,
-        ENABLE_TIMELINE_SECTION,
-        ENABLE_GOALS_SECTION,
-        ENABLE_PROFILE_ARTIFACTS
-    } = useFeatureFlags();
+  const {
+    ENABLE_CALENDAR_VIEW,
+    ENABLE_TIMELINE_SECTION,
+    ENABLE_GOALS_SECTION,
+    ENABLE_PROFILE_ARTIFACTS
+  } = useFeatureFlags();
 
-    // Create navigation function that uses router
-    const handleNavigation = (sectionKey: SectionKey) => {
-        const routeMap: Record<SectionKey, string> = {
-            'dashboard-home': '/dashboard/home',
-            'applications-section': '/applications',
-            'reminders-section': '/reminders',
-            'analytics-section': '/analytics',
-            'interviews-section': '/interviews',
-            'profile-artifacts-section': '/profile',
-            'goals-section': '/goals',
-            'timeline-section': '/timeline',
-            'calendar-section': '/calendar',
-        };
-
-        const route = routeMap[sectionKey];
-        if (route) {
-            router.push(route);
-        }
+  // Create navigation function that uses router
+  const handleNavigation = (sectionKey: SectionKey) => {
+    const routeMap: Record<SectionKey, string> = {
+      'dashboard-home': '/dashboard/home',
+      'applications-section': '/applications',
+      'reminders-section': '/reminders',
+      'analytics-section': '/analytics',
+      'interviews-section': '/interviews',
+      'profile-artifacts-section': '/profile',
+      'goals-section': '/goals',
+      'timeline-section': '/timeline',
+      'calendar-section': '/calendar',
     };
 
-    // Build sidebar items
-    const sidebarItems: NavItemType[] = [
-        { id: 'dashboard-home', key: 'dashboard-home', label: 'Dashboard', icon: <House className="w-5 h-5" />, color: 'var(--accent-blue)', badge: { count: 3 } },
-        { id: 'applications-section', key: 'applications-section', label: 'Applications', icon: <FileText className="w-5 h-5" />, color: 'var(--accent-purple)', badge: { count: applications.length } },
-        { id: 'reminders-section', key: 'reminders-section', label: 'Reminders', icon: <Bell className="w-5 h-5" />, color: 'var(--accent-pink)', badge: { count: upcomingEvents.length } },
-        { id: 'interviews-section', key: 'interviews-section', label: 'Interviews', icon: <Users className="w-5 h-5" />, color: 'var(--accent-orange)', badge: { count: appStats?.interviewsScheduled || 0 } },
-        ...(ENABLE_PROFILE_ARTIFACTS ? [{ id: 'profile-artifacts-section' as SectionKey, key: 'profile-artifacts-section' as SectionKey, label: 'Profile', icon: <User className="w-5 h-5" />, color: 'var(--accent-green)' }] : []),
-        ...(ENABLE_GOALS_SECTION ? [{ id: 'goals-section' as SectionKey, key: 'goals-section' as SectionKey, label: 'Goals', icon: <Target className="w-5 h-5" />, color: 'var(--accent-yellow)' }] : []),
-        ...(ENABLE_TIMELINE_SECTION ? [{ id: 'timeline-section' as SectionKey, key: 'timeline-section' as SectionKey, label: 'Timeline', icon: <Clock className="w-5 h-5" />, color: 'var(--accent-red)', badge: { count: activities.length } }] : []),
-        ...(ENABLE_CALENDAR_VIEW ? [{ id: 'calendar-section' as SectionKey, key: 'calendar-section' as SectionKey, label: 'Calendar', icon: <CalendarIcon className="w-5 h-5" />, color: 'var(--accent-blue-light)', badge: { count: upcomingEvents.length } }] : []),
-    ];
+    const route = routeMap[sectionKey];
+    if (route) {
+      router.push(route);
+    }
+  };
 
-    useEffect(() => {
-        const timer = setTimeout(() => setIsLoaded(true), 100);
-        return () => clearTimeout(timer);
-    }, []);
+  // Build sidebar items
+  const sidebarItems: NavItemType[] = [
+    { id: 'dashboard-home', key: 'dashboard-home', label: 'Dashboard', icon: <House className="w-5 h-5" />, color: 'var(--accent-blue)', badge: { count: 3 } },
+    { id: 'applications-section', key: 'applications-section', label: 'Applications', icon: <FileText className="w-5 h-5" />, color: 'var(--accent-purple)', badge: { count: applications.length } },
+    { id: 'reminders-section', key: 'reminders-section', label: 'Reminders', icon: <Bell className="w-5 h-5" />, color: 'var(--accent-pink)', badge: { count: upcomingEvents.length } },
+    { id: 'interviews-section', key: 'interviews-section', label: 'Interviews', icon: <Users className="w-5 h-5" />, color: 'var(--accent-orange)', badge: { count: appStats?.interviewsScheduled || 0 } },
+    ...(ENABLE_PROFILE_ARTIFACTS ? [{ id: 'profile-artifacts-section' as SectionKey, key: 'profile-artifacts-section' as SectionKey, label: 'Profile', icon: <User className="w-5 h-5" />, color: 'var(--accent-green)' }] : []),
+    ...(ENABLE_GOALS_SECTION ? [{ id: 'goals-section' as SectionKey, key: 'goals-section' as SectionKey, label: 'Goals', icon: <Target className="w-5 h-5" />, color: 'var(--accent-yellow)' }] : []),
+    ...(ENABLE_TIMELINE_SECTION ? [{ id: 'timeline-section' as SectionKey, key: 'timeline-section' as SectionKey, label: 'Timeline', icon: <Clock className="w-5 h-5" />, color: 'var(--accent-red)', badge: { count: activities.length } }] : []),
+    ...(ENABLE_CALENDAR_VIEW ? [{ id: 'calendar-section' as SectionKey, key: 'calendar-section' as SectionKey, label: 'Calendar', icon: <CalendarIcon className="w-5 h-5" />, color: 'var(--accent-blue-light)', badge: { count: upcomingEvents.length } }] : []),
+  ];
 
-    const toggleMobileMenu = () => {
-        setIsMobileMenuOpen(!isMobileMenuOpen);
-    };
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoaded(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
-    return (
-        <div className={`app-container reveal-loaded ${isLoaded ? 'loaded' : ''}`}>
-            {/* Modern Navbar */}
-            <ModernNavbar
-                items={sidebarItems}
-                currentSection={currentSection}
-                setCurrentSection={handleNavigation}
-                userName={userProfile.name}
-                userAvatar={userProfile.avatar}
-                onMobileMenuToggle={toggleMobileMenu}
-                isMobileMenuOpen={isMobileMenuOpen}
-            />
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
 
-            <main className="glass-main">
-                <div className="main-content">
-                    <div className="reveal-element">
-                        {/* Show loading state */}
-                        {dbLoading && (
-                            <div className="loading-state">
-                                <div className="loading-spinner"></div>
-                                <p>Loading data from database...</p>
-                            </div>
-                        )}
+  return (
+    <div className={`app-container reveal-loaded ${isLoaded ? 'loaded' : ''}`}>
+      {/* Modern Navbar */}
+      <ModernNavbar
+        items={sidebarItems}
+        currentSection={currentSection}
+        setCurrentSection={handleNavigation}
+        userName={userProfile.name}
+        userAvatar={userProfile.avatar}
+        onMobileMenuToggle={toggleMobileMenu}
+        isMobileMenuOpen={isMobileMenuOpen}
+      />
 
-                        {/* Show error state */}
-                        {dbError && (
-                            <div className="error-state">
-                                <h2>Database Error</h2>
-                                <p>{dbError}</p>
-                                <p>Please make sure the database is seeded by running: <code>npm run db:reset</code></p>
-                            </div>
-                        )}
+      <main className="glass-main">
+        <div className="main-content">
+          <div className="reveal-element">
+            {/* Show loading state */}
+            {dbLoading && (
+              <div className="loading-state">
+                <div className="loading-spinner"></div>
+                <p>Loading data from database...</p>
+              </div>
+            )}
 
-                        {/* Show content when data is loaded */}
-                        {!dbLoading && !dbError && children}
-                    </div>
-                </div>
-            </main>
+            {/* Show error state */}
+            {dbError && (
+              <div className="error-state">
+                <h2>Database Error</h2>
+                <p>{dbError}</p>
+                <p>Please make sure the database is seeded by running: <code>npm run db:reset</code></p>
+              </div>
+            )}
 
-            {/* Background elements and particles */}
-            <div className="particles">
-                <div className="particle"></div>
-                <div className="particle"></div>
-                <div className="particle"></div>
-                <div className="particle"></div>
-                <div className="particle"></div>
-                <div className="particle"></div>
-                <div className="particle"></div>
-                <div className="particle"></div>
-            </div>
-            <div className="bg-gradient-1"></div>
-            <div className="bg-gradient-2"></div>
+            {/* Show content when data is loaded */}
+            {!dbLoading && !dbError && children}
+          </div>
+        </div>
+      </main>
 
-            <style jsx>{`
+      {/* Background elements and particles */}
+      <div className="particles">
+        <div className="particle"></div>
+        <div className="particle"></div>
+        <div className="particle"></div>
+        <div className="particle"></div>
+        <div className="particle"></div>
+        <div className="particle"></div>
+        <div className="particle"></div>
+        <div className="particle"></div>
+      </div>
+      <div className="bg-gradient-1"></div>
+      <div className="bg-gradient-2"></div>
+
+      <style jsx>{`
         .app-container {
           position: relative;
           min-height: 100vh;
-          background: var(--bg-primary);
+          background: var(--actual-background, var(--background));
           color: var(--text-primary);
-          padding-top: 68px;
+          padding-top: var(--navbar-height, 68px);
           overflow-x: hidden;
+          transition: background 0.3s ease;
         }
 
         .glass-main {
@@ -160,8 +161,8 @@ export default function AppLayout({ children, currentSection }: AppLayoutProps) 
         .loading-spinner {
           width: 40px;
           height: 40px;
-          border: 4px solid var(--border-color);
-          border-top-color: var(--accent-primary);
+          border: 4px solid var(--border-thin);
+          border-top-color: var(--primary);
           border-radius: 50%;
           animation: spin 1s linear infinite;
           margin: 0 auto 1rem;
@@ -185,7 +186,7 @@ export default function AppLayout({ children, currentSection }: AppLayoutProps) 
         .particle {
           position: absolute;
           border-radius: 50%;
-          background: rgba(var(--accent-blue-rgb), 0.2);
+          background: var(--glass-hover-bg);
           animation: float 15s infinite ease-in-out;
         }
 
@@ -210,7 +211,7 @@ export default function AppLayout({ children, currentSection }: AppLayoutProps) 
         .bg-gradient-1 {
           width: 50vw;
           height: 50vw;
-          background: radial-gradient(circle, rgba(var(--accent-blue-rgb), 0.15), transparent 70%);
+          background: radial-gradient(circle, var(--glass-hover-bg), transparent 70%);
           top: -10vw;
           right: -10vw;
           animation: float 20s infinite alternate ease-in-out;
@@ -219,7 +220,7 @@ export default function AppLayout({ children, currentSection }: AppLayoutProps) 
         .bg-gradient-2 {
           width: 60vw;
           height: 60vw;
-          background: radial-gradient(circle, rgba(var(--accent-purple-rgb), 0.1), transparent 70%);
+          background: radial-gradient(circle, var(--glass-card-bg), transparent 70%);
           bottom: -20vw;
           left: -10vw;
           animation: float-reverse 25s infinite alternate-reverse ease-in-out;
@@ -244,6 +245,6 @@ export default function AppLayout({ children, currentSection }: AppLayoutProps) 
           }
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 }

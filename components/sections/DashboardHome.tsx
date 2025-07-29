@@ -92,8 +92,8 @@ export default function DashboardHome() {
   const applicationsData = applications;
   const activitiesData = activities;
   const eventsData = upcomingEvents;
-  const goalsData = []; // Goals not implemented in DB yet, will use defaults
-  const remindersData = []; // Reminders not implemented in DB yet
+  const goalsData: any[] = []; // Goals not implemented in DB yet, will use defaults
+  const remindersData: any[] = []; // Reminders not implemented in DB yet
 
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -120,7 +120,7 @@ export default function DashboardHome() {
   });
 
   // Use database stats if available, fallback to calculated stats
-  const totalApplications = appStats.totalApplications || Object.values(stageCounts).reduce((sum, count) => sum + count, 0);
+  const totalApplications = appStats.totalApplications || Object.values(stageCounts).reduce((sum: number, count) => sum + (count as number), 0);
   const activeApplications = appStats.activeApplications || (stageCounts.applied + stageCounts.screening + stageCounts.interview);
   const responseRate = parseFloat(appStats.responseRate) || (totalApplications > 0 ? ((totalApplications - stageCounts.applied) / totalApplications) * 100 : 0);
   const successRate = parseFloat(appStats.successRate) || ((stageCounts.offer + stageCounts.rejected) > 0 ? (stageCounts.offer / (stageCounts.offer + stageCounts.rejected)) * 100 : 0);
@@ -147,7 +147,7 @@ export default function DashboardHome() {
 
   // Calculate response times by company tier (mock data based on company characteristics)
   const responseTimesByTier: { tier: string; days: number }[] = (() => {
-    const tiers = { 'Startup': [], 'Mid-size': [], 'Enterprise': [] };
+    const tiers: { [key: string]: number[] } = { 'Startup': [], 'Mid-size': [], 'Enterprise': [] };
 
     applicationsData.forEach(app => {
       const responseTime = Math.floor(Math.random() * 14) + 1; // 1-14 days
@@ -165,13 +165,13 @@ export default function DashboardHome() {
 
     return Object.entries(tiers).map(([tier, times]) => ({
       tier,
-      days: times.length > 0 ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : 0
+      days: times.length > 0 ? Math.round(times.reduce((a: number, b: number) => a + b, 0) / times.length) : 0
     })).filter(item => item.days > 0);
   })();
 
   // Calculate top industries from applications
   const topIndustries: { name: string; count: number; success: number }[] = (() => {
-    const industries = {};
+    const industries: { [key: string]: { count: number; offers: number } } = {};
 
     applicationsData.forEach(app => {
       const industry = app.company.industry || 'Technology'; // Default fallback
@@ -196,7 +196,7 @@ export default function DashboardHome() {
 
   // Use database data directly (arrays, not wrapped objects)
   const upcomingEventsToShow = eventsData.slice(0, 4);
-  const upcomingReminders = []; // remindersData.slice(0, 3); // Not implemented in DB yet
+  const upcomingReminders: any[] = []; // remindersData.slice(0, 3); // Not implemented in DB yet
   const recentActivities = activitiesData.slice(0, 5);
   const monthlyGoals = goalsData; // Empty for now, will use defaults later
 
@@ -783,7 +783,7 @@ export default function DashboardHome() {
           padding: 0 12px 0 40px;
           border-radius: var(--border-radius);
           border: 1px solid var(--border-thin);
-          background: var(--glass-bg);
+          background: var(--glass-input-bg, var(--card));
           color: var(--text-primary);
           font-size: 14px;
           transition: all 0.3s var(--easing-standard);
@@ -815,7 +815,7 @@ export default function DashboardHome() {
         .time-range-selector {
           display: flex;
           align-items: center;
-          background: var(--glass-bg);
+          background: var(--glass-period-selector-bg, var(--surface));
           border: 1px solid var(--border-thin);
           border-radius: var(--border-radius);
           padding: 4px;

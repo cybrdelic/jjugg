@@ -149,10 +149,10 @@ const CardHeader: React.FC<CardHeaderProps> = ({
                 .header-container {
                     display: flex;
                     flex-direction: column;
-                    padding: 1.25rem 1.5rem;
+                    padding: var(--container-padding, 1.25rem 1.5rem);
                     transition: all var(--transition-normal) var(--easing-standard);
-                    border-top-left-radius: var(--border-radius);
-                    border-top-right-radius: var(--border-radius);
+                    border-top-left-radius: var(--container-border-radius, var(--border-radius));
+                    border-top-right-radius: var(--container-border-radius, var(--border-radius));
                     position: relative;
                     overflow: hidden;
                     z-index: 1;
@@ -164,11 +164,6 @@ const CardHeader: React.FC<CardHeaderProps> = ({
                     left: 0;
                     width: 100%;
                     height: 100%;
-                    background: linear-gradient(
-                        to bottom,
-                        rgba(255, 255, 255, 0.03),
-                        transparent 80%
-                    );
                     pointer-events: none;
                     z-index: -1;
                     opacity: 0.5;

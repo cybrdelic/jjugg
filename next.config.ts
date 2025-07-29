@@ -19,6 +19,9 @@ const nextConfig: NextConfig = {
     formats: ['image/webp', 'image/avif'],
   },
 
+  // Exclude server-only files from client bundle
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
+
   // Webpack optimizations
   webpack: (config: any, { dev, isServer }: { dev: boolean; isServer: boolean }) => {
     // Enable webpack caching for faster builds
@@ -27,6 +30,14 @@ const nextConfig: NextConfig = {
         ...config.resolve.fallback,
         fs: false,
       };
+
+      // Exclude database scripts and migrations from client bundle
+      config.externals = config.externals || [];
+      config.externals.push({
+        'commander': 'commander',
+        './database/scripts': 'empty',
+        './database/migrations': 'empty'
+      });
     }
 
     return config;
