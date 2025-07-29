@@ -789,13 +789,13 @@ const ApplicationDetailModal: React.FC<ApplicationDetailProps> = ({
           display: flex;
           align-items: center;
           justify-content: center;
-          background-color: rgba(0, 0, 0, 0.5);
+          background-color: var(--modal-backdrop, rgba(0, 0, 0, 0.5));
           z-index: 1000;
           padding: 20px;
           opacity: 0;
           visibility: hidden;
           transition: all 0.3s var(--easing-standard);
-          backdrop-filter: blur(5px);
+          backdrop-filter: blur(var(--blur-amount, 5px));
         }
 
         .application-modal-container.visible {

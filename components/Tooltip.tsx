@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Portal from './Portal';
 
 interface Position {
@@ -45,7 +45,7 @@ export default function Tooltip({
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Calculate tooltip position based on trigger element
-  const updatePosition = () => {
+  const updatePosition = useCallback(() => {
     if (!triggerRef.current || !tooltipRef.current) return;
 
     const triggerRect = triggerRef.current.getBoundingClientRect();
@@ -90,14 +90,19 @@ export default function Tooltip({
     }
 
     setPosition({ top, left });
-  };
+  }, [placement, offset]);
 
   const handleMouseEnter = () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       setIsVisible(true);
       // Need to wait for the tooltip to render before calculating position
-      setTimeout(updatePosition, 0);
+      // Use requestAnimationFrame for better timing
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          updatePosition();
+        });
+      });
     }, delay);
   };
 
@@ -109,6 +114,7 @@ export default function Tooltip({
   // Update position when window is resized
   useEffect(() => {
     if (isVisible) {
+      updatePosition();
       window.addEventListener('resize', updatePosition);
       window.addEventListener('scroll', updatePosition);
 
@@ -117,7 +123,7 @@ export default function Tooltip({
         window.removeEventListener('scroll', updatePosition);
       };
     }
-  }, [isVisible]);
+  }, [isVisible, updatePosition]);
 
   // Clear timeout on unmount
   useEffect(() => {
@@ -128,9 +134,32 @@ export default function Tooltip({
 
   // Clone the child element to add event handlers
   const triggerElement = React.cloneElement(children, {
-    onMouseEnter: handleMouseEnter,
-    onMouseLeave: handleMouseLeave,
-    ref: triggerRef,
+    onMouseEnter: (e: React.MouseEvent) => {
+      handleMouseEnter();
+      // Call original handler if it exists
+      const originalHandler = (children.props as any)?.onMouseEnter;
+      if (originalHandler) {
+        originalHandler(e);
+      }
+    },
+    onMouseLeave: (e: React.MouseEvent) => {
+      handleMouseLeave();
+      // Call original handler if it exists
+      const originalHandler = (children.props as any)?.onMouseLeave;
+      if (originalHandler) {
+        originalHandler(e);
+      }
+    },
+    ref: (el: HTMLElement) => {
+      triggerRef.current = el;
+      // Handle original ref if it exists
+      const originalRef = (children as any).ref;
+      if (typeof originalRef === 'function') {
+        originalRef(el);
+      } else if (originalRef && typeof originalRef === 'object') {
+        originalRef.current = el;
+      }
+    },
   } as any);
 
   return (
@@ -144,7 +173,8 @@ export default function Tooltip({
             className={`tooltip ${className} ${placement}`}
             style={{
               top: `${position.top}px`,
-              left: `${position.left}px`
+              left: `${position.left}px`,
+              visibility: position.top === 0 && position.left === 0 ? 'hidden' : 'visible'
             }}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
@@ -169,55 +199,53 @@ export default function Tooltip({
               }
 
               .tooltip-content {
-                background-color: var(--tooltip-bg);
+                background: var(--glass-bg, var(--surface));
                 color: var(--text-primary);
                 padding: 8px 12px;
-                border-radius: var(--border-radius);
-                border: 1px solid var(--border-thin);
-                font-size: 14px;
+                border-radius: var(--border-radius, 8px);
+                border: 1px solid var(--border-thin, var(--border));
+                font-size: 12px;
+                font-weight: 500;
                 line-height: 1.4;
-                box-shadow: var(--shadow);
-                backdrop-filter: blur(var(--blur-amount));
-                -webkit-backdrop-filter: blur(var(--blur-amount));
+                box-shadow: var(--shadow-md, var(--shadow));
+                backdrop-filter: blur(var(--blur-amount, 20px));
+                -webkit-backdrop-filter: blur(var(--blur-amount, 20px));
+                white-space: nowrap;
+                max-width: 250px;
+                word-wrap: break-word;
               }
 
-              .tooltip-arrow {
-                position: absolute;
-                width: 12px;
-                height: 12px;
-                background-color: var(--tooltip-bg);
-                border: 1px solid var(--border-thin);
-                transform: rotate(45deg);
+
               }
 
               .tooltip.top .tooltip-arrow {
-                bottom: -6px;
+                bottom: -5px;
                 left: 50%;
-                margin-left: -6px;
+                margin-left: -5px;
                 border-top: none;
                 border-left: none;
               }
 
               .tooltip.right .tooltip-arrow {
-                left: -6px;
+                left: -5px;
                 top: 50%;
-                margin-top: -6px;
+                margin-top: -5px;
                 border-right: none;
                 border-bottom: none;
               }
 
               .tooltip.bottom .tooltip-arrow {
-                top: -6px;
+                top: -5px;
                 left: 50%;
-                margin-left: -6px;
+                margin-left: -5px;
                 border-bottom: none;
                 border-right: none;
               }
 
               .tooltip.left .tooltip-arrow {
-                right: -6px;
+                right: -5px;
                 top: 50%;
-                margin-top: -6px;
+                margin-top: -5px;
                 border-left: none;
                 border-top: none;
               }

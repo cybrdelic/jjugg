@@ -86,13 +86,13 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: var(--modal-backdrop, rgba(0, 0, 0, 0.5));
             /* z-index is now handled by Portal component */
             display: flex;
             visibility: hidden;
             opacity: 0;
             transition: all 0.3s var(--easing-standard);
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(var(--blur-amount, 5px));
           }
 
           .side-drawer-container.visible {
