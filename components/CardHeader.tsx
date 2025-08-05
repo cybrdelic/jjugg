@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Sparkles, MoreHorizontal } from 'lucide-react';
-import { useTheme } from '@/contexts/ThemeContext';
 import ActionButton from './dashboard/ActionButton';
 
 interface CardHeaderProps {
@@ -28,12 +27,10 @@ const CardHeader: React.FC<CardHeaderProps> = ({
     actionLabel,
     showDivider = true
 }) => {
-    const { currentTheme } = useTheme();
     const [isHovered, setIsHovered] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
     const [hasInteracted, setHasInteracted] = useState(false);
     const headerRef = useRef<HTMLDivElement>(null);
-    const animationLevel = currentTheme.animation;
 
     useEffect(() => {
         if (hasInteracted) {
@@ -59,43 +56,25 @@ const CardHeader: React.FC<CardHeaderProps> = ({
     };
 
     const gradientColors = {
-        start: accentColor || 'var(--accent-primary)',
-        end: 'var(--accent-secondary)'
+        start: accentColor || 'var(--primary)',
+        end: 'var(--accent)'
     };
-
-    const hasGlossEffect = animationLevel !== 'minimal';
-    const hasParticles = animationLevel === 'playful' || animationLevel === 'moderate';
 
     return (
         <div
             ref={headerRef}
-            className={`header-container ${variant} animation-${animationLevel} ${isHovered ? 'hovered' : ''} ${isAnimating ? 'animating' : ''} ${hasInteracted ? 'interacted' : ''}`}
+            className={`header-container ${variant} ${isHovered ? 'hovered' : ''} ${isAnimating ? 'animating' : ''} ${hasInteracted ? 'interacted' : ''}`}
             role="banner"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             style={{
-                '--accent-color': accentColor || 'var(--accent-primary)',
+                '--accent-color': accentColor || 'var(--primary)',
                 '--gradient-start': gradientColors.start,
                 '--gradient-end': gradientColors.end,
             } as React.CSSProperties}
         >
             <div className="glass-overlay"></div>
-            {hasGlossEffect && <div className="header-gloss"></div>}
-            {variant === 'gradient' && <div className="gradient-bg"></div>}
-            {hasParticles && (
-                <div className="particle-container">
-                    <div className="particle p1"></div>
-                    <div className="particle p2"></div>
-                    <div className="particle p3"></div>
-                    {animationLevel === 'playful' && (
-                        <>
-                            <div className="particle p4"></div>
-                            <div className="particle p5"></div>
-                        </>
-                    )}
-                </div>
-            )}
-
+            <div className="header-gloss"></div>
             <div className="header-content">
                 <div className="header-left">
                     <h2 className="header-title">

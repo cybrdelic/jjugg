@@ -5,349 +5,349 @@
 
 import React, { forwardRef } from 'react';
 import {
-    Clock, CheckSquare, Briefcase, MapPin, DollarSign,
-    Users, ArrowUp, ArrowDown, User
+  Clock, CheckSquare, Briefcase, MapPin, DollarSign,
+  Users, ArrowUp, ArrowDown, User
 } from 'lucide-react';
 import { Application, ApplicationStage } from '@/types';
 import Tooltip from '../../Tooltip';
 import Portal from '../../Portal';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface ApplicationTableRowProps {
-    application: Application;
-    visibleColumns: string[];
-    isSelected: boolean;
-    isLastRow: boolean;
-    mounted: boolean;
-    isMobileView: boolean;
-    isAutosizeEnabled: boolean;
-    tableViewDensity: 'compact' | 'comfortable' | 'spacious';
-    inlineEditingId: string | null;
-    activeStageDropdown: string | null;
-    animationDelay: number;
-    stagesOrder: ApplicationStage[];
+  application: Application;
+  visibleColumns: string[];
+  isSelected: boolean;
+  isLastRow: boolean;
+  mounted: boolean;
+  isMobileView: boolean;
+  isAutosizeEnabled: boolean;
+  tableViewDensity: 'compact' | 'comfortable' | 'spacious';
+  inlineEditingId: string | null;
+  activeStageDropdown: string | null;
+  animationDelay: number;
+  stagesOrder: ApplicationStage[];
 
-    // Handlers
-    onSelect: (selected: boolean) => void;
-    onRowClick: (e: React.MouseEvent) => void;
-    onContextMenu: (e: React.MouseEvent) => void;
-    onStageClick: (e: React.MouseEvent) => void;
-    onStageChange: (stage: ApplicationStage) => void;
+  // Handlers
+  onSelect: (selected: boolean) => void;
+  onRowClick: (e: React.MouseEvent) => void;
+  onContextMenu: (e: React.MouseEvent) => void;
+  onStageClick: (e: React.MouseEvent) => void;
+  onStageChange: (stage: ApplicationStage) => void;
 }
 
 const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>(({
-    application,
-    visibleColumns,
-    isSelected,
-    isLastRow,
-    mounted,
-    isMobileView,
-    isAutosizeEnabled,
-    tableViewDensity,
-    inlineEditingId,
-    activeStageDropdown,
-    animationDelay,
-    stagesOrder,
-    onSelect,
-    onRowClick,
-    onContextMenu,
-    onStageClick,
-    onStageChange
+  application,
+  visibleColumns,
+  isSelected,
+  isLastRow,
+  mounted,
+  isMobileView,
+  isAutosizeEnabled,
+  tableViewDensity,
+  inlineEditingId,
+  activeStageDropdown,
+  animationDelay,
+  stagesOrder,
+  onSelect,
+  onRowClick,
+  onContextMenu,
+  onStageClick,
+  onStageChange
 }, ref) => {
-    const formatDate = (date: Date): string =>
-        new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
+  const { applicationStage } = useThemeColors();
 
-    const getStageColor = (stage: ApplicationStage): string => {
-        switch (stage) {
-            case 'applied': return 'var(--applied)';
-            case 'screening': return 'var(--screening)';
-            case 'interview': return 'var(--interview)';
-            case 'offer': return 'var(--offer)';
-            case 'rejected': return 'var(--rejected)';
-            default: return 'var(--text-tertiary)';
-        }
-    };
+  const formatDate = (date: Date): string =>
+    new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
 
-    const getStageLabel = (stage: ApplicationStage): string =>
-        stage.charAt(0).toUpperCase() + stage.slice(1);
+  const getStageColor = (stage: ApplicationStage): string => {
+    return applicationStage.getColor(stage);
+  };
 
-    const calculateStageProgress = (stage: ApplicationStage): number => {
-        return Math.min(((stagesOrder.indexOf(stage) + 1) / stagesOrder.length) * 100, 100);
-    };
+  const getStageBackgroundColor = (stage: ApplicationStage): string => {
+    return applicationStage.getBackgroundColor(stage);
+  };
 
-    const getNextInterview = () => {
-        if (!application.interviews) return null;
-        const upcoming = application.interviews
-            .filter(i => !i.completed && i.date > new Date())
-            .sort((a, b) => a.date.getTime() - b.date.getTime());
-        return upcoming[0] || null;
-    };
+  const getStageLabel = (stage: ApplicationStage): string =>
+    stage.charAt(0).toUpperCase() + stage.slice(1);
 
-    const getPendingTasks = () => {
-        if (!application.tasks) return [];
-        return application.tasks.filter(t => !t.completed && t.dueDate && new Date(t.dueDate) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
-    };
+  const calculateStageProgress = (stage: ApplicationStage): number => {
+    return Math.min(((stagesOrder.indexOf(stage) + 1) / stagesOrder.length) * 100, 100);
+  };
 
-    return (
-        <div
-            ref={ref}
-            className={`table-row ${isSelected ? 'selected' : ''} ${mounted ? 'animate-in' : ''} ${isMobileView ? 'mobile-view' : ''} ${isAutosizeEnabled ? 'autosize' : ''} density-${tableViewDensity} ${inlineEditingId === application.id ? 'editing' : ''}`}
-            style={{ animationDelay: `${animationDelay}s` }}
-            onClick={onRowClick}
-            onContextMenu={onContextMenu}
-        >
-            {/* Checkbox */}
-            <div className="checkbox-wrapper">
-                <input
-                    type="checkbox"
-                    className="custom-checkbox"
-                    checked={isSelected}
-                    onChange={(e) => {
-                        e.stopPropagation();
-                        onSelect(e.target.checked);
-                    }}
-                    id={`checkbox-${application.id}`}
+  const getNextInterview = () => {
+    if (!application.interviews) return null;
+    const upcoming = application.interviews
+      .filter(i => !i.completed && i.date > new Date())
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+    return upcoming[0] || null;
+  };
+
+  const getPendingTasks = () => {
+    if (!application.tasks) return [];
+    return application.tasks.filter(t => !t.completed && t.dueDate && new Date(t.dueDate) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+  };
+
+  return (
+    <div
+      ref={ref}
+      className={`table-row ${isSelected ? 'selected' : ''} ${mounted ? 'animate-in' : ''} ${isMobileView ? 'mobile-view' : ''} ${isAutosizeEnabled ? 'autosize' : ''} density-${tableViewDensity} ${inlineEditingId === application.id ? 'editing' : ''}`}
+      style={{ animationDelay: `${animationDelay}s` }}
+      onClick={onRowClick}
+      onContextMenu={onContextMenu}
+    >
+      {/* Checkbox */}
+      <div className="checkbox-wrapper">
+        <input
+          type="checkbox"
+          className="custom-checkbox"
+          checked={isSelected}
+          onChange={(e) => {
+            e.stopPropagation();
+            onSelect(e.target.checked);
+          }}
+          id={`checkbox-${application.id}`}
+        />
+        <label htmlFor={`checkbox-${application.id}`} className="checkbox-label"></label>
+      </div>
+
+      {/* Company */}
+      {visibleColumns.includes('company') && (
+        <div className="cell company-cell" data-label="Company">
+          <Tooltip
+            content={
+              <div className="company-tooltip">
+                <h4>{application.company.name}</h4>
+                {application.company.industry && <p><strong>Industry:</strong> {application.company.industry}</p>}
+                {application.company.headquarters && <p><strong>Location:</strong> {application.company.headquarters}</p>}
+                {application.company.size && <p><strong>Size:</strong> {application.company.size}</p>}
+              </div>
+            }
+            placement="top"
+          >
+            <div className="company-info">
+              {application.company.logo ? (
+                <img
+                  src={application.company.logo}
+                  alt={application.company.name}
+                  className="company-logo"
                 />
-                <label htmlFor={`checkbox-${application.id}`} className="checkbox-label"></label>
+              ) : (
+                <div
+                  className="company-logo-placeholder"
+                  style={{ backgroundColor: `hsl(${application.company.name.charCodeAt(0) * 7}, 70%, 50%)` }}
+                >
+                  {application.company.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <span className="company-name">{application.company.name}</span>
             </div>
+          </Tooltip>
+        </div>
+      )}
 
-            {/* Company */}
-            {visibleColumns.includes('company') && (
-                <div className="cell company-cell" data-label="Company">
-                    <Tooltip
-                        content={
-                            <div className="company-tooltip">
-                                <h4>{application.company.name}</h4>
-                                {application.company.industry && <p><strong>Industry:</strong> {application.company.industry}</p>}
-                                {application.company.headquarters && <p><strong>Location:</strong> {application.company.headquarters}</p>}
-                                {application.company.size && <p><strong>Size:</strong> {application.company.size}</p>}
-                            </div>
-                        }
-                        placement="top"
-                    >
-                        <div className="company-info">
-                            {application.company.logo ? (
-                                <img
-                                    src={application.company.logo}
-                                    alt={application.company.name}
-                                    className="company-logo"
-                                />
-                            ) : (
-                                <div
-                                    className="company-logo-placeholder"
-                                    style={{ backgroundColor: `hsl(${application.company.name.charCodeAt(0) * 7}, 70%, 50%)` }}
-                                >
-                                    {application.company.name.charAt(0).toUpperCase()}
-                                </div>
-                            )}
-                            <span className="company-name">{application.company.name}</span>
-                        </div>
-                    </Tooltip>
+      {/* Position */}
+      {visibleColumns.includes('position') && (
+        <div className="cell position-cell" data-label="Position">
+          <Tooltip
+            content={
+              <div className="position-tooltip">
+                <h4>{application.position}</h4>
+                {application.jobDescription && <p>{application.jobDescription}</p>}
+              </div>
+            }
+            placement="top"
+          >
+            <div className="position-info">
+              <span className="position-title">{application.position}</span>
+              {application.jobDescription && (
+                <span className="position-description">{application.jobDescription}</span>
+              )}
+            </div>
+          </Tooltip>
+        </div>
+      )}
+
+      {/* Date Applied */}
+      {visibleColumns.includes('dateApplied') && (
+        <div className="cell" data-label="Date Applied">
+          <span className="cell-value">{formatDate(application.dateApplied)}</span>
+        </div>
+      )}
+
+      {/* Stage */}
+      {visibleColumns.includes('stage') && (
+        <div className="cell" data-label="Stage">
+          <div className="stage-container" onClick={onStageClick}>
+            <Tooltip
+              content={`Click to change stage from: ${getStageLabel(application.stage)}`}
+              placement="top"
+            >
+              <div
+                className={`stage-badge stage-${application.stage} clickable`}
+                style={{ borderColor: getStageColor(application.stage) }}
+              >
+                <div
+                  className="stage-indicator"
+                  style={{ backgroundColor: getStageColor(application.stage) }}
+                ></div>
+                <span className="stage-label">{getStageLabel(application.stage)}</span>
+              </div>
+            </Tooltip>
+            <div className="stage-progress-container">
+              <div className="stage-progress-background">
+                {stagesOrder.map((stage, idx) => (
+                  <div
+                    key={stage}
+                    className={`stage-step ${stagesOrder.indexOf(application.stage) >= idx ? 'completed' : ''}`}
+                    style={{ backgroundColor: stagesOrder.indexOf(application.stage) >= idx ? getStageColor(stage) : 'var(--border)' }}
+                  />
+                ))}
+              </div>
+            </div>
+            {activeStageDropdown === application.id && (
+              <Portal>
+                <div
+                  className="stage-dropdown-overlay"
+                  style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100vw',
+                    height: '100vh',
+                    zIndex: 999,
+                    pointerEvents: 'none'
+                  }}
+                >
+                  <div
+                    className="stage-dropdown"
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      position: 'absolute',
+                      top: 'var(--dropdown-top)',
+                      left: 'var(--dropdown-left)',
+                      pointerEvents: 'auto'
+                    }}
+                  >
+                    {stagesOrder.map((stage) => (
+                      <div
+                        key={stage}
+                        className={`stage-option ${stage === application.stage ? 'current' : ''}`}
+                        onClick={() => {
+                          onStageChange(stage);
+                        }}
+                      >
+                        <div
+                          className="stage-option-indicator"
+                          style={{ backgroundColor: getStageColor(stage) }}
+                        ></div>
+                        <span>{getStageLabel(stage)}</span>
+                        {stage === application.stage && <span className="current-badge">Current</span>}
+                      </div>
+                    ))}
+                  </div>
                 </div>
+              </Portal>
             )}
+          </div>
+        </div>
+      )}
 
-            {/* Position */}
-            {visibleColumns.includes('position') && (
-                <div className="cell position-cell" data-label="Position">
-                    <Tooltip
-                        content={
-                            <div className="position-tooltip">
-                                <h4>{application.position}</h4>
-                                {application.jobDescription && <p>{application.jobDescription}</p>}
-                            </div>
-                        }
-                        placement="top"
-                    >
-                        <div className="position-info">
-                            <span className="position-title">{application.position}</span>
-                            {application.jobDescription && (
-                                <span className="position-description">{application.jobDescription}</span>
-                            )}
-                        </div>
-                    </Tooltip>
+      {/* Alerts */}
+      {visibleColumns.includes('alert') && (
+        <div className="cell" data-label="Alerts">
+          <div className="alerts-cell">
+            {getNextInterview() && (
+              <div className="alert-item interview-alert">
+                <Clock size={14} className="alert-icon" />
+                <span>{formatDate(getNextInterview()!.date)}</span>
+              </div>
+            )}
+            {getPendingTasks().length > 0 && (
+              <div className="alert-item task-alert">
+                <CheckSquare size={14} className="alert-icon" />
+                <span>{getPendingTasks().length} due soon</span>
+              </div>
+            )}
+            {application.stage === 'offer' && (
+              <div className="alert-item offer-alert">
+                <Briefcase size={14} className="alert-icon" />
+                <span>Offer pending</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Tasks */}
+      {visibleColumns.includes('tasks') && (
+        <div className="cell" data-label="Tasks">
+          <div className="tasks-cell">
+            <div className="tasks-count-container">
+              <CheckSquare size={14} className="cell-icon" />
+              <span className="cell-value">
+                {application.tasks ? `${application.tasks.filter(t => t.completed).length}/${application.tasks.length}` : '0/0'}
+              </span>
+            </div>
+            {application.tasks && application.tasks.length > 0 && (
+              <div className="tasks-progress-container">
+                <div className="tasks-progress-bar">
+                  <div
+                    className="tasks-progress-fill"
+                    style={{
+                      width: `${(application.tasks.filter(t => t.completed).length / application.tasks.length) * 100}%`,
+                      backgroundColor: 'var(--success)'
+                    }}
+                  />
                 </div>
+                <span className="tasks-pending-count">
+                  {application.tasks.filter(t => !t.completed).length} pending
+                </span>
+              </div>
             )}
+          </div>
+        </div>
+      )}
 
-            {/* Date Applied */}
-            {visibleColumns.includes('dateApplied') && (
-                <div className="cell" data-label="Date Applied">
-                    <span className="cell-value">{formatDate(application.dateApplied)}</span>
-                </div>
+      {/* Location */}
+      {visibleColumns.includes('location') && (
+        <div className="cell" data-label="Location">
+          <div className="location-cell">
+            <div className="location-info">
+              <MapPin size={14} className="cell-icon" />
+              <span className="cell-value">{application.location || 'Not specified'}</span>
+              {application.remote && <span className="remote-indicator">Remote</span>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Salary */}
+      {visibleColumns.includes('salary') && (
+        <div className="cell" data-label="Salary">
+          <div className="compensation-cell">
+            {application.salary ? (
+              <span className="comp-value">{application.salary}</span>
+            ) : (
+              <span className="no-comp">Not specified</span>
             )}
+          </div>
+        </div>
+      )}
 
-            {/* Stage */}
-            {visibleColumns.includes('stage') && (
-                <div className="cell" data-label="Stage">
-                    <div className="stage-container" onClick={onStageClick}>
-                        <Tooltip
-                            content={`Click to change stage from: ${getStageLabel(application.stage)}`}
-                            placement="top"
-                        >
-                            <div
-                                className={`stage-badge stage-${application.stage} clickable`}
-                                style={{ borderColor: getStageColor(application.stage) }}
-                            >
-                                <div
-                                    className="stage-indicator"
-                                    style={{ backgroundColor: getStageColor(application.stage) }}
-                                ></div>
-                                <span className="stage-label">{getStageLabel(application.stage)}</span>
-                            </div>
-                        </Tooltip>
-                        <div className="stage-progress-container">
-                            <div className="stage-progress-background">
-                                {stagesOrder.map((stage, idx) => (
-                                    <div
-                                        key={stage}
-                                        className={`stage-step ${stagesOrder.indexOf(application.stage) >= idx ? 'completed' : ''}`}
-                                        style={{ backgroundColor: stagesOrder.indexOf(application.stage) >= idx ? getStageColor(stage) : 'var(--border)' }}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                        {activeStageDropdown === application.id && (
-                            <Portal>
-                                <div
-                                    className="stage-dropdown-overlay"
-                                    style={{
-                                        position: 'fixed',
-                                        top: 0,
-                                        left: 0,
-                                        width: '100vw',
-                                        height: '100vh',
-                                        zIndex: 999,
-                                        pointerEvents: 'none'
-                                    }}
-                                >
-                                    <div
-                                        className="stage-dropdown"
-                                        onClick={(e) => e.stopPropagation()}
-                                        style={{
-                                            position: 'absolute',
-                                            top: 'var(--dropdown-top)',
-                                            left: 'var(--dropdown-left)',
-                                            pointerEvents: 'auto'
-                                        }}
-                                    >
-                                        {stagesOrder.map((stage) => (
-                                            <div
-                                                key={stage}
-                                                className={`stage-option ${stage === application.stage ? 'current' : ''}`}
-                                                onClick={() => {
-                                                    onStageChange(stage);
-                                                }}
-                                            >
-                                                <div
-                                                    className="stage-option-indicator"
-                                                    style={{ backgroundColor: getStageColor(stage) }}
-                                                ></div>
-                                                <span>{getStageLabel(stage)}</span>
-                                                {stage === application.stage && <span className="current-badge">Current</span>}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </Portal>
-                        )}
-                    </div>
-                </div>
+      {/* Bonus */}
+      {visibleColumns.includes('bonus') && (
+        <div className="cell" data-label="Bonus">
+          <div className="compensation-cell">
+            {application.bonus ? (
+              <span className="comp-value bonus-value">{application.bonus}</span>
+            ) : (
+              <span className="no-comp">None</span>
             )}
+          </div>
+        </div>
+      )}
 
-            {/* Alerts */}
-            {visibleColumns.includes('alert') && (
-                <div className="cell" data-label="Alerts">
-                    <div className="alerts-cell">
-                        {getNextInterview() && (
-                            <div className="alert-item interview-alert">
-                                <Clock size={14} className="alert-icon" />
-                                <span>{formatDate(getNextInterview()!.date)}</span>
-                            </div>
-                        )}
-                        {getPendingTasks().length > 0 && (
-                            <div className="alert-item task-alert">
-                                <CheckSquare size={14} className="alert-icon" />
-                                <span>{getPendingTasks().length} due soon</span>
-                            </div>
-                        )}
-                        {application.stage === 'offer' && (
-                            <div className="alert-item offer-alert">
-                                <Briefcase size={14} className="alert-icon" />
-                                <span>Offer pending</span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* Tasks */}
-            {visibleColumns.includes('tasks') && (
-                <div className="cell" data-label="Tasks">
-                    <div className="tasks-cell">
-                        <div className="tasks-count-container">
-                            <CheckSquare size={14} className="cell-icon" />
-                            <span className="cell-value">
-                                {application.tasks ? `${application.tasks.filter(t => t.completed).length}/${application.tasks.length}` : '0/0'}
-                            </span>
-                        </div>
-                        {application.tasks && application.tasks.length > 0 && (
-                            <div className="tasks-progress-container">
-                                <div className="tasks-progress-bar">
-                                    <div
-                                        className="tasks-progress-fill"
-                                        style={{
-                                            width: `${(application.tasks.filter(t => t.completed).length / application.tasks.length) * 100}%`,
-                                            backgroundColor: 'var(--success)'
-                                        }}
-                                    />
-                                </div>
-                                <span className="tasks-pending-count">
-                                    {application.tasks.filter(t => !t.completed).length} pending
-                                </span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* Location */}
-            {visibleColumns.includes('location') && (
-                <div className="cell" data-label="Location">
-                    <div className="location-cell">
-                        <div className="location-info">
-                            <MapPin size={14} className="cell-icon" />
-                            <span className="cell-value">{application.location || 'Not specified'}</span>
-                            {application.remote && <span className="remote-indicator">Remote</span>}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Salary */}
-            {visibleColumns.includes('salary') && (
-                <div className="cell" data-label="Salary">
-                    <div className="compensation-cell">
-                        {application.salary ? (
-                            <span className="comp-value">{application.salary}</span>
-                        ) : (
-                            <span className="no-comp">Not specified</span>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* Bonus */}
-            {visibleColumns.includes('bonus') && (
-                <div className="cell" data-label="Bonus">
-                    <div className="compensation-cell">
-                        {application.bonus ? (
-                            <span className="comp-value bonus-value">{application.bonus}</span>
-                        ) : (
-                            <span className="no-comp">None</span>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            <style jsx>{`
+      <style jsx>{`
         .table-row {
           display: grid;
           grid-template-columns: 40px 1.8fr 2.2fr 1fr 1.5fr 0.8fr 1.2fr 1fr 1fr;
@@ -938,8 +938,8 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
           100% { box-shadow: 0 0 0 0 rgba(var(--accent-green-rgb), 0); }
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 });
 
 ApplicationTableRow.displayName = 'ApplicationTableRow';

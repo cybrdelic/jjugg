@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "rm -rf .next && next build",
+    "dev": "npx next dev",
+    "build": "npx next build",
     "start": "next start",
     "lint": "next lint",
     "tailwind:init": "tailwindcss init -p",
@@ -15,7 +15,11 @@
     "db:migrate": "tsx database/scripts/migrate-runner.ts up",
     "db:migrate:down": "tsx database/scripts/migrate-runner.ts down",
     "db:migrate:status": "tsx database/scripts/migrate-runner.ts status",
-    "db:migrate:create": "tsx database/scripts/migrate-runner.ts create"
+    "db:migrate:create": "tsx database/scripts/migrate-runner.ts create",
+    "analyze-components": "node scripts/analyze-components.js",
+    "analyze-components:top10": "node scripts/analyze-components.js -- --top 10",
+    "analyze-components:large": "node scripts/analyze-components.js -- --min-lines 100 --top 15",
+    "analyze-components:feature-flag-activated": "node scripts/analyze-components.js -- --feature-flag-activated"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

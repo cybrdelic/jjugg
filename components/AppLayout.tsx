@@ -3,10 +3,8 @@ import { useState, useEffect, ReactNode } from 'react';
 import ModernNavbar from '../components/ModernNavbar';
 import { useFeatureFlags } from '@/contexts/FeatureFlagContext';
 import { useAppData } from '@/contexts/AppDataContext';
+import { useNavigation } from '@/hooks/useNavigation';
 import type { SectionKey, NavItemType } from '@/types';
-import {
-  House, FileText, Bell, Users, User, Target, Clock, Calendar as CalendarIcon
-} from 'lucide-react';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -29,44 +27,8 @@ export default function AppLayout({ children, currentSection }: AppLayoutProps) 
     error: dbError
   } = useAppData();
 
-  const {
-    ENABLE_CALENDAR_VIEW,
-    ENABLE_TIMELINE_SECTION,
-    ENABLE_GOALS_SECTION,
-    ENABLE_PROFILE_ARTIFACTS
-  } = useFeatureFlags();
-
-  // Create navigation function that uses router
-  const handleNavigation = (sectionKey: SectionKey) => {
-    const routeMap: Record<SectionKey, string> = {
-      'dashboard-home': '/dashboard/home',
-      'applications-section': '/applications',
-      'reminders-section': '/reminders',
-      'analytics-section': '/analytics',
-      'interviews-section': '/interviews',
-      'profile-artifacts-section': '/profile',
-      'goals-section': '/goals',
-      'timeline-section': '/timeline',
-      'calendar-section': '/calendar',
-    };
-
-    const route = routeMap[sectionKey];
-    if (route) {
-      router.push(route);
-    }
-  };
-
-  // Build sidebar items
-  const sidebarItems: NavItemType[] = [
-    { id: 'dashboard-home', key: 'dashboard-home', label: 'Dashboard', icon: <House className="w-5 h-5" />, color: 'var(--accent-blue)', badge: { count: 3 } },
-    { id: 'applications-section', key: 'applications-section', label: 'Applications', icon: <FileText className="w-5 h-5" />, color: 'var(--accent-purple)', badge: { count: applications.length } },
-    { id: 'reminders-section', key: 'reminders-section', label: 'Reminders', icon: <Bell className="w-5 h-5" />, color: 'var(--accent-pink)', badge: { count: upcomingEvents.length } },
-    { id: 'interviews-section', key: 'interviews-section', label: 'Interviews', icon: <Users className="w-5 h-5" />, color: 'var(--accent-orange)', badge: { count: appStats?.interviewsScheduled || 0 } },
-    ...(ENABLE_PROFILE_ARTIFACTS ? [{ id: 'profile-artifacts-section' as SectionKey, key: 'profile-artifacts-section' as SectionKey, label: 'Profile', icon: <User className="w-5 h-5" />, color: 'var(--accent-green)' }] : []),
-    ...(ENABLE_GOALS_SECTION ? [{ id: 'goals-section' as SectionKey, key: 'goals-section' as SectionKey, label: 'Goals', icon: <Target className="w-5 h-5" />, color: 'var(--accent-yellow)' }] : []),
-    ...(ENABLE_TIMELINE_SECTION ? [{ id: 'timeline-section' as SectionKey, key: 'timeline-section' as SectionKey, label: 'Timeline', icon: <Clock className="w-5 h-5" />, color: 'var(--accent-red)', badge: { count: activities.length } }] : []),
-    ...(ENABLE_CALENDAR_VIEW ? [{ id: 'calendar-section' as SectionKey, key: 'calendar-section' as SectionKey, label: 'Calendar', icon: <CalendarIcon className="w-5 h-5" />, color: 'var(--accent-blue-light)', badge: { count: upcomingEvents.length } }] : []),
-  ];
+  // Use the new navigation hook that handles all the complexity
+  const { navigationItems, handleNavigation } = useNavigation();
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoaded(true), 100);
@@ -81,7 +43,7 @@ export default function AppLayout({ children, currentSection }: AppLayoutProps) 
     <div className={`app-container reveal-loaded ${isLoaded ? 'loaded' : ''}`}>
       {/* Modern Navbar */}
       <ModernNavbar
-        items={sidebarItems}
+        items={navigationItems}
         currentSection={currentSection}
         setCurrentSection={handleNavigation}
         userName={userProfile.name}

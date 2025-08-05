@@ -6,6 +6,7 @@ import {
   DollarSign, Globe, Clock, Edit, Trash2, ExternalLink, Star
 } from 'lucide-react';
 import { Company, ApplicationStage } from '@/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface ApplicationCardProps {
   id: string;
@@ -47,6 +48,8 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
+  const { applicationStage } = useThemeColors();
+
   // Format date
   const formatDate = (date: Date): string => {
     return new Intl.DateTimeFormat('en-US', {
@@ -56,16 +59,14 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
     }).format(date);
   };
 
-  // Get stage color
+  // Get stage color using theme-specific colors
   const getStageColor = (stage: ApplicationStage): string => {
-    switch (stage) {
-      case 'applied': return 'var(--accent-blue)';
-      case 'screening': return 'var(--accent-purple)';
-      case 'interview': return 'var(--accent-green)';
-      case 'offer': return 'var(--accent-success)';
-      case 'rejected': return 'var(--accent-red)';
-      default: return 'var(--text-secondary)';
-    }
+    return applicationStage.getColor(stage);
+  };
+
+  // Get stage background color using theme-specific colors
+  const getStageBackgroundColor = (stage: ApplicationStage): string => {
+    return applicationStage.getBackgroundColor(stage);
   };
 
   // Get stage display name
@@ -74,6 +75,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
   };
 
   const stageColor = getStageColor(stage);
+  const stageBackgroundColor = getStageBackgroundColor(stage);
   const stageLabel = getStageLabel(stage);
 
   // Calculate RGB value for effects

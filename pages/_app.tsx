@@ -1,5 +1,6 @@
 // pages/_app.tsx
 import "@/styles/globals.css";
+import "@/styles/theme.css"; // Import our simple CSS theme system
 import type { AppProps } from "next/app";
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { FeatureFlagProvider } from '@/contexts/FeatureFlagContext';

@@ -9,6 +9,7 @@ import {
     ChevronDown,
     ChevronUp
 } from 'lucide-react';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 interface NetworkingStats {
     connections: number;
@@ -44,6 +45,8 @@ interface JobSearchKPIDashboardProps {
 const JobSearchKPIDashboard: React.FC<JobSearchKPIDashboardProps> = ({ initialData }) => {
     const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
     const [activeInsight, setActiveInsight] = useState<'response-rate' | 'success-rate' | 'networking' | null>(null);
+
+    const { analytics } = useThemeColors();
 
     const {
         totalApplications = 42,
@@ -108,7 +111,7 @@ const JobSearchKPIDashboard: React.FC<JobSearchKPIDashboardProps> = ({ initialDa
             {/* Stats Summary */}
             <div className="stats-summary">
                 <div className="stat-card" onClick={() => console.log('Applications stat clicked')}>
-                    <div className="stat-icon" style={{ background: 'var(--accent-blue)' }}>
+                    <div className="stat-icon" style={{ background: analytics.primary[0] }}>
                         <FileText size={18} />
                     </div>
                     <div className="stat-content">
@@ -122,7 +125,7 @@ const JobSearchKPIDashboard: React.FC<JobSearchKPIDashboardProps> = ({ initialDa
                 </div>
 
                 <div className="stat-card" onClick={() => setActiveInsight('response-rate')}>
-                    <div className="stat-icon" style={{ background: 'var(--accent-purple)' }}>
+                    <div className="stat-icon" style={{ background: analytics.primary[1] }}>
                         <Activity size={18} />
                     </div>
                     <div className="stat-content">
@@ -136,7 +139,7 @@ const JobSearchKPIDashboard: React.FC<JobSearchKPIDashboardProps> = ({ initialDa
                 </div>
 
                 <div className="stat-card" onClick={() => setActiveInsight('success-rate')}>
-                    <div className="stat-icon" style={{ background: 'var(--accent-green)' }}>
+                    <div className="stat-icon" style={{ background: analytics.primary[2] }}>
                         <Award size={18} />
                     </div>
                     <div className="stat-content">
@@ -150,7 +153,7 @@ const JobSearchKPIDashboard: React.FC<JobSearchKPIDashboardProps> = ({ initialDa
                 </div>
 
                 <div className="stat-card" onClick={() => console.log("clicked")}>
-                    <div className="stat-icon" style={{ background: 'var(--accent-yellow)' }}>
+                    <div className="stat-icon" style={{ background: analytics.primary[3] }}>
                         <Timer size={18} />
                     </div>
                     <div className="stat-content">
@@ -164,7 +167,7 @@ const JobSearchKPIDashboard: React.FC<JobSearchKPIDashboardProps> = ({ initialDa
                 </div>
 
                 <div className="stat-card" onClick={() => console.log("clicked")}>
-                    <div className="stat-icon" style={{ background: 'var(--accent-red)' }}>
+                    <div className="stat-icon" style={{ background: analytics.primary[4] }}>
                         <X size={18} />
                     </div>
                     <div className="stat-content">
@@ -200,9 +203,7 @@ const JobSearchKPIDashboard: React.FC<JobSearchKPIDashboardProps> = ({ initialDa
                                                             className="tier-bar"
                                                             style={{
                                                                 width: `${Math.min(100, tier.days * 5)}%`,
-                                                                backgroundColor: index === 0 ? 'var(--accent-green)' :
-                                                                    index === 1 ? 'var(--accent-blue)' :
-                                                                        'var(--accent-purple)'
+                                                                backgroundColor: analytics.primary[index % analytics.primary.length]
                                                             }}
                                                         >
                                                             <span className="tier-value">{tier.days} days</span>
@@ -234,10 +235,10 @@ const JobSearchKPIDashboard: React.FC<JobSearchKPIDashboardProps> = ({ initialDa
                                                         className="score-bar"
                                                         style={{
                                                             width: `${score}%`,
-                                                            backgroundColor: score >= 90 ? 'var(--accent-green)' :
-                                                                score >= 80 ? 'var(--accent-blue)' :
-                                                                    score >= 70 ? 'var(--accent-purple)' :
-                                                                        'var(--accent-orange)'
+                                                            backgroundColor: score >= 90 ? analytics.positive :
+                                                                score >= 80 ? analytics.primary[0] :
+                                                                    score >= 70 ? analytics.primary[1] :
+                                                                        analytics.negative
                                                         }}
                                                     ></div>
                                                 </div>
@@ -281,9 +282,9 @@ const JobSearchKPIDashboard: React.FC<JobSearchKPIDashboardProps> = ({ initialDa
                                                             className="industry-bar"
                                                             style={{
                                                                 width: `${industry.success}%`,
-                                                                backgroundColor: industry.success > 40 ? 'var(--accent-green)' :
-                                                                    industry.success > 20 ? 'var(--accent-blue)' :
-                                                                        'var(--accent-red)'
+                                                                backgroundColor: industry.success > 40 ? analytics.positive :
+                                                                    industry.success > 20 ? analytics.primary[0] :
+                                                                        analytics.negative
                                                             }}
                                                         ></div>
                                                     </div>
@@ -340,14 +341,14 @@ const JobSearchKPIDashboard: React.FC<JobSearchKPIDashboardProps> = ({ initialDa
                                                 <div className="bar-container">
                                                     <div className="bar-label">With Referral</div>
                                                     <div className="bar-bg">
-                                                        <div className="bar-value" style={{ width: '85%', backgroundColor: 'var(--accent-blue)' }}></div>
+                                                        <div className="bar-value" style={{ width: '85%', backgroundColor: analytics.primary[0] }}></div>
                                                     </div>
                                                     <div className="bar-percent">85%</div>
                                                 </div>
                                                 <div className="bar-container">
                                                     <div className="bar-label">Without Referral</div>
                                                     <div className="bar-bg">
-                                                        <div className="bar-value" style={{ width: '42%', backgroundColor: 'var(--accent-blue)' }}></div>
+                                                        <div className="bar-value" style={{ width: '42%', backgroundColor: analytics.primary[1] }}></div>
                                                     </div>
                                                     <div className="bar-percent">42%</div>
                                                 </div>
@@ -360,14 +361,14 @@ const JobSearchKPIDashboard: React.FC<JobSearchKPIDashboardProps> = ({ initialDa
                                                 <div className="bar-container">
                                                     <div className="bar-label">With Referral</div>
                                                     <div className="bar-bg">
-                                                        <div className="bar-value" style={{ width: '65%', backgroundColor: 'var(--accent-green)' }}></div>
+                                                        <div className="bar-value" style={{ width: '65%', backgroundColor: analytics.positive }}></div>
                                                     </div>
                                                     <div className="bar-percent">65%</div>
                                                 </div>
                                                 <div className="bar-container">
                                                     <div className="bar-label">Without Referral</div>
                                                     <div className="bar-bg">
-                                                        <div className="bar-value" style={{ width: '28%', backgroundColor: 'var(--accent-green)' }}></div>
+                                                        <div className="bar-value" style={{ width: '28%', backgroundColor: analytics.positive }}></div>
                                                     </div>
                                                     <div className="bar-percent">28%</div>
                                                 </div>

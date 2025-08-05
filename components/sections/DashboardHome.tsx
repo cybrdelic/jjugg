@@ -15,9 +15,10 @@ import ApplicationFunnel from '../ApplicationFunnel';
 import WeeklyActivity from '../WeeklyActivity';
 import ActionsTab from '../ActionsTab';
 import { useFeatureFlags } from '@/contexts/FeatureFlagContext';
-import SkillsTab from '../SkillsTab'; // Import the new SkillsTab component
+import SkillsTab from '../SkillsTab';
 import EnhancedDropdown from '../EnhancedDropdown';
 import { useAppData } from '../../contexts/AppDataContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 // Types
 interface Company {
@@ -87,6 +88,20 @@ interface SkillGap {
 export default function DashboardHome() {
   const { ENABLE_DEVELOPMENT_FEATURES } = useFeatureFlags();
   const { applications, activities, upcomingEvents, appStats, userProfile, loading, error } = useAppData();
+  const { currentTheme } = useTheme();
+
+  // Analytics colors derived from current theme
+  const analytics = {
+    primary: [
+      currentTheme?.colors?.primary || '#3b82f6',
+      currentTheme?.colors?.accent || '#8b5cf6',
+      currentTheme?.colors?.status?.info || '#06b6d4',
+      currentTheme?.colors?.status?.warning || '#f59e0b'
+    ],
+    positive: currentTheme?.colors?.status?.success || '#10b981',
+    negative: currentTheme?.colors?.status?.error || '#ef4444',
+    neutral: currentTheme?.colors?.secondary || '#6b7280'
+  };
 
   // Extract individual data sets for easier access
   const applicationsData = applications;
@@ -240,402 +255,403 @@ export default function DashboardHome() {
   };
 
   return (
-    <section className={`dashboard-home ${mounted ? 'mounted' : ''}`}>
-      <div className="dashboard-search">
-        <Search className="search-icon" size={18} />
-        <input
-          type="text"
-          placeholder="Search applications, companies, or contacts..."
-          value={searchTerm}
-          onChange={handleSearchChange}
-          onFocus={() => setIsSearchFocused(true)}
-          onBlur={() => setIsSearchFocused(false)}
-          className="search-input"
-        />
-        {searchTerm && (
-          <button className="clear-search" onClick={() => setSearchTerm('')}>
-            <X size={12} />
-          </button>
-        )}
-      </div>
+    <div className="dashboard-wrapper">
+      <section className={`dashboard-home ${mounted ? 'mounted' : ''}`}>
+        <div className="dashboard-search">
+          <Search className="search-icon" size={18} />
+          <input
+            type="text"
+            placeholder="Search applications, companies, or contacts..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
+            className="search-input"
+          />
+          {searchTerm && (
+            <button className="clear-search" onClick={() => setSearchTerm('')}>
+              <X size={12} />
+            </button>
+          )}
+        </div>
 
-      <div className="time-range-selector">
-        <ActionButton
-          label="7d"
-          icon={Clock}
-          variant={timeRange === '7d' ? 'secondary' : 'ghost'}
-          size="small"
-          onClick={() => setTimeRange('7d')}
-        />
-        <ActionButton
-          label="30d"
-          icon={Clock}
-          variant={timeRange === '30d' ? 'secondary' : 'ghost'}
-          size="small"
-          onClick={() => setTimeRange('30d')}
-        />
-        <ActionButton
-          label="90d"
-          icon={Clock}
-          variant={timeRange === '90d' ? 'secondary' : 'ghost'}
-          size="small"
-          onClick={() => setTimeRange('90d')}
-        />
-        <ActionButton
-          label="All"
-          icon={Clock}
-          variant={timeRange === 'all' ? 'secondary' : 'ghost'}
-          size="small"
-          onClick={() => setTimeRange('all')}
-        />
-      </div>
+        <div className="time-range-selector">
+          <ActionButton
+            label="7d"
+            icon={Clock}
+            variant={timeRange === '7d' ? 'secondary' : 'ghost'}
+            size="small"
+            onClick={() => setTimeRange('7d')}
+          />
+          <ActionButton
+            label="30d"
+            icon={Clock}
+            variant={timeRange === '30d' ? 'secondary' : 'ghost'}
+            size="small"
+            onClick={() => setTimeRange('30d')}
+          />
+          <ActionButton
+            label="90d"
+            icon={Clock}
+            variant={timeRange === '90d' ? 'secondary' : 'ghost'}
+            size="small"
+            onClick={() => setTimeRange('90d')}
+          />
+          <ActionButton
+            label="All"
+            icon={Clock}
+            variant={timeRange === 'all' ? 'secondary' : 'ghost'}
+            size="small"
+            onClick={() => setTimeRange('all')}
+          />
+        </div>
 
-      <div className="stats-summary">
-        <StatCard value={totalApplications} label="Total Applications" icon={FileText} color="var(--accent-blue)" onClick={() => setActiveInsight('total-applications')} />
-        <StatCard value={totalApplications > 0 ? `${responseRate.toFixed(0)}%` : "0%"} label="Response Rate" icon={Activity} color="var(--accent-purple)" onClick={() => setActiveInsight('response-rate')} />
-        <StatCard value={totalApplications > 0 ? `${successRate.toFixed(0)}%` : "0%"} label="Success Rate" icon={Award} color="var(--accent-green)" onClick={() => setActiveInsight('success-rate')} />
-        <StatCard value={activeApplications} label="Active Applications" icon={Clock} color="var(--accent-orange)" onClick={() => setActiveInsight('active-applications')} />
-      </div>
+        <div className="stats-summary">
+          <StatCard value={totalApplications} label="Total Applications" icon={FileText} color={analytics.primary[0]} onClick={() => setActiveInsight('total-applications')} />
+          <StatCard value={totalApplications > 0 ? `${responseRate.toFixed(0)}%` : "0%"} label="Response Rate" icon={Activity} color={analytics.primary[1]} onClick={() => setActiveInsight('response-rate')} />
+          <StatCard value={totalApplications > 0 ? `${successRate.toFixed(0)}%` : "0%"} label="Success Rate" icon={Award} color={analytics.primary[2]} onClick={() => setActiveInsight('success-rate')} />
+          <StatCard value={activeApplications} label="Active Applications" icon={Clock} color={analytics.primary[3]} onClick={() => setActiveInsight('active-applications')} />
+        </div>
 
-      <div className="insight-panel">
-        {activeInsight === 'response-rate' && (
-          <div className="insight-content">
-            <div className="insight-header">
-              <h3>Application Response Rate Analysis</h3>
-              <span className="insight-desc">How quickly companies are responding to your applications</span>
+        <div className="insight-panel">
+          {activeInsight === 'response-rate' && (
+            <div className="insight-content">
+              <div className="insight-header">
+                <h3>Application Response Rate Analysis</h3>
+                <span className="insight-desc">How quickly companies are responding to your applications</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'row', width: '100%', minWidth: '100%' }}>
+                <div className="insight-data">
+                  <div className="insight-chart">
+                    <div className="response-time-chart">
+                      {responseTimesByTier.length > 0 ? (
+                        responseTimesByTier.map((tier, index) => (
+                          <div className="response-tier" key={tier.tier}>
+                            <div className="tier-name">{tier.tier}</div>
+                            <div className="tier-bar-container">
+                              <div className="tier-bar" style={{ width: `${Math.min(100, tier.days * 5)}%`, backgroundColor: analytics.primary[index % analytics.primary.length] }}>
+                                <span className="tier-value">{tier.days} days</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="empty-state">
+                          <p>No response time data available yet.</p>
+                          <p>Start applying to jobs to see response time insights.</p>
+                        </div>
+                      )}
+                    </div>
+                    {responseTimesByTier.length > 0 && (
+                      <div className="chart-legend">
+                        <span>Faster Response</span>
+                        <span>Slower Response</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="dashboard-card match-score-card">
+                  <div className="card-header">
+                    <h3 className="card-title">Job Match Quality</h3>
+                    <ActionButton label="Improve Matches" icon={Award} variant="ghost" size="small" />
+                  </div>
+                  <div className="match-score-distribution">
+                    {jobMatchScores.length > 0 ? (
+                      jobMatchScores.map((score, index) => (
+                        <div className="match-score-bar" key={index}>
+                          <div className="score-bar-container">
+                            <div className="score-bar" style={{ width: `${score}%`, backgroundColor: score >= 90 ? analytics.positive : score >= 80 ? analytics.primary[0] : score >= 70 ? analytics.primary[1] : analytics.negative }}></div>
+                          </div>
+                          <div className="score-label">
+                            <span className="company-name">Company {index + 1}</span>
+                            <span className="score-value">{score}%</span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="empty-state">
+                        <p>No job match data available yet.</p>
+                        <p>Apply to jobs to see match quality insights.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="insight-recommendations">
+                <h4>Recommendations</h4>
+                <ul>
+                  <li>Follow up on applications that are past the average response time</li>
+                  <li>Use referrals to improve response rates by up to 30%</li>
+                  <li>Your startup applications get faster responses (avg. 3 days)</li>
+                </ul>
+              </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'row', width: '100%', minWidth: '100%' }}>
+          )}
+          {activeInsight === 'success-rate' && (
+            <div className="insight-content">
+              <div className="insight-header">
+                <h3>Success Rate by Industry & Job Title</h3>
+                <span className="insight-desc">Where your applications are performing best</span>
+              </div>
               <div className="insight-data">
                 <div className="insight-chart">
-                  <div className="response-time-chart">
-                    {responseTimesByTier.length > 0 ? (
-                      responseTimesByTier.map((tier, index) => (
-                        <div className="response-tier" key={tier.tier}>
-                          <div className="tier-name">{tier.tier}</div>
-                          <div className="tier-bar-container">
-                            <div className="tier-bar" style={{ width: `${Math.min(100, tier.days * 5)}%`, backgroundColor: index === 0 ? 'var(--accent-green)' : index === 1 ? 'var(--accent-blue)' : 'var(--accent-purple)' }}>
-                              <span className="tier-value">{tier.days} days</span>
+                  <div className="success-rate-chart">
+                    {topIndustries.length > 0 ? (
+                      topIndustries.map(industry => (
+                        <div className="industry-row" key={industry.name}>
+                          <div className="industry-name">{industry.name}</div>
+                          <div className="industry-stats">
+                            <div className="industry-bar-container">
+                              <div className="industry-bar" style={{ width: `${industry.success}%`, backgroundColor: industry.success > 40 ? analytics.positive : industry.success > 20 ? analytics.primary[0] : analytics.negative }}></div>
+                            </div>
+                            <div className="industry-values">
+                              <span className="applications-count">{industry.count} apps</span>
+                              <span className="success-percent">{industry.success}%</span>
                             </div>
                           </div>
                         </div>
                       ))
                     ) : (
                       <div className="empty-state">
-                        <p>No response time data available yet.</p>
-                        <p>Start applying to jobs to see response time insights.</p>
+                        <p>No industry success rate data available yet.</p>
+                        <p>Apply to jobs across different industries to see success rate insights.</p>
                       </div>
                     )}
                   </div>
-                  {responseTimesByTier.length > 0 && (
-                    <div className="chart-legend">
-                      <span>Faster Response</span>
-                      <span>Slower Response</span>
-                    </div>
-                  )}
+                </div>
+                <div className="insight-metrics vertical">
+                  <div className="insight-metric">
+                    <span className="metric-value">Technology</span>
+                    <span className="metric-label">Top Industry Applied</span>
+                  </div>
+                  <div className="insight-metric">
+                    <span className="metric-value">Healthcare</span>
+                    <span className="metric-label">Highest Success Rate</span>
+                  </div>
+                  <div className="insight-metric">
+                    <span className="metric-value">Frontend Developer</span>
+                    <span className="metric-label">Most Successful Role</span>
+                  </div>
                 </div>
               </div>
-              <div className="dashboard-card match-score-card">
-                <div className="card-header">
-                  <h3 className="card-title">Job Match Quality</h3>
-                  <ActionButton label="Improve Matches" icon={Award} variant="ghost" size="small" />
-                </div>
-                <div className="match-score-distribution">
-                  {jobMatchScores.length > 0 ? (
-                    jobMatchScores.map((score, index) => (
-                      <div className="match-score-bar" key={index}>
-                        <div className="score-bar-container">
-                          <div className="score-bar" style={{ width: `${score}%`, backgroundColor: score >= 90 ? 'var(--accent-green)' : score >= 80 ? 'var(--accent-blue)' : score >= 70 ? 'var(--accent-purple)' : 'var(--accent-orange)' }}></div>
-                        </div>
-                        <div className="score-label">
-                          <span className="company-name">Company {index + 1}</span>
-                          <span className="score-value">{score}%</span>
-                        </div>
+              <div className="insight-recommendations">
+                <h4>Recommendations</h4>
+                <ul>
+                  <li>Consider more healthcare industry applications (50% success rate)</li>
+                  <li>Focus on frontend development roles where your profile performs best</li>
+                  <li>Customize resume more for technology companies to improve conversion</li>
+                </ul>
+              </div>
+            </div>
+          )}
+          {activeInsight === 'total-applications' && (
+            <div className="insight-content">
+              <div className="insight-header">
+                <h3>Total Applications Overview</h3>
+                <span className="insight-desc">Your job application activity and progress</span>
+              </div>
+              <div className="insight-data">
+                <div className="insight-chart">
+                  {totalApplications > 0 ? (
+                    <div className="applications-breakdown">
+                      <div className="breakdown-item">
+                        <span className="breakdown-label">Applied</span>
+                        <span className="breakdown-value">{stageCounts.applied}</span>
                       </div>
-                    ))
+                      <div className="breakdown-item">
+                        <span className="breakdown-label">Screening</span>
+                        <span className="breakdown-value">{stageCounts.screening}</span>
+                      </div>
+                      <div className="breakdown-item">
+                        <span className="breakdown-label">Interview</span>
+                        <span className="breakdown-value">{stageCounts.interview}</span>
+                      </div>
+                      <div className="breakdown-item">
+                        <span className="breakdown-label">Offer</span>
+                        <span className="breakdown-value">{stageCounts.offer}</span>
+                      </div>
+                      <div className="breakdown-item">
+                        <span className="breakdown-label">Rejected</span>
+                        <span className="breakdown-value">{stageCounts.rejected}</span>
+                      </div>
+                    </div>
                   ) : (
                     <div className="empty-state">
-                      <p>No job match data available yet.</p>
-                      <p>Apply to jobs to see match quality insights.</p>
+                      <p>No applications yet.</p>
+                      <p>Start applying to jobs to track your progress here.</p>
                     </div>
                   )}
                 </div>
               </div>
+              <div className="insight-recommendations">
+                <h4>Tips</h4>
+                <ul>
+                  <li>Aim for 2-3 applications per day for consistent progress</li>
+                  <li>Track which job boards and methods give you the best results</li>
+                  <li>Quality applications perform better than quantity</li>
+                </ul>
+              </div>
             </div>
-            <div className="insight-recommendations">
-              <h4>Recommendations</h4>
-              <ul>
-                <li>Follow up on applications that are past the average response time</li>
-                <li>Use referrals to improve response rates by up to 30%</li>
-                <li>Your startup applications get faster responses (avg. 3 days)</li>
-              </ul>
-            </div>
-          </div>
-        )}
-        {activeInsight === 'success-rate' && (
-          <div className="insight-content">
-            <div className="insight-header">
-              <h3>Success Rate by Industry & Job Title</h3>
-              <span className="insight-desc">Where your applications are performing best</span>
-            </div>
-            <div className="insight-data">
-              <div className="insight-chart">
-                <div className="success-rate-chart">
-                  {topIndustries.length > 0 ? (
-                    topIndustries.map(industry => (
-                      <div className="industry-row" key={industry.name}>
-                        <div className="industry-name">{industry.name}</div>
-                        <div className="industry-stats">
-                          <div className="industry-bar-container">
-                            <div className="industry-bar" style={{ width: `${industry.success}%`, backgroundColor: industry.success > 40 ? 'var(--accent-green)' : industry.success > 20 ? 'var(--accent-blue)' : 'var(--accent-red)' }}></div>
-                          </div>
-                          <div className="industry-values">
-                            <span className="applications-count">{industry.count} apps</span>
-                            <span className="success-percent">{industry.success}%</span>
-                          </div>
-                        </div>
+          )}
+          {activeInsight === 'active-applications' && (
+            <div className="insight-content">
+              <div className="insight-header">
+                <h3>Active Applications Status</h3>
+                <span className="insight-desc">Applications currently in progress</span>
+              </div>
+              <div className="insight-data">
+                <div className="insight-chart">
+                  {activeApplications > 0 ? (
+                    <div className="active-breakdown">
+                      <div className="active-item">
+                        <span className="active-label">Awaiting Response</span>
+                        <span className="active-value">{stageCounts.applied}</span>
+                        <span className="active-desc">Applications submitted, waiting for initial response</span>
                       </div>
-                    ))
+                      <div className="active-item">
+                        <span className="active-label">In Screening</span>
+                        <span className="active-value">{stageCounts.screening}</span>
+                        <span className="active-desc">Under review by HR or recruiters</span>
+                      </div>
+                      <div className="active-item">
+                        <span className="active-label">Interview Stage</span>
+                        <span className="active-value">{stageCounts.interview}</span>
+                        <span className="active-desc">Actively interviewing</span>
+                      </div>
+                    </div>
                   ) : (
                     <div className="empty-state">
-                      <p>No industry success rate data available yet.</p>
-                      <p>Apply to jobs across different industries to see success rate insights.</p>
+                      <p>No active applications.</p>
+                      <p>Submit applications to companies you're interested in.</p>
                     </div>
                   )}
                 </div>
               </div>
-              <div className="insight-metrics vertical">
-                <div className="insight-metric">
-                  <span className="metric-value">Technology</span>
-                  <span className="metric-label">Top Industry Applied</span>
-                </div>
-                <div className="insight-metric">
-                  <span className="metric-value">Healthcare</span>
-                  <span className="metric-label">Highest Success Rate</span>
-                </div>
-                <div className="insight-metric">
-                  <span className="metric-value">Frontend Developer</span>
-                  <span className="metric-label">Most Successful Role</span>
-                </div>
+              <div className="insight-recommendations">
+                <h4>Next Steps</h4>
+                <ul>
+                  <li>Follow up on applications older than 2 weeks</li>
+                  <li>Prepare for upcoming interviews</li>
+                  <li>Continue applying to maintain momentum</li>
+                </ul>
               </div>
             </div>
-            <div className="insight-recommendations">
-              <h4>Recommendations</h4>
-              <ul>
-                <li>Consider more healthcare industry applications (50% success rate)</li>
-                <li>Focus on frontend development roles where your profile performs best</li>
-                <li>Customize resume more for technology companies to improve conversion</li>
-              </ul>
-            </div>
-          </div>
-        )}
-        {activeInsight === 'total-applications' && (
-          <div className="insight-content">
-            <div className="insight-header">
-              <h3>Total Applications Overview</h3>
-              <span className="insight-desc">Your job application activity and progress</span>
-            </div>
-            <div className="insight-data">
-              <div className="insight-chart">
-                {totalApplications > 0 ? (
-                  <div className="applications-breakdown">
-                    <div className="breakdown-item">
-                      <span className="breakdown-label">Applied</span>
-                      <span className="breakdown-value">{stageCounts.applied}</span>
-                    </div>
-                    <div className="breakdown-item">
-                      <span className="breakdown-label">Screening</span>
-                      <span className="breakdown-value">{stageCounts.screening}</span>
-                    </div>
-                    <div className="breakdown-item">
-                      <span className="breakdown-label">Interview</span>
-                      <span className="breakdown-value">{stageCounts.interview}</span>
-                    </div>
-                    <div className="breakdown-item">
-                      <span className="breakdown-label">Offer</span>
-                      <span className="breakdown-value">{stageCounts.offer}</span>
-                    </div>
-                    <div className="breakdown-item">
-                      <span className="breakdown-label">Rejected</span>
-                      <span className="breakdown-value">{stageCounts.rejected}</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="empty-state">
-                    <p>No applications yet.</p>
-                    <p>Start applying to jobs to track your progress here.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="insight-recommendations">
-              <h4>Tips</h4>
-              <ul>
-                <li>Aim for 2-3 applications per day for consistent progress</li>
-                <li>Track which job boards and methods give you the best results</li>
-                <li>Quality applications perform better than quantity</li>
-              </ul>
-            </div>
-          </div>
-        )}
-        {activeInsight === 'active-applications' && (
-          <div className="insight-content">
-            <div className="insight-header">
-              <h3>Active Applications Status</h3>
-              <span className="insight-desc">Applications currently in progress</span>
-            </div>
-            <div className="insight-data">
-              <div className="insight-chart">
-                {activeApplications > 0 ? (
-                  <div className="active-breakdown">
-                    <div className="active-item">
-                      <span className="active-label">Awaiting Response</span>
-                      <span className="active-value">{stageCounts.applied}</span>
-                      <span className="active-desc">Applications submitted, waiting for initial response</span>
-                    </div>
-                    <div className="active-item">
-                      <span className="active-label">In Screening</span>
-                      <span className="active-value">{stageCounts.screening}</span>
-                      <span className="active-desc">Under review by HR or recruiters</span>
-                    </div>
-                    <div className="active-item">
-                      <span className="active-label">Interview Stage</span>
-                      <span className="active-value">{stageCounts.interview}</span>
-                      <span className="active-desc">Actively interviewing</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="empty-state">
-                    <p>No active applications.</p>
-                    <p>Submit applications to companies you're interested in.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="insight-recommendations">
-              <h4>Next Steps</h4>
-              <ul>
-                <li>Follow up on applications older than 2 weeks</li>
-                <li>Prepare for upcoming interviews</li>
-                <li>Continue applying to maintain momentum</li>
-              </ul>
-            </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
-      <div className="dashboard-tabs">
-        <TabGroup
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          className="dashboard-tab-group"
-        >
-          <TabButton
-            data-id="overview"
-            label="Overview"
-            icon={BarChart2}
-            size="medium"
-            accentColor="var(--accent-blue)"
-          />
-          {/* Temporarily disabled tabs */}
-          {/*
+        <div className="dashboard-tabs">
+          <TabGroup
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            className="dashboard-tab-group"
+          >
+            <TabButton
+              data-id="overview"
+              label="Overview"
+              icon={BarChart2}
+              size="medium"
+              accentColor={analytics.primary[0]}
+            />
+            {/* Temporarily disabled tabs */}
+            {/*
           <TabButton
             data-id="actions"
             label="Action Items"
             icon={Zap}
             size="medium"
-            accentColor="var(--accent-blue)"
+            accentColor={analytics.primary[0]}
           />
           <TabButton
             data-id="skills"
             label="Skills Analysis"
             icon={Award}
             size="medium"
-            accentColor="var(--accent-blue)"
+            accentColor={analytics.primary[0]}
           />
           */}
-          <TabButton
-            data-id="activity"
-            label="Activity"
-            icon={Activity}
-            size="medium"
-            accentColor="var(--accent-blue)"
-          />
-        </TabGroup>
-      </div>
+            <TabButton
+              data-id="activity"
+              label="Activity"
+              icon={Activity}
+              size="medium"
+              accentColor={analytics.primary[0]}
+            />
+          </TabGroup>
+        </div>
 
-      {activeTab === 'overview' && (
-        <div className="dashboard-grid overview-grid">
-          <ApplicationFunnel stageCounts={stageCounts} onViewAll={() => ENABLE_DEVELOPMENT_FEATURES ? console.log('View all applications') : alert('This feature is not available in the current version')} />
-          <WeeklyActivity weeklyActivity={weeklyActivity} onViewDetails={() => ENABLE_DEVELOPMENT_FEATURES ? console.log('View activity details') : alert('This feature is not available in the current version')} />
-          <div className="dashboard-card upcoming-card">
-            <div className="card-header">
-              <h3 className="card-title">Upcoming</h3>
-              <ActionButton label="Calendar" icon={Calendar} variant="ghost" size="small" onClick={() => ENABLE_DEVELOPMENT_FEATURES ? console.log('View calendar') : alert('This feature is not available in the current version')} />
-            </div>
-            <div className="upcoming-events">
-              {upcomingEventsToShow.map(event => (
-                <UpcomingEvent
-                  key={event.id}
-                  id={event.id}
-                  title={event.title}
-                  companyName={event.company.name}
-                  companyLogo={event.company.logo}
-                  date={event.date}
-                  time={event.time}
-                  type={event.type}
-                  details={event.details}
-                />
-              ))}
-              {upcomingReminders.map(reminder => (
-                <div key={reminder.id} className="upcoming-reminder">
-                  <div className="reminder-icon">
-                    <Bell size={16} />
-                  </div>
-                  <div className="reminder-content">
-                    <div className="reminder-title">{reminder.title}</div>
-                    <div className="reminder-meta">
-                      <span className="reminder-time">
-                        {new Intl.DateTimeFormat('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: 'numeric',
-                          minute: '2-digit'
-                        }).format(reminder.dueDate)}
-                      </span>
-                      {reminder.relatedApplication && (
-                        <span className="reminder-company">
-                          {reminder.relatedApplication.company.name}
-                        </span>
-                      )}
+        {activeTab === 'overview' && (
+          <div className="dashboard-grid overview-grid">
+            <ApplicationFunnel stageCounts={stageCounts} onViewAll={() => ENABLE_DEVELOPMENT_FEATURES ? console.log('View all applications') : alert('This feature is not available in the current version')} />
+            <WeeklyActivity weeklyActivity={weeklyActivity} onViewDetails={() => ENABLE_DEVELOPMENT_FEATURES ? console.log('View activity details') : alert('This feature is not available in the current version')} />
+            <div className="dashboard-card upcoming-card">
+              <div className="card-header">
+                <h3 className="card-title">Upcoming</h3>
+                <ActionButton label="Calendar" icon={Calendar} variant="ghost" size="small" onClick={() => ENABLE_DEVELOPMENT_FEATURES ? console.log('View calendar') : alert('This feature is not available in the current version')} />
+              </div>
+              <div className="upcoming-events">
+                {upcomingEventsToShow.map(event => (
+                  <UpcomingEvent
+                    key={event.id}
+                    id={event.id}
+                    title={event.title}
+                    companyName={event.company.name}
+                    companyLogo={event.company.logo}
+                    date={event.date}
+                    time={event.time}
+                    type={event.type}
+                    details={event.details}
+                  />
+                ))}
+                {upcomingReminders.map(reminder => (
+                  <div key={reminder.id} className="upcoming-reminder">
+                    <div className="reminder-icon">
+                      <Bell size={16} />
                     </div>
+                    <div className="reminder-content">
+                      <div className="reminder-title">{reminder.title}</div>
+                      <div className="reminder-meta">
+                        <span className="reminder-time">
+                          {new Intl.DateTimeFormat('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit'
+                          }).format(reminder.dueDate)}
+                        </span>
+                        {reminder.relatedApplication && (
+                          <span className="reminder-company">
+                            {reminder.relatedApplication.company.name}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className={`priority-indicator priority-${reminder.priority}`}></div>
                   </div>
-                  <div className={`priority-indicator priority-${reminder.priority}`}></div>
-                </div>
-              ))}
-            </div>
-            <div className="card-actions">
-              <ActionButton
-                label="Add Event"
-                icon={Plus}
-                variant="secondary"
-                size="small"
-                onClick={() => console.log('Add event')}
-              />
-              <ActionButton
-                label="View All"
-                icon={ChevronRight}
-                variant="ghost"
-                size="small"
-                onClick={() => console.log('View all events')}
-                className="view-all"
-              />
+                ))}
+              </div>
+              <div className="card-actions">
+                <ActionButton
+                  label="Add Event"
+                  icon={Plus}
+                  variant="secondary"
+                  size="small"
+                  onClick={() => console.log('Add event')}
+                />
+                <ActionButton
+                  label="View All"
+                  icon={ChevronRight}
+                  variant="ghost"
+                  size="small"
+                  onClick={() => console.log('View all events')}
+                  className="view-all"
+                />
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Temporarily disabled tab content */}
-      {/*
+        {/* Temporarily disabled tab content */}
+        {/*
       {activeTab === 'actions' && (
         <ActionsTab recommendedActions={recommendedActions} />
       )}
@@ -645,101 +661,108 @@ export default function DashboardHome() {
       )}
       */}
 
-      {activeTab === 'activity' && (
-        <div className="dashboard-grid activity-grid">
-          <div className="dashboard-card activity-feed-card">
-            <div className="card-header">
-              <h3 className="card-title">Activity Feed</h3>
-              <div className="filters">
-                <EnhancedDropdown
-                  options={[
-                    { value: 'all', label: 'All Activities' },
-                    { value: 'applications', label: 'Applications' },
-                    { value: 'interviews', label: 'Interviews' }
-                  ]}
-                  value={activityFilter}
-                  onChange={(value) => setActivityFilter(Array.isArray(value) ? value[0] : value)}
-                  size="small"
-                  width={150}
-                />
+        {activeTab === 'activity' && (
+          <div className="dashboard-grid activity-grid">
+            <div className="dashboard-card activity-feed-card">
+              <div className="card-header">
+                <h3 className="card-title">Activity Feed</h3>
+                <div className="filters">
+                  <EnhancedDropdown
+                    options={[
+                      { value: 'all', label: 'All Activities' },
+                      { value: 'applications', label: 'Applications' },
+                      { value: 'interviews', label: 'Interviews' }
+                    ]}
+                    value={activityFilter}
+                    onChange={(value) => setActivityFilter(Array.isArray(value) ? value[0] : value)}
+                    size="small"
+                    width={150}
+                  />
+                </div>
+              </div>
+              <div className="activity-timeline">
+                {recentActivities.map((activity, index) => (
+                  <ActivityItem
+                    key={activity.id}
+                    id={activity.id}
+                    type={activity.type}
+                    title={activity.title}
+                    companyName={activity.company.name}
+                    companyLogo={activity.company.logo}
+                    timestamp={activity.timestamp}
+                    details={activity.details}
+                    isLast={index === recentActivities.length - 1}
+                    onClick={() => console.log(`Activity ${activity.id} clicked`)}
+                  />
+                ))}
+                <div className="timeline-end">
+                  <div className="timeline-end-icon"><MoreHorizontal size={16} /></div>
+                  <span className="timeline-end-text">See more activities</span>
+                </div>
               </div>
             </div>
-            <div className="activity-timeline">
-              {recentActivities.map((activity, index) => (
-                <ActivityItem
-                  key={activity.id}
-                  id={activity.id}
-                  type={activity.type}
-                  title={activity.title}
-                  companyName={activity.company.name}
-                  companyLogo={activity.company.logo}
-                  timestamp={activity.timestamp}
-                  details={activity.details}
-                  isLast={index === recentActivities.length - 1}
-                  onClick={() => console.log(`Activity ${activity.id} clicked`)}
-                />
-              ))}
-              <div className="timeline-end">
-                <div className="timeline-end-icon"><MoreHorizontal size={16} /></div>
-                <span className="timeline-end-text">See more activities</span>
+            <div className="dashboard-card application-stats-card">
+              <div className="card-header">
+                <h3 className="card-title">Application Analytics</h3>
+                <div className="time-toggle">
+                  <button className={timeRange === '30d' ? 'active' : ''}>30d</button>
+                  <button className={timeRange === '90d' ? 'active' : ''}>90d</button>
+                  <button className={timeRange === 'all' ? 'active' : ''}>All</button>
+                </div>
+              </div>
+              <div className="stats-grid">
+                <div className="stat-box">
+                  <span className="stat-value">{totalApplications}</span>
+                  <span className="stat-label">Total Applications</span>
+                  <span className="stat-change positive">+15%</span>
+                </div>
+                <div className="stat-box">
+                  <span className="stat-value">{activeApplications}</span>
+                  <span className="stat-label">Active Applications</span>
+                  <span className="stat-change positive">+8%</span>
+                </div>
+                <div className="stat-box">
+                  <span className="stat-value">7.3</span>
+                  <span className="stat-label">Avg. Response Days</span>
+                  <span className="stat-change negative">+1.2</span>
+                </div>
+                <div className="stat-box">
+                  <span className="stat-value">{stageCounts.interview}</span>
+                  <span className="stat-label">Interviews</span>
+                  <span className="stat-change positive">+3</span>
+                </div>
+                <div className="stat-box">
+                  <span className="stat-value">{responseRate.toFixed(0)}%</span>
+                  <span className="stat-label">Response Rate</span>
+                  <span className="stat-change positive">+5%</span>
+                </div>
+                <div className="stat-box">
+                  <span className="stat-value">22%</span>
+                  <span className="stat-label">Interview Rate</span>
+                  <span className="stat-change positive">+3%</span>
+                </div>
               </div>
             </div>
           </div>
-          <div className="dashboard-card application-stats-card">
-            <div className="card-header">
-              <h3 className="card-title">Application Analytics</h3>
-              <div className="time-toggle">
-                <button className={timeRange === '30d' ? 'active' : ''}>30d</button>
-                <button className={timeRange === '90d' ? 'active' : ''}>90d</button>
-                <button className={timeRange === 'all' ? 'active' : ''}>All</button>
-              </div>
-            </div>
-            <div className="stats-grid">
-              <div className="stat-box">
-                <span className="stat-value">{totalApplications}</span>
-                <span className="stat-label">Total Applications</span>
-                <span className="stat-change positive">+15%</span>
-              </div>
-              <div className="stat-box">
-                <span className="stat-value">{activeApplications}</span>
-                <span className="stat-label">Active Applications</span>
-                <span className="stat-change positive">+8%</span>
-              </div>
-              <div className="stat-box">
-                <span className="stat-value">7.3</span>
-                <span className="stat-label">Avg. Response Days</span>
-                <span className="stat-change negative">+1.2</span>
-              </div>
-              <div className="stat-box">
-                <span className="stat-value">{stageCounts.interview}</span>
-                <span className="stat-label">Interviews</span>
-                <span className="stat-change positive">+3</span>
-              </div>
-              <div className="stat-box">
-                <span className="stat-value">{responseRate.toFixed(0)}%</span>
-                <span className="stat-label">Response Rate</span>
-                <span className="stat-change positive">+5%</span>
-              </div>
-              <div className="stat-box">
-                <span className="stat-value">22%</span>
-                <span className="stat-label">Interview Rate</span>
-                <span className="stat-change positive">+3%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+        )}
 
-      <ActionButton
-        label=""
-        icon={Zap}
-        variant="primary"
-        size="large"
-        onClick={() => console.log('Quick actions')}
-        className="quick-actions-button"
-      />
+        <ActionButton
+          label=""
+          icon={Zap}
+          variant="primary"
+          size="large"
+          onClick={() => console.log('Quick actions')}
+          className="quick-actions-button"
+        />
 
-      <style jsx>{`
+        <style jsx>{`
+        .dashboard-wrapper {
+          min-height: 100vh;
+          background: var(--theme-bg-gradient);
+          padding: 2rem;
+          transition: var(--theme-transition);
+        }
+
         .dashboard-home {
           display: flex;
           flex-direction: column;
@@ -769,29 +792,29 @@ export default function DashboardHome() {
           left: 12px;
           top: 50%;
           transform: translateY(-50%);
-          color: var(--text-tertiary);
-          transition: color 0.3s var(--easing-standard);
+          color: var(--theme-text-tertiary);
+          transition: color 0.3s var(--theme-transition);
         }
 
         .dashboard-search.focused .search-icon {
-          color: var(--accent-blue);
+          color: var(--theme-primary);
         }
 
         .search-input {
           width: 100%;
           height: 42px;
           padding: 0 12px 0 40px;
-          border-radius: var(--border-radius);
-          border: 1px solid var(--border-thin);
-          background: var(--glass-input-bg, var(--card));
-          color: var(--text-primary);
+          border-radius: var(--theme-border-radius);
+          border: 1px solid var(--theme-border);
+          background: var(--theme-surface);
+          color: var(--theme-text-primary);
           font-size: 14px;
-          transition: all 0.3s var(--easing-standard);
+          transition: all 0.3s var(--theme-transition);
         }
 
         .search-input:focus {
-          border-color: var(--accent-blue);
-          box-shadow: 0 0 0 3px rgba(var(--accent-blue-rgb), 0.1);
+          border-color: var(--theme-focus);
+          box-shadow: 0 0 0 3px var(--theme-glass-subtle);
         }
 
         .clear-search {
@@ -1489,6 +1512,7 @@ export default function DashboardHome() {
           transform: translateY(-2px);
         }
       `}</style>
-    </section>
+      </section>
+    </div>
   );
 }

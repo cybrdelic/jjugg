@@ -1,0 +1,293 @@
+/* Global CSS custom properties for themes */
+/* This replaces the complex ThemeInjector system with simple CSS */
+
+:root {
+    /* Layout & Spacing */
+    --navbar-height: 68px;
+    --container-padding: 32px;
+    --navbar-gap: 32px;
+    --nav-gap: 4px;
+    --nav-padding: 6px;
+    --nav-item-gap: 8px;
+    --logo-gap: 10px;
+    --logo-size: 32px;
+
+    /* Typography */
+    --font-size-xs: 10px;
+    --font-size-sm: 14px;
+    --font-size-md: 18px;
+    --font-size-lg: 20px;
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --letter-spacing: -0.5px;
+
+    /* Border Radius */
+    --border-radius-sm: 4px;
+    --border-radius: 6px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --border-radius-xl: 16px;
+    --border-radius-full: 9999px;
+
+    /* Transitions */
+    --transition-fast: 0.15s ease;
+    --transition: 0.2s ease;
+    --transition-slow: 0.3s ease;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+    /* Spacing */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --space-12: 48px;
+    --space-16: 64px;
+
+    /* Icon & Component Sizes */
+    --icon-size-sm: 14px;
+    --icon-size: 16px;
+    --icon-size-lg: 20px;
+    --icon-size-xl: 24px;
+    --badge-size: 18px;
+    --avatar-size-sm: 24px;
+    --avatar-size: 32px;
+    --avatar-size-lg: 48px;
+
+    /* Content Width */
+    --max-content-width: 1400px;
+}
+
+/* Light Theme (Default) */
+:root {
+    /* Primary Colors */
+    --primary: #3b82f6;
+    --primary-light: #60a5fa;
+    --primary-dark: #2563eb;
+
+    /* Secondary Colors */
+    --secondary: #6b7280;
+    --accent: #8b5cf6;
+
+    /* Background Colors */
+    --background: #ffffff;
+    --background-secondary: #f9fafb;
+    --surface: #ffffff;
+    --surface-elevated: #ffffff;
+    --card: #ffffff;
+    --card-hover: #f9fafb;
+
+    /* Border Colors */
+    --border: #e5e7eb;
+    --border-light: #f3f4f6;
+    --border-strong: #d1d5db;
+
+    /* Text Colors */
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --text-tertiary: #9ca3af;
+    --text-inverse: #ffffff;
+
+    /* Status Colors */
+    --success: #10b981;
+    --success-light: #d1fae5;
+    --warning: #f59e0b;
+    --warning-light: #fef3c7;
+    --error: #ef4444;
+    --error-light: #fee2e2;
+    --info: #3b82f6;
+    --info-light: #dbeafe;
+
+    /* Application Stage Colors */
+    --color-blue: #3b82f6;
+    --color-blue-light: #dbeafe;
+    --color-yellow: #f59e0b;
+    --color-yellow-light: #fef3c7;
+    --color-orange: #f97316;
+    --color-orange-light: #fed7aa;
+    --color-green: #10b981;
+    --color-green-light: #d1fae5;
+    --color-red: #ef4444;
+    --color-red-light: #fee2e2;
+    --color-gray: #6b7280;
+
+    /* Theme System Colors */
+    --color-primary: #0ea5e9;
+    --color-primary-dark: #0284c7;
+    --color-secondary: #8b5cf6;
+    --color-secondary-dark: #7c3aed;
+    --color-accent: #f59e0b;
+    --color-background: #ffffff;
+    --color-surface: #f8fafc;
+    --color-card: #ffffff;
+    --color-text: #0f172a;
+    --color-text-primary: #0f172a;
+    --color-text-secondary: #64748b;
+    --color-text-muted: #94a3b8;
+    --color-border: #e2e8f0;
+
+    /* Shadow System - Light Mode */
+    --shadow-small: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-large: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+    /* Interactive States */
+    --hover-bg: rgba(0, 0, 0, 0.05);
+    --active-bg: rgba(0, 0, 0, 0.1);
+    --focus-ring: #3b82f6;
+    --disabled-bg: #f3f4f6;
+    --disabled-text: #9ca3af;
+
+    /* Glass Effects */
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-hover-bg: rgba(255, 255, 255, 0.2);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --glass-backdrop: blur(12px);
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+    /* Primary Colors - slightly adjusted for dark mode */
+    --primary: #60a5fa;
+    --primary-light: #93c5fd;
+    --primary-dark: #3b82f6;
+
+    /* Background Colors */
+    --background: #000000;
+    --background-secondary: #111111;
+    --surface: #111111;
+    --surface-elevated: #1a1a1a;
+    --card: #111111;
+    --card-hover: #1a1a1a;
+
+    /* Border Colors */
+    --border: #1a1a1a;
+    --border-light: #2a2a2a;
+    --border-strong: #3a3a3a;
+
+    /* Text Colors */
+    --text-primary: #f9fafb;
+    --text-secondary: #d1d5db;
+    --text-tertiary: #9ca3af;
+    --text-inverse: #111827;
+
+    /* Application Stage Colors - Dark Mode */
+    --color-blue: #60a5fa;
+    --color-blue-light: #1e3a8a;
+    --color-yellow: #fbbf24;
+    --color-yellow-light: #92400e;
+    --color-orange: #fb923c;
+    --color-orange-light: #9a3412;
+    --color-green: #34d399;
+    --color-green-light: #064e3b;
+    --color-red: #f87171;
+    --color-red-light: #7f1d1d;
+    --color-gray: #9ca3af;
+
+    /* Theme System Colors - Dark Mode */
+    --color-primary: #0ea5e9;
+    --color-primary-dark: #0284c7;
+    --color-secondary: #a78bfa;
+    --color-secondary-dark: #8b5cf6;
+    --color-accent: #f59e0b;
+    --color-background: #000000;
+    --color-surface: #111111;
+    --color-card: #111111;
+    --color-text: #f1f5f9;
+    --color-text-primary: #f1f5f9;
+    --color-text-secondary: #cbd5e1;
+    --color-text-muted: #94a3b8;
+    --color-border: #1a1a1a;
+
+    /* Shadow System - Dark Mode */
+    --shadow-small: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    --shadow-large: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+
+    /* Interactive States */
+    --hover-bg: rgba(255, 255, 255, 0.05);
+    --active-bg: rgba(255, 255, 255, 0.1);
+    --disabled-bg: #374151;
+    --disabled-text: #6b7280;
+
+    /* Glass Effects */
+    --glass-bg: rgba(0, 0, 0, 0.2);
+    --glass-hover-bg: rgba(0, 0, 0, 0.3);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+/* Base Body Styles */
+body {
+    background: var(--background);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    transition: background-color var(--transition), color var(--transition);
+    margin: 0;
+    padding: 0;
+}
+
+/* Utility Classes */
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-lg);
+}
+
+.glass-card:hover {
+    background: var(--glass-hover-bg);
+}
+
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-lg);
+    transition: all var(--transition);
+}
+
+.card:hover {
+    background: var(--card-hover);
+    border-color: var(--border-strong);
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: var(--text-inverse);
+    border: 1px solid var(--primary);
+    border-radius: var(--border-radius);
+    padding: var(--space-3) var(--space-4);
+    font-weight: var(--font-weight-medium);
+    transition: all var(--transition-fast);
+    cursor: pointer;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.btn-secondary {
+    background: var(--surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    padding: var(--space-3) var(--space-4);
+    font-weight: var(--font-weight-medium);
+    transition: all var(--transition-fast);
+    cursor: pointer;
+}
+
+.btn-secondary:hover {
+    background: var(--hover-bg);
+    border-color: var(--border-strong);
+}

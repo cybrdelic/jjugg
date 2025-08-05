@@ -11,6 +11,7 @@ export interface FeatureFlags {
     ENABLE_DEBUG_PAGE: boolean;
     ENABLE_PROFILE_ARTIFACTS: boolean;
     ENABLE_DEVELOPMENT_FEATURES: boolean;
+    ENABLE_DASHBOARD: boolean; // New feature flag for dashboard
 }
 
 // Default feature flag settings - all disabled by default
@@ -22,6 +23,7 @@ const defaultFeatureFlags: FeatureFlags = {
     ENABLE_DEBUG_PAGE: false,
     ENABLE_PROFILE_ARTIFACTS: false,
     ENABLE_DEVELOPMENT_FEATURES: false,
+    ENABLE_DASHBOARD: false, // Default to false for new feature
 };
 
 // Create the context

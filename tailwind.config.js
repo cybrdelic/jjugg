@@ -9,66 +9,88 @@ module.exports = {
   darkMode: 'class',
   theme: {
     extend: {
-      // Custom colors
+      // Theme-aware colors using CSS variables
       colors: {
-        // Primary palette
-        primary: {
-          50: '#e6f1fe',
-          100: '#cce3fd',
-          200: '#99c7fb',
-          300: '#66abf9',
-          400: '#338ff7',
-          500: '#0073f5', // Main primary color
-          600: '#005cc4',
-          700: '#004593',
-          800: '#002e62',
-          900: '#001731',
-        },
-        // Secondary palette
-        secondary: {
-          50: '#f5f7fa',
-          100: '#ebeef5',
-          200: '#d8deeb',
-          300: '#c4cde1',
-          400: '#b1bdd7',
-          500: '#9daccd', // Main secondary color
-          600: '#7e8aa4',
-          700: '#5e677b',
-          800: '#3f4552',
-          900: '#1f2229',
-        },
+        // Core theme colors
+        primary: 'var(--primary)',
+        secondary: 'var(--secondary)',
+        accent: 'var(--accent)',
+
+        // Background system
+        background: 'var(--background)',
+        surface: 'var(--surface)',
+        card: 'var(--card)',
+        'card-hover': 'var(--card-hover)',
+        'background-secondary': 'var(--background-secondary)',
+        'surface-elevated': 'var(--surface-elevated)',
+
+        // Border system
+        border: 'var(--border)',
+        'border-light': 'var(--border-light)',
+        'border-strong': 'var(--border-strong)',
+
+        // Text hierarchy
+        'text-primary': 'var(--text-primary)',
+        'text-secondary': 'var(--text-secondary)',
+        'text-tertiary': 'var(--text-tertiary)',
+        'text-accent': 'var(--text-accent)',
+        'text-inverse': 'var(--text-inverse)',
+
+        // Status colors
+        'status-success': 'var(--status-success)',
+        'status-success-light': 'var(--status-success-light)',
+        'status-warning': 'var(--status-warning)',
+        'status-warning-light': 'var(--status-warning-light)',
+        'status-error': 'var(--status-error)',
+        'status-error-light': 'var(--status-error-light)',
+        'status-info': 'var(--status-info)',
+        'status-info-light': 'var(--status-info-light)',
+        'status-pending': 'var(--status-pending)',
+        'status-pending-light': 'var(--status-pending-light)',
+
+        // Application stage colors
+        'application-applied': 'var(--application-applied)',
+        'application-applied-light': 'var(--application-applied-light)',
+        'application-screening': 'var(--application-screening)',
+        'application-screening-light': 'var(--application-screening-light)',
+        'application-interview': 'var(--application-interview)',
+        'application-interview-light': 'var(--application-interview-light)',
+        'application-offer': 'var(--application-offer)',
+        'application-offer-light': 'var(--application-offer-light)',
+        'application-rejected': 'var(--application-rejected)',
+        'application-rejected-light': 'var(--application-rejected-light)',
+
+        // Interactive states
+        'hover-bg': 'var(--hover-bg)',
+        'active-bg': 'var(--active-bg)',
+        'focus-ring': 'var(--focus-ring)',
+        'disabled-bg': 'var(--disabled-bg)',
+        'selected-bg': 'var(--selected-bg)',
+
         // Accent colors
-        accent: {
-          blue: '#3b82f6',
-          purple: '#8b5cf6',
-          pink: '#ec4899',
-          orange: '#f97316',
-          green: '#10b981',
-          yellow: '#f59e0b',
-          red: '#ef4444',
-        },
-        // Glass effect backgrounds
-        glass: {
-          light: 'rgba(255, 255, 255, 0.65)',
-          DEFAULT: 'rgba(255, 255, 255, 0.35)',
-          dark: 'rgba(17, 24, 39, 0.75)',
-          darker: 'rgba(0, 0, 0, 0.55)',
-        },
-        // Interaction states
-        state: {
-          hover: {
-            light: 'rgba(0, 0, 0, 0.05)',
-            dark: 'rgba(255, 255, 255, 0.1)',
-          },
-          active: {
-            light: 'rgba(0, 0, 0, 0.1)',
-            dark: 'rgba(255, 255, 255, 0.15)',
-          },
-          focus: {
-            light: 'rgba(59, 130, 246, 0.2)',
-            dark: 'rgba(96, 165, 250, 0.2)',
-          },
-        },
+        'accent-blue': 'var(--accent-blue)',
+        'accent-purple': 'var(--accent-purple)',
+        'accent-pink': 'var(--accent-pink)',
+        'accent-orange': 'var(--accent-orange)',
+        'accent-green': 'var(--accent-green)',
+        'accent-yellow': 'var(--accent-yellow)',
+        'accent-red': 'var(--accent-red)',
+        'accent-blue-light': 'var(--accent-blue-light)',
+
+        // Glass morphism
+        'glass-subtle': 'var(--glass-subtle)',
+        'glass-medium': 'var(--glass-medium)',
+        'glass-strong': 'var(--glass-strong)',
+        'glass-overlay': 'var(--glass-overlay)',
+
+        // Glass component backgrounds
+        'glass-bg': 'var(--glass-bg)',
+        'glass-card-bg': 'var(--glass-card-bg)',
+        'glass-sidebar-bg': 'var(--glass-sidebar-bg)',
+        'glass-hover-bg': 'var(--glass-hover-bg)',
+        'glass-button-bg': 'var(--glass-button-bg)',
+        'glass-input-bg': 'var(--glass-input-bg)',
+        'glass-selected-bg': 'var(--glass-selected-bg)',
       },      // Typography - Cohesive font system
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

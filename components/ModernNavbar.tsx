@@ -1,12 +1,9 @@
-'use client';
-
 import React, { useState, useEffect, useRef } from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
 import { SectionKey, NavItemType } from '@/types';
 import {
   Menu, X, Search, Bell, Plus, Command, User, LogOut, Settings
 } from 'lucide-react';
-import ThemeSwitcher from './ThemeSwitcher';
+import { ThemeSwitcher } from './ThemeSwitcher';
 import ModernSearchBar from './ModernSearchBar';
 
 interface ModernNavbarProps {
@@ -28,7 +25,6 @@ export default function ModernNavbar({
   onMobileMenuToggle,
   isMobileMenuOpen = false
 }: ModernNavbarProps) {
-  const { currentTheme } = useTheme();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isNotificationMenuOpen, setIsNotificationMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -249,48 +245,56 @@ export default function ModernNavbar({
         </div>
       )}
 
+      {/* CSS now comes from global theme.css - no more complex injection! */}
       <style jsx>{`
-        /* Base Navbar Styles - Clean & Consistent */
+        .modern-navbar {
+          /* All CSS variables are now defined in styles/theme.css */
+          /* This eliminates the need for complex JavaScript theme injection */
+        }
+      `}</style>
+
+      <style jsx>{`
+        /* Base Navbar Styles - Using CSS custom properties from theme.css */
         .modern-navbar {
           position: fixed;
           top: 0;
           left: 0;
           right: 0;
-          height: var(--navbar-height, 68px);
-          background: var(--actual-background, var(--background));
-          border-bottom: var(--navbar-border, var(--border-thin));
+          height: var(--navbar-height);
+          background: var(--background);
+          border-bottom: 1px solid var(--border);
           z-index: 1000;
-          transition: all var(--transition-normal, 0.3s) ease;
+          transition: all var(--transition);
         }
 
         .navbar-container {
           height: 100%;
-          max-width: var(--max-content-width, 1400px);
+          max-width: var(--max-content-width);
           margin: 0 auto;
-          padding: 0 var(--container-padding-x, 32px);
+          padding: 0 var(--container-padding);
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: var(--navbar-gap, 32px);
+          gap: var(--navbar-gap);
         }
 
         /* Left Section */
         .navbar-left {
           display: flex;
           align-items: center;
-          gap: var(--navbar-left-gap, 40px);
+          gap: var(--space-10);
           flex: 0 1 auto;
         }
 
         .mobile-menu-btn {
           display: none;
-          padding: var(--button-padding-sm, 8px);
-          background: var(--card);
-          border: var(--border-thin);
-          border-radius: var(--button-border-radius);
+          padding: var(--space-2);
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: var(--border-radius);
           color: var(--text-secondary);
           cursor: pointer;
-          transition: all var(--transition-fast, 0.2s) ease;
+          transition: all var(--transition-fast);
         }
 
         .mobile-menu-btn:hover {
@@ -302,160 +306,158 @@ export default function ModernNavbar({
         .navbar-logo {
           display: flex;
           align-items: center;
-          gap: var(--logo-gap, 10px);
-          font-weight: var(--font-weight-headers, 700);
-          font-size: var(--font-size-lg, 20px);
+          gap: var(--space-3);
+          font-weight: var(--font-weight-bold);
+          font-size: var(--font-size-lg);
           color: var(--text-primary);
         }
 
         .logo-icon {
-          width: var(--logo-size, 32px);
-          height: var(--logo-size, 32px);
+          width: var(--logo-size);
+          height: var(--logo-size);
           background: var(--primary);
-          border-radius: var(--button-border-radius);
+          border-radius: var(--border-radius);
           display: flex;
           align-items: center;
           justify-content: center;
-          color: white;
-          font-size: var(--font-size-md, 18px);
-          font-weight: var(--font-weight-headers, 700);
+          color: var(--text-inverse);
+          font-size: var(--font-size-md);
+          font-weight: var(--font-weight-bold);
         }
 
         .logo-text {
-          font-size: var(--font-size-md, 18px);
-          letter-spacing: var(--letter-spacing, -0.5px);
+          font-size: var(--font-size-md);
+          letter-spacing: var(--letter-spacing);
         }
 
         /* Desktop Navigation */
         .desktop-nav {
           display: flex;
           align-items: center;
-          gap: var(--nav-gap, 4px);
-          background: var(--glass-card-container-bg);
-          border: var(--border-thin);
-          border-radius: var(--container-border-radius);
-          padding: var(--nav-padding, 6px);
+          gap: var(--nav-gap);
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: var(--border-radius-lg);
+          padding: var(--space-2);
         }
 
         .nav-item {
           position: relative;
           display: flex;
           align-items: center;
-          gap: var(--nav-item-gap, 8px);
-          padding: var(--button-padding);
+          gap: var(--space-2);
+          padding: var(--space-3) var(--space-4);
           background: none;
           border: none;
-          border-radius: var(--button-border-radius);
+          border-radius: var(--border-radius);
           color: var(--text-secondary);
-          font-size: var(--font-size-sm, 14px);
-          font-weight: var(--font-weight-secondary);
+          font-size: var(--font-size-sm);
+          font-weight: var(--font-weight-medium);
           cursor: pointer;
-          transition: all var(--transition-fast, 0.2s) ease;
+          transition: all var(--transition-fast);
           white-space: nowrap;
-          text-transform: var(--text-transform);
-          letter-spacing: var(--letter-spacing);
         }
 
         .nav-item:hover {
-          background: var(--glass-hover-bg);
+          background: var(--hover-bg);
           color: var(--text-primary);
         }
 
         .nav-item.active {
           background: var(--primary);
-          color: white;
-          box-shadow: var(--button-shadow);
+          color: var(--text-inverse);
+          box-shadow: var(--shadow-sm);
         }
 
         .nav-icon {
           display: flex;
           align-items: center;
-          font-size: var(--icon-size, 16px);
+          font-size: var(--icon-size);
         }
 
         .nav-label {
           white-space: nowrap;
-          font-weight: var(--font-weight-secondary, 500);
+          font-weight: var(--font-weight-medium);
         }
 
         .nav-badge {
           position: absolute;
-          top: var(--badge-offset-y, 2px);
-          right: var(--badge-offset-x, 2px);
-          min-width: var(--badge-size, 18px);
-          height: var(--badge-size, 18px);
-          background: var(--accent-red);
-          color: white;
-          border-radius: calc(var(--badge-size, 18px) / 2);
-          font-size: var(--font-size-xs, 10px);
-          font-weight: var(--font-weight-headers, 700);
+          top: 2px;
+          right: 2px;
+          min-width: var(--badge-size);
+          height: var(--badge-size);
+          background: var(--error);
+          color: var(--text-inverse);
+          border-radius: var(--border-radius-full);
+          font-size: var(--font-size-xs);
+          font-weight: var(--font-weight-bold);
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 0 var(--badge-padding, 5px);
-          box-shadow: var(--shadow-md);
+          padding: 0 var(--space-1);
+          box-shadow: var(--shadow);
         }
 
         /* Right Section */
         .navbar-right {
           display: flex;
           align-items: center;
-          gap: var(--navbar-right-gap, 12px);
+          gap: var(--space-3);
           flex: 0 0 auto;
         }
 
         /* Search */
         .navbar-search {
-          width: var(--search-width, 280px);
-          max-width: var(--search-width, 280px);
-          transition: all var(--transition-normal, 0.3s) ease;
+          width: 280px;
+          max-width: 280px;
+          transition: all var(--transition);
         }
 
         .navbar-search:focus-within {
-          width: var(--search-width-expanded, 350px);
-          max-width: var(--search-width-expanded, 350px);
+          width: 350px;
+          max-width: 350px;
         }
-
 
         /* Icon Buttons */
         .icon-btn {
           position: relative;
-          width: var(--icon-btn-size, 40px);
-          height: var(--icon-btn-size, 40px);
+          width: 40px;
+          height: 40px;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: var(--glass-button-bg);
-          border: var(--border-thin);
-          border-radius: var(--button-border-radius);
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: var(--border-radius);
           color: var(--text-secondary);
           cursor: pointer;
-          transition: all var(--transition-fast, 0.2s) ease;
+          transition: all var(--transition-fast);
         }
 
         .icon-btn:hover {
-          background: var(--glass-hover-bg);
+          background: var(--hover-bg);
           color: var(--text-primary);
-          transform: translateY(var(--hover-lift, -1px));
+          border-color: var(--border-strong);
+          transform: translateY(-1px);
         }
 
         .badge {
           position: absolute;
-          top: var(--badge-offset-top, -6px);
-          right: var(--badge-offset-right, -6px);
-          min-width: var(--badge-size-lg, 20px);
-          height: var(--badge-size-lg, 20px);
-          background: var(--accent-red);
-          color: white;
-          border-radius: calc(var(--badge-size-lg, 20px) / 2);
-          font-size: var(--font-size-xs, 11px);
-          font-weight: var(--font-weight-headers, 700);
+          top: -6px;
+          right: -6px;
+          min-width: 20px;
+          height: 20px;
+          background: var(--error);
+          color: var(--text-inverse);
+          border-radius: var(--border-radius-full);
+          font-size: 11px;
+          font-weight: var(--font-weight-bold);
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 0 var(--badge-padding, 6px);
-          box-shadow: var(--shadow-md);
-          border: var(--badge-border-width, 2px) solid var(--background);
+          padding: 0 var(--space-1);
+          box-shadow: var(--shadow);
+          border: 2px solid var(--background);
         }
 
         /* Dropdowns */
@@ -468,9 +470,9 @@ export default function ModernNavbar({
           top: calc(100% + 8px);
           right: 0;
           min-width: 240px;
-          background: var(--card);
-          border: var(--border-thin);
-          border-radius: var(--card-border-radius, 12px);
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: var(--border-radius-lg);
           box-shadow: var(--shadow-lg);
           overflow: hidden;
           z-index: 1001;
