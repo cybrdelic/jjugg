@@ -96,7 +96,7 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
       onContextMenu={onContextMenu}
     >
       {/* Checkbox */}
-      <div className="checkbox-wrapper">
+      <div className="checkbox-wrapper" onClick={(e) => e.stopPropagation()}>
         <input
           type="checkbox"
           className="custom-checkbox"
@@ -105,9 +105,10 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
             e.stopPropagation();
             onSelect(e.target.checked);
           }}
+          onClick={(e) => e.stopPropagation()}
           id={`checkbox-${application.id}`}
         />
-        <label htmlFor={`checkbox-${application.id}`} className="checkbox-label"></label>
+        <label htmlFor={`checkbox-${application.id}`} className="checkbox-label" onClick={(e) => e.stopPropagation()}></label>
       </div>
 
       {/* Company */}
@@ -512,7 +513,7 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
           height: 20px;
           background: var(--surface);
           border: 2px solid var(--border);
-          border-radius: 6px;
+          border-radius: 3px;
           cursor: pointer;
           transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
           display: flex;
@@ -544,7 +545,7 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
         .company-logo {
           width: 32px;
           height: 32px;
-          border-radius: 8px;
+          border-radius: 4px;
           object-fit: cover;
           border: 1px solid var(--border);
           flex-shrink: 0;
@@ -553,7 +554,7 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
         .company-logo-placeholder {
           width: 32px;
           height: 32px;
-          border-radius: 8px;
+          border-radius: 4px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -629,7 +630,7 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
           align-items: center;
           gap: 4px;
           padding: 4px 10px;
-          border-radius: 16px;
+          border-radius: 8px;
           font-size: 11px;
           font-weight: 600;
           text-transform: capitalize;
@@ -711,7 +712,7 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
           align-items: center;
           gap: 6px;
           padding: 5px 10px;
-          border-radius: 6px;
+          border-radius: 4px;
           font-size: 12px;
           max-width: 100%;
           margin-bottom: 4px;
@@ -768,7 +769,7 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
         .tasks-progress-bar {
           height: 6px;
           background: var(--glass-bg);
-          border-radius: 3px;
+          border-radius: 2px;
           flex-grow: 1;
           overflow: hidden;
           border: 1px solid var(--border);
@@ -818,7 +819,7 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
           font-size: 12px;
           padding: 3px 6px;
           background: rgba(var(--info-rgb), 0.075);
-          border-radius: 4px;
+          border-radius: 3px;
           max-width: fit-content;
           transition: all 0.2s ease;
         }
@@ -846,7 +847,7 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
         .stage-dropdown {
           background: var(--glass-bg);
           border: 1px solid var(--border);
-          border-radius: 8px;
+          border-radius: 4px;
           box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.1));
           z-index: 1001;
           animation: dropdownSlideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -875,7 +876,7 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
           padding: 8px 12px;
           cursor: pointer;
           transition: all 0.2s ease;
-          border-radius: 4px;
+          border-radius: 2px;
           margin: 2px;
           font-size: 12px;
           position: relative;
@@ -904,7 +905,7 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
           font-weight: 600;
           background: rgba(var(--primary-rgb), 0.1);
           padding: 2px 6px;
-          border-radius: 10px;
+          border-radius: 4px;
         }
 
         /* Tooltip styles */

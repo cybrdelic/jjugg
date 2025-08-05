@@ -3,400 +3,463 @@
  * Manages view modes, filters, and table controls
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
-    Grid3x3, ListFilter, SlidersHorizontal, Smartphone,
-    Monitor, Maximize2, Minimize2
+  Grid3x3, ListFilter, Calendar, TrendingUp, ChevronDown, Filter
 } from 'lucide-react';
 import Tooltip from '../../Tooltip';
 import { ApplicationStage } from '@/types';
 
 interface ApplicationsControlsProps {
-    // View state
-    viewMode: 'table' | 'kanban';
-    isMobileView: boolean;
-    isAutosizeEnabled: boolean;
-    tableViewDensity: 'compact' | 'comfortable' | 'spacious';
-    showAdvancedFilters: boolean;
-    isColumnMenuOpen: boolean;
+  // View state
+  viewMode: 'table' | 'kanban';
+  isMobileView: boolean;
+  isAutosizeEnabled: boolean;
+  tableViewDensity: 'compact' | 'comfortable' | 'spacious';
+  showAdvancedFilters: boolean;
+  isColumnMenuOpen: boolean;
 
-    // Filters
-    quickFilters: {
-        stage: ApplicationStage | 'all',
-        dateRange: '7d' | '30d' | '90d' | 'all',
-        salary: 'with' | 'without' | 'all'
-    };
-    visibleColumns: string[];
+  // Filters
+  quickFilters: {
+    stage: ApplicationStage | 'all',
+    dateRange: '7d' | '30d' | '90d' | 'all',
+    salary: 'with' | 'without' | 'all'
+  };
+  visibleColumns: string[];
 
-    // Handlers
-    onViewModeChange: (mode: 'table' | 'kanban') => void;
-    onMobileViewToggle: () => void;
-    onAutosizeToggle: () => void;
-    onDensityChange: (density: 'compact' | 'comfortable' | 'spacious') => void;
-    onQuickFiltersChange: (filters: Partial<ApplicationsControlsProps['quickFilters']>) => void;
-    onAdvancedFiltersToggle: () => void;
-    onColumnMenuToggle: () => void;
-    onVisibleColumnsChange: (columns: string[]) => void;
+  // Handlers
+  onViewModeChange: (mode: 'table' | 'kanban') => void;
+  onMobileViewToggle: () => void;
+  onAutosizeToggle: () => void;
+  onDensityChange: (density: 'compact' | 'comfortable' | 'spacious') => void;
+  onQuickFiltersChange: (filters: Partial<ApplicationsControlsProps['quickFilters']>) => void;
+  onAdvancedFiltersToggle: () => void;
+  onColumnMenuToggle: () => void;
+  onVisibleColumnsChange: (columns: string[]) => void;
 }
 
 export function ApplicationsControls({
-    viewMode,
-    isMobileView,
-    isAutosizeEnabled,
-    tableViewDensity,
-    showAdvancedFilters,
-    isColumnMenuOpen,
-    quickFilters,
-    visibleColumns,
-    onViewModeChange,
-    onMobileViewToggle,
-    onAutosizeToggle,
-    onDensityChange,
-    onQuickFiltersChange,
-    onAdvancedFiltersToggle,
-    onColumnMenuToggle,
-    onVisibleColumnsChange
+  viewMode,
+  isMobileView,
+  isAutosizeEnabled,
+  tableViewDensity,
+  showAdvancedFilters,
+  isColumnMenuOpen,
+  quickFilters,
+  visibleColumns,
+  onViewModeChange,
+  onMobileViewToggle,
+  onAutosizeToggle,
+  onDensityChange,
+  onQuickFiltersChange,
+  onAdvancedFiltersToggle,
+  onColumnMenuToggle,
+  onVisibleColumnsChange
 }: ApplicationsControlsProps) {
-    const allColumns = ['company', 'position', 'dateApplied', 'stage', 'tasks', 'location', 'salary', 'bonus'];
+  const [stageDropdownOpen, setStageDropdownOpen] = useState(false);
+  const [dateDropdownOpen, setDateDropdownOpen] = useState(false);
 
-    return (
-        <div className="dashboard-controls">
-            {/* View Toggle */}
-            <div className="view-toggle">
-                <Tooltip content="List View" placement="bottom">
-                    <button
-                        className={`control-btn ${viewMode === 'table' ? 'active' : ''}`}
-                        onClick={() => onViewModeChange('table')}
-                    >
-                        <ListFilter size={14} />
-                    </button>
-                </Tooltip>
-                <Tooltip content="Kanban View" placement="bottom">
-                    <button
-                        className={`control-btn ${viewMode === 'kanban' ? 'active' : ''}`}
-                        onClick={() => onViewModeChange('kanban')}
-                    >
-                        <Grid3x3 size={14} />
-                    </button>
-                </Tooltip>
-                <Tooltip content={isMobileView ? "Switch to Desktop View" : "Switch to Mobile View"} placement="bottom">
-                    <button
-                        className={`control-btn responsive-toggle ${isMobileView ? 'active' : ''}`}
-                        onClick={onMobileViewToggle}
-                    >
-                        {isMobileView ? <Monitor size={14} /> : <Smartphone size={14} />}
-                    </button>
-                </Tooltip>
-                <Tooltip content={isAutosizeEnabled ? "Switch to Fixed Columns" : "Switch to Auto Column Widths"} placement="bottom">
-                    <button
-                        className={`control-btn autosize-toggle ${isAutosizeEnabled ? 'active' : ''}`}
-                        onClick={onAutosizeToggle}
-                    >
-                        {isAutosizeEnabled ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-                    </button>
-                </Tooltip>
+  const getStageDisplayText = (stage: ApplicationStage | 'all') => {
+    switch (stage) {
+      case 'all': return 'All Stages';
+      case 'applied': return 'Applied';
+      case 'screening': return 'Screening';
+      case 'interview': return 'Interview';
+      case 'offer': return 'Offer';
+      case 'rejected': return 'Rejected';
+      default: return 'All Stages';
+    }
+  };
+
+  const getDateDisplayText = (range: '7d' | '30d' | '90d' | 'all') => {
+    switch (range) {
+      case 'all': return 'All Time';
+      case '7d': return 'Last 7 days';
+      case '30d': return 'Last 30 days';
+      case '90d': return 'Last 90 days';
+      default: return 'All Time';
+    }
+  };
+
+  const getStageColor = (stage: ApplicationStage | 'all') => {
+    switch (stage) {
+      case 'applied': return 'var(--info)';
+      case 'screening': return 'var(--warning)';
+      case 'interview': return 'var(--primary)';
+      case 'offer': return 'var(--success)';
+      case 'rejected': return 'var(--error)';
+      default: return 'var(--text-secondary)';
+    }
+  };
+
+  return (
+    <div className="controls-container">
+      {/* View Mode Toggle - Enhanced */}
+      <div className="control-section view-section">
+        <span className="section-label">View</span>
+        <div className="toggle-group">
+          <Tooltip content="Table View - Detailed list with sortable columns" placement="bottom">
+            <button
+              className={`toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
+              onClick={() => onViewModeChange('table')}
+            >
+              <ListFilter size={16} />
+              <span>Table</span>
+            </button>
+          </Tooltip>
+          <Tooltip content="Kanban View - Visual board organized by stages" placement="bottom">
+            <button
+              className={`toggle-btn ${viewMode === 'kanban' ? 'active' : ''}`}
+              onClick={() => onViewModeChange('kanban')}
+            >
+              <Grid3x3 size={16} />
+              <span>Kanban</span>
+            </button>
+          </Tooltip>
+        </div>
+      </div>
+
+      {/* Filters Section - Enhanced */}
+      <div className="control-section filters-section">
+        <span className="section-label">
+          <Filter size={14} />
+          Filters
+        </span>
+
+        {/* Stage Filter */}
+        <div className="filter-dropdown-container">
+          <button
+            className={`filter-dropdown ${stageDropdownOpen ? 'open' : ''}`}
+            onClick={() => setStageDropdownOpen(!stageDropdownOpen)}
+          >
+            <div className="filter-content">
+              <TrendingUp size={14} />
+              <span className="filter-label">Stage:</span>
+              <span
+                className="filter-value"
+                style={{ color: getStageColor(quickFilters.stage) }}
+              >
+                {getStageDisplayText(quickFilters.stage)}
+              </span>
             </div>
+            <ChevronDown size={14} className={`chevron ${stageDropdownOpen ? 'rotated' : ''}`} />
+          </button>
 
-            {/* Density Controls */}
-            <div className="density-controls">
-                <Tooltip content="Table Density" placement="bottom">
-                    <div className="density-selector">
-                        <button
-                            className={`density-btn ${tableViewDensity === 'compact' ? 'active' : ''}`}
-                            onClick={() => onDensityChange('compact')}
-                            title="Compact"
-                        >
-                            <div className="density-icon compact-icon"></div>
-                        </button>
-                        <button
-                            className={`density-btn ${tableViewDensity === 'comfortable' ? 'active' : ''}`}
-                            onClick={() => onDensityChange('comfortable')}
-                            title="Comfortable"
-                        >
-                            <div className="density-icon comfortable-icon"></div>
-                        </button>
-                        <button
-                            className={`density-btn ${tableViewDensity === 'spacious' ? 'active' : ''}`}
-                            onClick={() => onDensityChange('spacious')}
-                            title="Spacious"
-                        >
-                            <div className="density-icon spacious-icon"></div>
-                        </button>
-                    </div>
-                </Tooltip>
-            </div>
-
-            {/* Quick Filters */}
-            <div className="quick-filters">
-                <select
-                    value={quickFilters.stage}
-                    onChange={(e) => onQuickFiltersChange({ stage: e.target.value as ApplicationStage | 'all' })}
-                    className="quick-filter-select"
-                >
-                    <option value="all">All Stages</option>
-                    <option value="applied">Applied</option>
-                    <option value="screening">Screening</option>
-                    <option value="interview">Interview</option>
-                    <option value="offer">Offer</option>
-                    <option value="rejected">Rejected</option>
-                </select>
-
-                <select
-                    value={quickFilters.dateRange}
-                    onChange={(e) => onQuickFiltersChange({ dateRange: e.target.value as '7d' | '30d' | '90d' | 'all' })}
-                    className="quick-filter-select"
-                >
-                    <option value="all">All Time</option>
-                    <option value="7d">Last 7 days</option>
-                    <option value="30d">Last 30 days</option>
-                    <option value="90d">Last 90 days</option>
-                </select>
-
+          {stageDropdownOpen && (
+            <div className="dropdown-menu stage-dropdown">
+              {(['all', 'applied', 'screening', 'interview', 'offer', 'rejected'] as const).map((stage) => (
                 <button
-                    className={`control-btn ${showAdvancedFilters ? 'active' : ''}`}
-                    onClick={onAdvancedFiltersToggle}
-                    title="Advanced Filters"
+                  key={stage}
+                  className={`dropdown-item ${quickFilters.stage === stage ? 'selected' : ''}`}
+                  onClick={() => {
+                    onQuickFiltersChange({ stage });
+                    setStageDropdownOpen(false);
+                  }}
                 >
-                    <SlidersHorizontal size={14} />
+                  <div
+                    className="stage-indicator"
+                    style={{ backgroundColor: getStageColor(stage) }}
+                  />
+                  <span>{getStageDisplayText(stage)}</span>
+                  {quickFilters.stage === stage && <div className="checkmark">✓</div>}
                 </button>
+              ))}
             </div>
+          )}
+        </div>
 
-            {/* Column Controls */}
-            <div className="control-actions">
-                <Tooltip content="Customize Columns" placement="bottom">
-                    <button
-                        className="control-btn"
-                        onClick={onColumnMenuToggle}
-                    >
-                        <SlidersHorizontal size={14} />
-                    </button>
-                </Tooltip>
-                {isColumnMenuOpen && (
-                    <div className="column-menu">
-                        {allColumns.map(col => (
-                            <label key={col} className="column-item">
-                                <input
-                                    type="checkbox"
-                                    checked={visibleColumns.includes(col)}
-                                    onChange={(e) => {
-                                        if (e.target.checked) {
-                                            onVisibleColumnsChange([...visibleColumns, col]);
-                                        } else {
-                                            onVisibleColumnsChange(visibleColumns.filter(c => c !== col));
-                                        }
-                                    }}
-                                />
-                                <span>{col.charAt(0).toUpperCase() + col.slice(1)}</span>
-                            </label>
-                        ))}
-                    </div>
-                )}
+        {/* Date Range Filter */}
+        <div className="filter-dropdown-container">
+          <button
+            className={`filter-dropdown ${dateDropdownOpen ? 'open' : ''}`}
+            onClick={() => setDateDropdownOpen(!dateDropdownOpen)}
+          >
+            <div className="filter-content">
+              <Calendar size={14} />
+              <span className="filter-label">Period:</span>
+              <span className="filter-value">
+                {getDateDisplayText(quickFilters.dateRange)}
+              </span>
             </div>
+            <ChevronDown size={14} className={`chevron ${dateDropdownOpen ? 'rotated' : ''}`} />
+          </button>
 
-            <style jsx>{`
-        .dashboard-controls {
+          {dateDropdownOpen && (
+            <div className="dropdown-menu date-dropdown">
+              {(['all', '7d', '30d', '90d'] as const).map((range) => (
+                <button
+                  key={range}
+                  className={`dropdown-item ${quickFilters.dateRange === range ? 'selected' : ''}`}
+                  onClick={() => {
+                    onQuickFiltersChange({ dateRange: range });
+                    setDateDropdownOpen(false);
+                  }}
+                >
+                  <Calendar size={12} className="item-icon" />
+                  <span>{getDateDisplayText(range)}</span>
+                  {quickFilters.dateRange === range && <div className="checkmark">✓</div>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <style jsx>{`
+        .controls-container {
           display: flex;
           align-items: center;
-          gap: 8px;
-          flex-wrap: wrap;
-          background: var(--glass-card-container-bg, var(--surface));
-          padding: 6px 10px;
-          border-radius: 6px;
-          border: 1px solid var(--border-thin);
-        }
-
-        .view-toggle {
-          display: flex;
-          gap: 4px;
-        }
-
-        .control-btn {
-          padding: 6px 10px;
-          background: var(--glass-button-bg, var(--card));
-          border: 1px solid var(--border-thin);
-          border-radius: 6px;
-          color: var(--text-secondary);
-          cursor: pointer;
-          transition: all 0.2s ease;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .control-btn:hover {
-          background: var(--glass-hover-bg, var(--hover-bg));
-          color: var(--text-primary);
-        }
-
-        .control-btn.active {
-          background: var(--accent-blue);
-          color: var(--text-inverse);
-          border-color: var(--accent-blue);
-        }
-
-        .control-btn.responsive-toggle {
-          margin-left: 8px;
-          border-left: 1px solid var(--border-thin);
-          padding-left: 12px;
-        }
-
-        .control-btn.autosize-toggle {
-          margin-left: 4px;
-        }
-
-        @media (min-width: 768px) {
-          .control-btn.responsive-toggle {
-            display: none;
-          }
-        }
-
-        /* Density Controls */
-        .density-controls {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          margin-left: 12px;
-          padding-left: 12px;
-          border-left: 1px solid var(--border-thin);
-        }
-
-        .density-selector {
-          display: flex;
-          align-items: center;
-          gap: 2px;
-          background: var(--glass-card-container-bg, var(--surface));
-          border-radius: 6px;
-          padding: 2px;
-          border: 1px solid var(--border-thin);
-        }
-
-        .density-btn {
-          padding: 4px 6px;
-          border: none;
-          background: transparent;
-          border-radius: 4px;
-          color: var(--text-secondary);
-          cursor: pointer;
-          transition: all 0.2s ease;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          min-width: 28px;
-          height: 28px;
-        }
-
-        .density-btn:hover {
-          background: var(--hover-bg);
-          color: var(--text-primary);
-        }
-
-        .density-btn.active {
-          background: var(--accent-blue);
-          color: var(--text-inverse);
-        }
-
-        .density-icon {
-          width: 12px;
-          height: 8px;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-        }
-
-        .density-icon::before,
-        .density-icon::after {
-          content: '';
-          width: 100%;
-          background: currentColor;
-          border-radius: 1px;
-        }
-
-        .compact-icon::before,
-        .compact-icon::after {
-          height: 1px;
-        }
-
-        .comfortable-icon::before,
-        .comfortable-icon::after {
-          height: 2px;
-        }
-
-        .spacious-icon::before,
-        .spacious-icon::after {
-          height: 3px;
-        }
-
-        /* Quick Filters */
-        .quick-filters {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          margin-left: 12px;
-          padding-left: 12px;
-          border-left: 1px solid var(--border-thin);
-        }
-
-        .quick-filter-select {
-          padding: 4px 8px;
-          border: 1px solid var(--border-thin);
-          border-radius: 6px;
+          gap: 16px;
+          padding: 12px 16px;
           background: var(--glass-bg);
-          color: var(--text-primary);
-          font-size: 12px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          min-width: 100px;
+          backdrop-filter: blur(var(--blur-amount));
+          -webkit-backdrop-filter: blur(var(--blur-amount));
+          border: 1px solid var(--border);
+          border-radius: 6px;
+          box-shadow: var(--shadow-medium);
+          margin-bottom: 16px;
         }
 
-        .quick-filter-select:focus {
-          outline: none;
-          border-color: var(--accent-blue);
-          box-shadow: 0 0 0 2px rgba(var(--accent-blue-rgb), 0.1);
-        }
-
-        .control-actions {
-          margin-left: auto;
+        .control-section {
+          display: flex;
+          align-items: center;
+          gap: 8px;
           position: relative;
         }
 
-        .column-menu {
+        .control-section:not(:last-child)::after {
+          content: '';
           position: absolute;
-          top: calc(100% + 6px);
-          right: 0;
-          background: var(--glass-bg);
-          border: 1px solid var(--border-thin);
-          border-radius: 6px;
-          padding: 8px;
-          z-index: 100;
-          animation: slideDown 0.3s ease-out;
-          min-width: 180px;
+          right: -8px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 1px;
+          height: 20px;
+          background: var(--border);
         }
 
-        .column-item {
+        .section-label {
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--text-secondary);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          min-width: fit-content;
+        }
+
+        .view-section {
+          min-width: fit-content;
+        }
+
+        .toggle-group {
+          display: flex;
+          background: var(--surface);
+          border-radius: 4px;
+          padding: 2px;
+          border: 1px solid var(--border);
+        }
+
+        .toggle-btn {
           display: flex;
           align-items: center;
           gap: 6px;
-          padding: 4px 8px;
-          font-size: 13px;
+          padding: 8px 12px;
+          border: none;
+          background: transparent;
+          border-radius: 3px;
+          font-size: 12px;
+          font-weight: 500;
           color: var(--text-secondary);
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+          min-width: 70px;
+          justify-content: center;
         }
 
-        .column-item:hover {
-          background: var(--hover-bg);
+        .toggle-btn:hover:not(.active) {
+          color: var(--text-primary);
+          background: var(--hover);
+        }
+
+        .toggle-btn.active {
+          color: var(--primary);
+          background: var(--primary-light);
+          font-weight: 600;
+          box-shadow: var(--shadow-sm);
+        }
+
+        .filters-section {
+          flex: 1;
+          gap: 12px;
+        }
+
+        .filter-dropdown-container {
+          position: relative;
+        }
+
+        .filter-dropdown {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 12px;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 4px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          min-width: 140px;
+          font-size: 12px;
+        }
+
+        .filter-dropdown:hover {
+          border-color: var(--primary);
+          box-shadow: var(--shadow-glow);
+        }
+
+        .filter-dropdown.open {
+          border-color: var(--primary);
+          box-shadow: var(--shadow-glow);
+        }
+
+        .filter-content {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .filter-label {
+          color: var(--text-tertiary);
+          font-weight: 500;
+        }
+
+        .filter-value {
+          color: var(--text-primary);
+          font-weight: 600;
+        }
+
+        .chevron {
+          transition: transform 0.2s ease;
+          color: var(--text-secondary);
+        }
+
+        .chevron.rotated {
+          transform: rotate(180deg);
+        }
+
+        .dropdown-menu {
+          position: absolute;
+          top: calc(100% + 4px);
+          left: 0;
+          right: 0;
+          background: var(--glass-bg);
+          backdrop-filter: blur(var(--blur-amount));
+          -webkit-backdrop-filter: blur(var(--blur-amount));
+          border: 1px solid var(--border);
+          border-radius: 4px;
+          box-shadow: var(--shadow-lg);
+          z-index: 1000;
+          overflow: hidden;
+          animation: dropdownSlideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          max-height: 240px;
+          overflow-y: auto;
+        }
+
+        @keyframes dropdownSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(-8px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        .dropdown-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 12px;
+          background: transparent;
+          border: none;
+          width: 100%;
+          text-align: left;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          font-size: 12px;
           color: var(--text-primary);
         }
 
-        .column-item input[type="checkbox"] {
-          margin: 0;
+        .dropdown-item:hover {
+          background: var(--hover);
+          color: var(--primary);
         }
 
-        @keyframes slideDown {
-          from { opacity: 0; transform: translateY(-10px); }
-          to { opacity: 1; transform: translateY(0); }
+        .dropdown-item.selected {
+          background: var(--primary-light);
+          color: var(--primary);
+          font-weight: 600;
+        }
+
+        .stage-indicator {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          flex-shrink: 0;
+        }
+
+        .item-icon {
+          color: var(--text-tertiary);
+          flex-shrink: 0;
+        }
+
+        .checkmark {
+          margin-left: auto;
+          color: var(--primary);
+          font-weight: bold;
+          font-size: 10px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+          .controls-container {
+            flex-direction: column;
+            gap: 12px;
+            padding: 12px;
+          }
+
+          .control-section {
+            width: 100%;
+            justify-content: space-between;
+          }
+
+          .control-section::after {
+            display: none;
+          }
+
+          .filters-section {
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+          }
+
+          .filter-dropdown {
+            width: 100%;
+          }
+
+          .toggle-group {
+            width: 100%;
+          }
+
+          .toggle-btn {
+            flex: 1;
+          }
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 }
