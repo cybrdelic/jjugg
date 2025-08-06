@@ -11,85 +11,85 @@ import ModernSearchBar from '../../ModernSearchBar';
 import { Application, StatusUpdate } from '@/types';
 
 interface ApplicationsHeaderProps {
-    // Data
-    applications: Application[];
-    applicationStats: { applications: number; interviews: number };
-    statusUpdates: StatusUpdate[];
-    selectedRowsCount: number;
+  // Data
+  applications: Application[];
+  applicationStats: { applications: number; interviews: number };
+  statusUpdates: StatusUpdate[];
+  selectedRowsCount: number;
 
-    // Handlers
-    onSearch: (term: string) => void;
-    onAddApplication: () => void;
-    onBulkDelete: () => void;
-    onExport: () => void;
+  // Handlers
+  onSearch: (term: string) => void;
+  onAddApplication: () => void;
+  onBulkDelete: () => void;
+  onExport: () => void;
 
-    // Loading states
-    hasGlobalUpdate: boolean;
+  // Loading states
+  hasGlobalUpdate: boolean;
 }
 
 export function ApplicationsHeader({
-    applications,
-    applicationStats,
-    statusUpdates,
-    selectedRowsCount,
-    onSearch,
-    onAddApplication,
-    onBulkDelete,
-    onExport,
-    hasGlobalUpdate
+  applications,
+  applicationStats,
+  statusUpdates,
+  selectedRowsCount,
+  onSearch,
+  onAddApplication,
+  onBulkDelete,
+  onExport,
+  hasGlobalUpdate
 }: ApplicationsHeaderProps) {
-    return (
-        <CardHeader
-            title={
-                <div className="header-title-wrapper">
-                    <span className={hasGlobalUpdate ? 'pulsing' : ''}>Applications</span>
-                    <span className="stats">
-                        ({applicationStats.applications} Applied, {applicationStats.interviews} Upcoming)
-                    </span>
-                    {statusUpdates.filter(update => !update.appId).map(update => (
-                        <span key={update.id} className="global-status-text" role="status">
-                            {update.message}
-                            <div className="button-shine"></div>
-                        </span>
-                    ))}
-                </div>
-            }
-            subtitle="Effortlessly track and manage your job applications"
-            accentColor="var(--accent-blue)"
-            variant="default"
-        >
-            <div className="header-actions">
-                <ModernSearchBar
-                    applications={applications}
-                    onSearch={onSearch}
-                    placeholder="Search applications, companies, positions..."
-                    className="search-component"
-                />
-                <div className="action-buttons">
-                    {selectedRowsCount > 0 && (
-                        <ActionButton
-                            label={`Delete ${selectedRowsCount}`}
-                            icon={Trash2}
-                            variant="danger"
-                            onClick={onBulkDelete}
-                        />
-                    )}
-                    <ActionButton
-                        label="New Application"
-                        icon={PlusCircle}
-                        variant="primary"
-                        onClick={onAddApplication}
-                    />
-                    <ActionButton
-                        label="Export CSV"
-                        icon={Download}
-                        variant="ghost"
-                        onClick={onExport}
-                    />
-                </div>
-            </div>
+  return (
+    <CardHeader
+      title={
+        <div className="header-title-wrapper">
+          <span className={hasGlobalUpdate ? 'pulsing' : ''}>Applications</span>
+          <span className="stats">
+            ({applicationStats.applications} Applied, {applicationStats.interviews} Upcoming)
+          </span>
+          {statusUpdates.filter(update => !update.appId).map(update => (
+            <span key={update.id} className="global-status-text" role="status">
+              {update.message}
+              <div className="button-shine"></div>
+            </span>
+          ))}
+        </div>
+      }
+      subtitle="Effortlessly track and manage your job applications"
+      accentColor="var(--accent-blue)"
+      variant="default"
+    >
+      <div className="header-actions">
+        <ModernSearchBar
+          applications={applications}
+          onSearch={onSearch}
+          placeholder="Search applications, companies, positions..."
+          className="search-component"
+        />
+        <div className="action-buttons">
+          {selectedRowsCount > 0 && (
+            <ActionButton
+              label={`Delete ${selectedRowsCount}`}
+              icon={Trash2}
+              variant="danger"
+              onClick={onBulkDelete}
+            />
+          )}
+          <ActionButton
+            label="New Application"
+            icon={PlusCircle}
+            variant="primary"
+            onClick={onAddApplication}
+          />
+          <ActionButton
+            label="Export CSV"
+            icon={Download}
+            variant="ghost"
+            onClick={onExport}
+          />
+        </div>
+      </div>
 
-            <style jsx>{`
+      <style jsx>{`
         .header-actions {
           display: flex;
           align-items: center;
@@ -152,12 +152,13 @@ export function ApplicationsHeader({
         }
 
         .global-status-text {
-          background: var(--accent-green);
-          color: white;
-          padding: 4px 12px;
-          border-radius: 16px;
-          font-size: 12px;
-          font-weight: 600;
+          background: var(--success);
+          color: var(--text-inverse);
+          padding: var(--space-1) var(--space-3);
+          border-radius: var(--border-radius-full);
+          font-size: var(--font-size-xs);
+          font-weight: var(--font-weight-semibold);
+          font-family: var(--font-interface);
           position: relative;
           overflow: hidden;
           animation: statusFade 3s ease-in-out forwards;
@@ -172,10 +173,10 @@ export function ApplicationsHeader({
           background: linear-gradient(
             90deg,
             transparent,
-            rgba(255, 255, 255, 0.3),
+            var(--glass-hover-bg),
             transparent
           );
-          animation: shimmer 2s infinite;
+          animation: shimmer var(--duration-1000) infinite;
         }
 
         @keyframes pulse {
@@ -196,6 +197,6 @@ export function ApplicationsHeader({
           100% { transform: translateX(200%); }
         }
       `}</style>
-        </CardHeader>
-    );
+    </CardHeader>
+  );
 }

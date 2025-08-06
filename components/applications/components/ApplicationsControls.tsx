@@ -211,12 +211,6 @@ export function ApplicationsControls({
           align-items: center;
           gap: 16px;
           padding: 12px 16px;
-          background: var(--glass-bg);
-          backdrop-filter: blur(var(--blur-amount));
-          -webkit-backdrop-filter: blur(var(--blur-amount));
-          border: 1px solid var(--border);
-          border-radius: 6px;
-          box-shadow: var(--shadow-medium);
           margin-bottom: 16px;
         }
 

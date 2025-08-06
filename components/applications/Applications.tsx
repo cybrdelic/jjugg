@@ -25,17 +25,14 @@ export default function Applications() {
     error,
 
     // State
-    searchTerm,
     viewMode,
     sortConfig,
-    selectedApplication,
     mounted,
     isDetailModalVisible,
     selectedRows,
     visibleColumns,
     isColumnMenuOpen,
     statusUpdates,
-    visibleApplications,
     isLoading,
     hasMore,
     columnFilters,
@@ -153,24 +150,11 @@ export default function Applications() {
   const hasGlobalUpdate = statusUpdates.some(update => !update.appId);
 
   return (
-    <section className={`applications-home ${mounted ? 'mounted' : ''}`}>
-      {/* Header with search and actions */}
-      <ApplicationsHeader
-        applications={filteredApplications}
-        applicationStats={applicationStats}
-        statusUpdates={statusUpdates}
-        selectedRowsCount={selectedRows.length}
-        hasGlobalUpdate={hasGlobalUpdate}
-        onSearch={setSearchTerm}
-        onAddApplication={handleCreateApplication}
-        onBulkDelete={handleBulkDelete}
-        onExport={handleExport}
-      />
-
-      {/* Main content area */}
-      <div className="dashboard-content">
-        <div className="table-container">
-          {/* Controls for view mode, filters, etc. */}
+    <div className={`applications-page ${mounted ? 'mounted' : ''}`}>
+      {/* Main Content */}
+      <main className="main-content">
+        {/* Toolbar - Controls, Filters, and Quick Actions */}
+        <div className="toolbar">
           <ApplicationsControls
             viewMode={viewMode}
             isMobileView={isMobileView}
@@ -190,7 +174,22 @@ export default function Applications() {
             onVisibleColumnsChange={setVisibleColumns}
           />
 
-          {/* Table or Kanban view */}
+          {/* Quick Actions - Show when rows are selected */}
+          {selectedRows.length > 0 && (
+            <div className="quick-actions">
+              <span className="selection-count">{selectedRows.length} selected</span>
+              <div className="action-buttons">
+                <button className="btn btn-primary">Move Stage</button>
+                <button className="btn btn-secondary" onClick={handleExport}>Export</button>
+                <button className="btn btn-danger" onClick={handleBulkDelete}>Delete</button>
+                <button className="btn btn-ghost" onClick={() => setSelectedRows([])}>Clear</button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Data Table */}
+        <div className="table-container">
           {viewMode === 'kanban' ? (
             <ApplicationsKanban
               applicationsByStage={applicationsByStage}
@@ -243,7 +242,7 @@ export default function Applications() {
             />
           )}
         </div>
-      </div>
+      </main>
 
       {/* Context Menu */}
       <ApplicationsContextMenu
@@ -284,142 +283,302 @@ export default function Applications() {
       )}
 
       <style jsx>{`
-        .applications-home {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          padding: 16px;
-          background: var(--actual-background, var(--background));
-          border-radius: 8px;
-          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-          position: relative;
-          overflow-x: hidden;
-          max-width: 100%;
+        /* Applications Page - Using Theme System */
+        .applications-page {
+          max-width: var(--max-content-width);
+          margin: 0 auto;
+          padding: var(--space-8) var(--space-6);
+          font-family: var(--font-body);
           opacity: 0;
-          transform: translateY(20px);
+          transition: opacity var(--duration-300) var(--ease-smooth);
         }
 
-        .applications-home.mounted {
+        .applications-page.mounted {
           opacity: 1;
-          transform: translateY(0);
         }
 
-        .dashboard-content {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
+        /* Main Content - Using Theme Cards */
+        .main-content {
+          background: var(--card);
+          border: 1px solid var(--border);
+          border-radius: var(--border-radius-lg);
+          overflow: hidden;
+          box-shadow: var(--shadow-small);
+          transition: all var(--duration-200) var(--ease-microinteractive);
         }
 
-        .table-container {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
+        .main-content:hover {
+          box-shadow: var(--shadow-medium);
         }
 
-        /* Loading State */
-        .applications-loading {
+        /* Toolbar - Using Theme Spacing */
+        .toolbar {
+          padding: 0 var(--space-6);
+          background: var(--surface);
+          border-bottom: 1px solid var(--border-light);
+        }
+
+        /* Quick Actions - Using Theme Colors */
+        .quick-actions {
           display: flex;
+          justify-content: space-between;
           align-items: center;
-          justify-content: center;
-          min-height: 400px;
-          padding: 40px;
+          margin-top: var(--space-4);
+          padding: var(--space-3) var(--space-4);
+          background: var(--primary);
+          border-radius: var(--border-radius-md);
+          color: var(--text-inverse);
+          animation: slideDown var(--duration-300) var(--ease-liquid);
         }
 
-        .loading-content {
-          text-align: center;
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .selection-count {
+          font-size: var(--font-size-sm);
+          font-weight: var(--font-weight-medium);
+          font-family: var(--font-interface);
+        }
+
+        .action-buttons {
           display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 16px;
+          gap: var(--space-2);
         }
 
-        .spinner {
-          width: 40px;
-          height: 40px;
-          border: 3px solid var(--border-thin);
-          border-top: 3px solid var(--accent-blue);
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
+        .quick-actions .btn {
+          background: rgba(255, 255, 255, 0.1);
+          border-color: rgba(255, 255, 255, 0.2);
+          color: var(--text-inverse);
+          backdrop-filter: var(--glass-backdrop);
         }
 
-        .loading-content h3 {
-          margin: 0;
+        .quick-actions .btn:hover {
+          background: rgba(255, 255, 255, 0.2);
+          transform: translateY(var(--morph-translate));
+        }
+
+        .quick-actions .btn-danger {
+          background: var(--error);
+          border-color: var(--error);
+        }
+
+        .quick-actions .btn-danger:hover {
+          background: #b91c1c;
+          transform: translateY(var(--morph-translate)) scale(var(--morph-scale));
+        }
+
+        /* Button Styles - Using Theme System */
+        .btn {
+          padding: var(--space-2) var(--space-4);
+          border: 1px solid var(--border);
+          border-radius: var(--border-radius);
+          cursor: pointer;
+          font-size: var(--font-size-sm);
+          font-weight: var(--font-weight-medium);
+          font-family: var(--font-interface);
+          letter-spacing: var(--letter-spacing);
+          transition: all var(--duration-150) var(--ease-microinteractive);
+          background: var(--surface);
           color: var(--text-primary);
-          font-size: 18px;
+          position: relative;
+          overflow: hidden;
+          transform: translateZ(0);
         }
 
-        .loading-content p {
-          margin: 0;
+        .btn::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, var(--hover-bg), transparent);
+          transition: left var(--duration-500) var(--ease-smooth);
+          pointer-events: none;
+        }
+
+        .btn:hover {
+          transform: translateY(var(--morph-translate)) scale(var(--morph-scale));
+          box-shadow: var(--shadow-small);
+        }
+
+        .btn:hover::before {
+          left: 100%;
+        }
+
+        .btn:active {
+          transform: translateY(0) scale(var(--micro-scale));
+          transition-duration: var(--duration-instant);
+        }
+
+        .btn-primary {
+          background: var(--primary);
+          border-color: var(--primary);
+          color: var(--text-inverse);
+        }
+
+        .btn-primary:hover {
+          background: var(--primary-dark);
+          border-color: var(--primary-dark);
+        }
+
+        .btn-secondary {
+          background: var(--surface-elevated);
+          border-color: var(--border);
           color: var(--text-secondary);
-          font-size: 14px;
         }
 
-        /* Error State */
+        .btn-secondary:hover {
+          background: var(--card-hover);
+          color: var(--text-primary);
+          border-color: var(--border-strong);
+        }
+
+        .btn-danger {
+          background: var(--error);
+          border-color: var(--error);
+          color: var(--text-inverse);
+        }
+
+        .btn-danger:hover {
+          background: #b91c1c;
+          border-color: #b91c1c;
+        }
+
+        .btn-ghost {
+          background: transparent;
+          border: none;
+          color: var(--text-tertiary);
+          padding: var(--space-2) var(--space-3);
+        }
+
+        .btn-ghost:hover {
+          background: var(--hover-bg);
+          color: var(--text-secondary);
+        }
+
+        /* Table Container - Using Theme */
+        .table-container {
+          background: transparent;
+        }
+
+        /* Loading & Error States - Using Theme Typography */
+        .applications-loading,
         .applications-error {
           display: flex;
           align-items: center;
           justify-content: center;
           min-height: 400px;
-          padding: 40px;
-        }
-
-        .error-content {
           text-align: center;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 16px;
-          max-width: 400px;
+          background: var(--background);
         }
 
-        .error-icon {
-          font-size: 48px;
-          opacity: 0.7;
+        .loading-content,
+        .error-content {
+          max-width: 300px;
+          padding: var(--space-8);
+          background: var(--card);
+          border-radius: var(--border-radius-lg);
+          box-shadow: var(--shadow-medium);
         }
 
+        .loading-content h3,
         .error-content h3 {
-          margin: 0;
-          color: var(--accent-red);
-          font-size: 18px;
+          margin: 0 0 var(--space-2) 0;
+          font-size: var(--text-lg);
+          font-weight: var(--font-weight-semibold);
+          font-family: var(--font-interface);
+          color: var(--text-primary);
+          line-height: var(--leading-tight);
         }
 
+        .loading-content p,
         .error-content p {
-          margin: 0;
+          margin: 0 0 var(--space-4) 0;
+          font-size: var(--font-size-sm);
+          font-family: var(--font-body);
           color: var(--text-secondary);
-          font-size: 14px;
-          line-height: 1.5;
+          line-height: var(--leading-normal);
+        }
+
+        .spinner {
+          width: 32px;
+          height: 32px;
+          border: 3px solid var(--border);
+          border-top: 3px solid var(--primary);
+          border-radius: 50%;
+          animation: spin var(--duration-1000) linear infinite;
+          margin: 0 auto var(--space-4);
         }
 
         .retry-button {
-          background: var(--accent-blue);
-          color: white;
+          background: var(--primary);
+          color: var(--text-inverse);
           border: none;
-          padding: 8px 16px;
-          border-radius: 6px;
+          padding: var(--space-2) var(--space-5);
+          border-radius: var(--border-radius);
           cursor: pointer;
-          font-size: 14px;
-          transition: all 0.2s ease;
+          font-size: var(--font-size-sm);
+          font-weight: var(--font-weight-medium);
+          font-family: var(--font-interface);
+          letter-spacing: var(--letter-spacing);
+          transition: all var(--duration-150) var(--ease-microinteractive);
         }
 
         .retry-button:hover {
-          background: var(--accent-blue-dark);
-          transform: translateY(-1px);
+          background: var(--primary-dark);
+          transform: translateY(var(--morph-translate)) scale(var(--morph-scale));
+          box-shadow: var(--shadow-small);
         }
 
-        /* Responsive Design */
+        .retry-button:active {
+          transform: translateY(0) scale(var(--micro-scale));
+          transition-duration: var(--duration-instant);
+        }
+
+        .error-icon {
+          font-size: var(--text-5xl);
+          margin-bottom: var(--space-4);
+        }
+
+        .error-content h3 {
+          color: var(--error);
+        }
+
+        /* Responsive Design - Using Theme Breakpoints */
         @media (max-width: 768px) {
-          .applications-home {
-            padding: 12px;
-            gap: 8px;
+          .applications-page {
+            padding: var(--space-6) var(--space-4);
+          }
+
+          .toolbar {
+            padding: var(--space-4);
+          }
+
+          .quick-actions {
+            flex-direction: column;
+            gap: var(--space-3);
+            align-items: stretch;
+          }
+
+          .action-buttons {
+            justify-content: center;
           }
         }
 
-
-
         @keyframes spin {
+          from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
       `}</style>
-    </section>
+    </div>
   );
 }

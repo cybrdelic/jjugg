@@ -774,14 +774,15 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
         .company-logo {
           width: 48px;
           height: 48px;
-          border-radius: 12px;
-          background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+          border-radius: var(--border-radius-lg);
+          background: linear-gradient(135deg, var(--primary), var(--secondary));
           display: flex;
           align-items: center;
           justify-content: center;
-          color: white;
-          font-weight: 600;
-          font-size: 24px;
+          color: var(--text-inverse);
+          font-weight: var(--font-weight-semibold);
+          font-size: var(--text-2xl);
+          font-family: var(--font-interface);
           overflow: hidden;
         }
 
@@ -816,12 +817,13 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
         .stage-badge {
           display: flex;
           align-items: center;
-          gap: 6px;
-          padding: 6px 12px;
-          background-color: rgba(var(--accent-primary-rgb), 0.08);
-          border-radius: 20px;
-          font-size: 14px;
-          font-weight: 500;
+          gap: var(--space-1-5);
+          padding: var(--space-1-5) var(--space-3);
+          background-color: var(--blob-primary);
+          border-radius: var(--border-radius-full);
+          font-size: var(--font-size-sm);
+          font-weight: var(--font-weight-medium);
+          font-family: var(--font-interface);
         }
 
         .badge-dot {
@@ -868,14 +870,14 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
           left: 0;
           width: 100%;
           height: 2px;
-          background-color: var(--accent-primary);
-          border-radius: 2px 2px 0 0;
+          background-color: var(--primary);
+          border-radius: var(--border-radius-sm) var(--border-radius-sm) 0 0;
         }
 
         .nav-badge {
-          padding: 2px 6px;
-          background-color: rgba(var(--accent-secondary-rgb), 0.1);
-          color: var(--accent-secondary);
+          padding: var(--space-0-5) var(--space-1-5);
+          background-color: var(--blob-accent);
+          color: var(--accent);
           border-radius: 10px;
           font-size: 11px;
           font-weight: 500;

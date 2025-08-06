@@ -277,14 +277,14 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
 
       <style jsx>{`
         .app-card {
-          background: var(--glass-card-bg);
-          border-radius: var(--border-radius);
-          border: 1px solid var(--border-thin);
+          background: var(--card);
+          border-radius: var(--border-radius-lg);
+          border: 1px solid var(--border);
           position: relative;
           overflow: hidden;
-          transition: all 0.3s var(--easing-standard);
+          transition: all var(--duration-300) var(--ease-smooth);
           cursor: pointer;
-          padding: 20px;
+          padding: var(--space-5);
         }
 
         .app-card::before {
