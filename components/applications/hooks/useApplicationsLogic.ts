@@ -73,6 +73,8 @@ export interface ApplicationsActions {
     handleDeleteApplication: (id: string) => Promise<void>;
     handleBulkDelete: () => Promise<void>;
     handleStageChange: (appId: string, newStage: ApplicationStage) => Promise<void>;
+    handleBulkStageChange: (appIds: string[], newStage: ApplicationStage) => Promise<void>;
+    handleBulkEdit: (appIds: string[]) => void;
     handleIncrementStage: (appId: string) => Promise<void>;
     handleDecrementStage: (appId: string) => Promise<void>;
     handleToggleShortlist: (appId: string) => Promise<void>;
@@ -98,6 +100,7 @@ export interface ApplicationsHookReturn extends ApplicationsState, ApplicationsA
     filteredApplications: Application[];
     applicationStats: { applications: number; interviews: number };
     selectedAppData: Application | null;
+    selectedApplications: Application[];
     applicationsByStage: Record<ApplicationStage, Application[]>;
     stagesOrder: ApplicationStage[];
 
@@ -335,6 +338,13 @@ export function useApplicationsLogic(): ApplicationsHookReturn {
         [state.selectedApplication, applicationsData]
     );
 
+    const selectedApplications = useMemo(() =>
+        state.selectedRows.length > 0
+            ? applicationsData?.filter((app: Application) => state.selectedRows.includes(app.id)) || []
+            : [],
+        [state.selectedRows, applicationsData]
+    );
+
     const applicationsByStage = useMemo(() => {
         const stages: Record<ApplicationStage, Application[]> = {
             applied: [], screening: [], interview: [], offer: [], rejected: []
@@ -421,6 +431,25 @@ export function useApplicationsLogic(): ApplicationsHookReturn {
             errorHandler.handleError(error, 'update_stage', appId);
         }
     }, [updateApplication, errorHandler, addStatusUpdate]);
+
+    const handleBulkStageChange = useCallback(async (appIds: string[], newStage: ApplicationStage) => {
+        try {
+            await Promise.all(appIds.map(appId => updateApplication(appId, { stage: newStage })));
+            addStatusUpdate(`Moved ${appIds.length} applications to ${newStage.charAt(0).toUpperCase() + newStage.slice(1)}`, null);
+        } catch (error) {
+            errorHandler.handleError(error, 'bulk_stage_change');
+        }
+    }, [updateApplication, errorHandler, addStatusUpdate]);
+
+    const handleBulkEdit = useCallback((appIds: string[]) => {
+        // For now, just show the detail modal for bulk editing
+        // In a full implementation, this would open a bulk edit modal
+        if (appIds.length === 1) {
+            handleOpenDetailModal(appIds[0]);
+        } else {
+            addStatusUpdate(`Bulk edit for ${appIds.length} applications (feature coming soon)`, null);
+        }
+    }, [addStatusUpdate]);
 
     const handleIncrementStage = useCallback(async (appId: string) => {
         const app = applicationsData?.find((a: Application) => a.id === appId);
@@ -585,6 +614,7 @@ export function useApplicationsLogic(): ApplicationsHookReturn {
         filteredApplications,
         applicationStats,
         selectedAppData,
+        selectedApplications,
         applicationsByStage,
         stagesOrder,
 
@@ -620,6 +650,8 @@ export function useApplicationsLogic(): ApplicationsHookReturn {
         handleDeleteApplication,
         handleBulkDelete,
         handleStageChange,
+        handleBulkStageChange,
+        handleBulkEdit,
         handleIncrementStage,
         handleDecrementStage,
         handleToggleShortlist,

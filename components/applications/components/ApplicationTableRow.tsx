@@ -335,69 +335,141 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
       )}
 
       <style jsx>{`
-        /* Enhanced Table Row - Compact & Polished Design */
+        /* ===================================
+           PROFESSIONAL TABLE ROW DESIGN
+           Clean Flat Design System
+           ===================================== */
+
         .table-row {
           display: grid;
-          grid-template-columns: 48px 2fr 2.5fr 1.2fr 1.5fr 1fr 1fr 1fr 0.8fr;
+          grid-template-columns: 48px minmax(150px, 2fr) minmax(200px, 2.5fr) minmax(120px, 1.2fr) minmax(100px, 1.5fr) minmax(80px, 1fr) minmax(80px, 1fr) minmax(80px, 1fr) minmax(60px, 0.8fr);
           gap: var(--space-3);
           align-items: center;
-          padding: var(--space-2) var(--space-4);
-          background: var(--card);
-          border: 1px solid var(--border);
-          border-radius: var(--border-radius);
-          margin-bottom: var(--space-0-5);
+          padding: var(--space-3) var(--space-4);
+          background: var(--background);
+          border-bottom: 1px solid var(--border-subtle);
           position: relative;
           cursor: pointer;
-          transition: all var(--duration-150) var(--ease-microinteractive);
-          backdrop-filter: var(--glass-backdrop);
-          -webkit-backdrop-filter: var(--glass-backdrop);
-          contain: layout style paint;
-          will-change: transform, box-shadow, background-color, border-color;
+          transition: all var(--duration-150) var(--ease-out);
+          min-height: 48px;
           overflow: hidden;
-          min-height: 40px;
         }
 
-        /* Elegant row animations */
+        .table-row.autosize {
+          grid-template-columns: 48px repeat(8, minmax(100px, auto));
+        }
+
+        /* Amazing row hover and selection states */
+        .table-row {
+          transition: all var(--duration-200) var(--ease-out);
+          position: relative;
+          overflow: hidden;
+          z-index: 1;
+        }
+
         .table-row::before {
           content: '';
           position: absolute;
+          left: -100%;
           top: 0;
-          left: 0;
-          right: 0;
           bottom: 0;
-          background: linear-gradient(135deg,
+          width: 100%;
+          background: linear-gradient(
+            90deg,
             transparent 0%,
-            var(--blob-primary) 50%,
-            transparent 100%);
-          opacity: 0;
-          transition: opacity var(--duration-300) var(--ease-smooth);
-          pointer-events: none;
+            rgba(var(--primary-rgb), 0.05) 50%,
+            transparent 100%
+          );
+          transition: left var(--duration-300) var(--ease-out);
           z-index: 0;
         }
 
-        /* Row states with polished effects */
-        .table-row:hover {
-          transform: translateY(var(--morph-translate));
-          background: var(--card-hover);
-          border-color: var(--primary);
-          box-shadow: var(--shadow-medium);
-        }
-
         .table-row:hover::before {
-          opacity: 1;
+          left: 100%;
         }
 
+        .table-row:hover {
+          background: var(--hover-bg);
+          border-color: var(--hover-border);
+          transform: translateY(-0.5px);
+          box-shadow: var(--shadow-sm);
+          z-index: 10;
+        }
+
+        .table-row:hover .cell {
+          transform: translateY(0);
+        }
+
+        .table-row:focus-within {
+          background: var(--hover-bg);
+          outline: 2px solid var(--primary);
+          outline-offset: -2px;
+          transform: translateY(-0.5px);
+          box-shadow: 0 0 0 3px var(--highlight-primary);
+          z-index: 10;
+        }
+
+        /* Modern selection state - clean and minimal */
         .table-row.selected {
-          background: var(--blob-primary);
+          background: var(--highlight-primary);
           border-color: var(--primary);
-          box-shadow: var(--shadow-large);
+          position: relative;
+          z-index: 5;
         }
 
         .table-row.selected::before {
-          opacity: 0.6;
-        }        /* Density Variations */
+          content: '';
+          position: absolute;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          width: 3px;
+          background: var(--primary);
+          border-radius: 0 2px 2px 0;
+        }
+
+        .table-row.selected:hover {
+          background: var(--highlight-hover);
+          transform: translateY(-0.5px);
+          box-shadow: var(--shadow-sm);
+          z-index: 15;
+        }        /* Cell content improvements */
+        .cell {
+          transition: all var(--duration-150) var(--ease-out);
+          position: relative;
+          z-index: 1;
+        }
+
+        .table-row:hover .cell {
+          color: var(--text-primary);
+        }
+
+        .table-row.selected .cell {
+          color: var(--text-primary);
+        }
+
+        /* Checkbox improvements */
+        .checkbox-cell {
+          position: relative;
+        }
+
+        .checkbox-cell input[type="checkbox"] {
+          transition: all var(--duration-200) var(--ease-out);
+          transform: scale(1);
+        }
+
+        .table-row:hover .checkbox-cell input[type="checkbox"] {
+          transform: scale(1.05);
+        }
+
+        .table-row.selected .checkbox-cell input[type="checkbox"] {
+          transform: scale(1.05);
+        }
+
+        /* Density Variations */
         .table-row.density-compact {
-          padding: 6px 12px;
+          padding: var(--space-2) var(--space-4);
+          min-height: 40px;
           grid-template-columns: 40px 2fr 2.5fr 1.2fr 1.5fr 1fr 1fr 1fr 0.8fr;
           gap: 10px;
           min-height: 32px;
@@ -474,6 +546,11 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
         }
 
         /* Modern Checkbox Design */
+        /* ===================================
+           PROFESSIONAL CHECKBOX STYLING
+           Enhanced Visibility & Interaction
+           ===================================== */
+
         .checkbox-wrapper {
           position: relative;
           width: 20px;
@@ -492,18 +569,22 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
 
         .checkbox-label {
           position: relative;
-          width: 20px;
-          height: 20px;
-          background: var(--glass-card-bg, rgba(255, 255, 255, 0.08));
-          border: 1.5px solid var(--border-input, rgba(255, 255, 255, 0.25));
-          border-radius: 3px;
+          width: 18px;
+          height: 18px;
+          background: var(--surface);
+          border: 2px solid var(--border-strong);
+          border-radius: var(--radius-sm);
           cursor: pointer;
-          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all var(--duration-150) var(--ease-out);
           display: flex;
           align-items: center;
           justify-content: center;
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
+        }
+
+        .checkbox-label:hover {
+          border-color: var(--primary);
+          transform: scale(1.1);
+          box-shadow: 0 0 0 2px var(--primary-alpha-20);
         }
 
         .checkbox-label::after {
@@ -514,19 +595,48 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
           border-top: none;
           border-right: none;
           transform: rotate(-45deg) scale(0);
-          transition: transform 0.15s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+          transition: transform var(--duration-150) var(--ease-out);
           margin-top: -1px;
         }
 
         .custom-checkbox:checked + .checkbox-label {
-          background: var(--accent-blue, #3b82f6);
-          border-color: var(--accent-blue, #3b82f6);
-          box-shadow: 0 2px 6px rgba(var(--accent-blue-rgb, 59, 130, 246), 0.3);
+          background: var(--primary);
+          border-color: var(--primary);
         }
 
         .custom-checkbox:checked + .checkbox-label::after {
           border-color: white;
           transform: rotate(-45deg) scale(1);
+        }
+
+        .custom-checkbox:focus + .checkbox-label {
+          outline: 2px solid var(--border-focus);
+          outline-offset: 2px;
+        }
+
+        /* ===================================
+           PROFESSIONAL CELL STYLING
+           Clean Content Layout
+           ===================================== */
+
+        .cell {
+          padding: var(--space-2) var(--space-1);
+          color: var(--text-primary);
+          font-size: var(--text-sm);
+          line-height: var(--leading-5);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          transition: all var(--duration-150) var(--ease-out);
+        }
+
+        .cell:first-child {
+          padding-left: 0;
+        }
+
+        .cell:last-child {
+          padding-right: 0;
+        }
         }
 
         .checkbox-label:hover {
@@ -603,12 +713,16 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
           text-align: left;
         }
 
-        /* Compact Stage Badge */
+        /* ===================================
+           PROFESSIONAL STAGE BADGE
+           Clean Flat Design
+           ===================================== */
+
         .stage-container {
           display: flex;
           align-items: center;
           justify-content: flex-start;
-          gap: 6px;
+          gap: var(--space-2);
           width: 100%;
           cursor: pointer;
           position: relative;
@@ -618,49 +732,30 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
         .stage-badge {
           display: inline-flex;
           align-items: center;
-          gap: 4px;
-          padding: 4px 8px;
-          border-radius: 3px;
-          font-size: 11px;
-          font-weight: 600;
+          gap: var(--space-1);
+          padding: var(--space-1) var(--space-2);
+          border-radius: var(--radius-sm);
+          font-size: var(--text-xs);
+          font-weight: var(--font-medium);
           text-transform: capitalize;
-          letter-spacing: 0.01em;
-          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-          border: 1px solid transparent;
+          letter-spacing: var(--tracking-wide);
+          transition: all var(--duration-150) var(--ease-out);
+          border: 1px solid var(--border-default);
           white-space: nowrap;
           flex-shrink: 0;
-          background: var(--glass-card-bg, rgba(255, 255, 255, 0.08));
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          background: var(--surface);
+          color: var(--text-secondary);
           position: relative;
           overflow: hidden;
           text-align: left;
         }
 
-        .stage-badge::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: linear-gradient(135deg,
-            rgba(255, 255, 255, 0.08) 0%,
-            transparent 50%,
-            rgba(255, 255, 255, 0.04) 100%);
-          opacity: 0;
-          transition: opacity 0.2s ease;
-        }
-
         .stage-badge.clickable:hover {
+          background: var(--bg-hover);
+          border-color: var(--border-strong);
+          color: var(--text-primary);
           transform: translateY(-1px);
-          box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
-          border-color: var(--accent-blue, #3b82f6);
-        }
-
-        .stage-badge:hover::before {
-          opacity: 1;
+          box-shadow: var(--shadow-sm);
         }
 
         .stage-indicator {
@@ -966,35 +1061,55 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
         }
 
-        /* Responsive Design */
+        /* ===================================
+           PROFESSIONAL RESPONSIVE DESIGN
+           Mobile-First Approach
+           ===================================== */
+
+        @media (max-width: 1400px) {
+          .table-row {
+            grid-template-columns: 40px minmax(120px, 2fr) minmax(180px, 2.5fr) minmax(100px, 1fr) minmax(100px, 1.2fr) minmax(80px, 1fr) minmax(100px, 1.5fr) minmax(80px, 1.2fr) 0;
+            gap: var(--space-2);
+          }
+        }
+
         @media (max-width: 1200px) {
           .table-row {
-            grid-template-columns: 40px 1.8fr 2fr 1fr 1.2fr 0.8fr 0 0 0;
-            gap: 10px;
-            padding: 6px 14px;
+            grid-template-columns: 40px minmax(120px, 1.8fr) minmax(150px, 2fr) minmax(80px, 1fr) minmax(100px, 1.2fr) minmax(60px, 0.8fr) 0 0 0;
+            gap: var(--space-2);
+            padding: var(--space-2-5) var(--space-4);
           }
         }
 
         @media (max-width: 992px) {
           .table-row {
-            grid-template-columns: 40px 2fr 2fr 1fr 1.2fr 0 0 0 0;
-            gap: 8px;
-            padding: 6px 12px;
+            grid-template-columns: 40px minmax(120px, 2fr) minmax(150px, 2fr) minmax(80px, 1fr) minmax(100px, 1.2fr) 0 0 0 0;
+            gap: var(--space-2);
+            padding: var(--space-2-5) var(--space-3);
           }
         }
 
         @media (max-width: 768px) {
           .table-row {
-            grid-template-columns: 36px 2fr 2fr 1fr 1fr 0 0 0 0;
-            gap: 6px;
-            padding: 6px 10px;
-            border-radius: 3px;
-            min-height: 36px;
+            grid-template-columns: 36px minmax(100px, 2fr) minmax(120px, 2fr) minmax(80px, 1fr) minmax(80px, 1fr) 0 0 0 0;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-3);
+            min-height: 40px;
           }
 
           .cell {
-            font-size: 12px;
-            min-height: 24px;
+            font-size: var(--text-xs);
+            line-height: var(--leading-4);
+          }
+
+          .checkbox-wrapper {
+            width: 16px;
+            height: 16px;
+          }
+
+          .checkbox-label {
+            width: 16px;
+            height: 16px;
           }
         }        /* Tooltip styles */
         .company-tooltip h4,

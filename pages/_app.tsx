@@ -5,6 +5,7 @@ import type { AppProps } from "next/app";
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { FeatureFlagProvider } from '@/contexts/FeatureFlagContext';
 import { AppDataProvider } from '@/contexts/AppDataContext';
+import { SnackBarProvider } from '@/contexts/SnackBarContext';
 import getFeatureFlags from '@/config/featureFlags';
 import { useEffect } from 'react';
 
@@ -25,7 +26,9 @@ export default function App({ Component, pageProps }: AppProps) {
     <ThemeProvider>
       <FeatureFlagProvider flags={featureFlags}>
         <AppDataProvider>
-          <Component {...pageProps} />
+          <SnackBarProvider position="bottom-right" maxVisible={3}>
+            <Component {...pageProps} />
+          </SnackBarProvider>
         </AppDataProvider>
       </FeatureFlagProvider>
     </ThemeProvider>

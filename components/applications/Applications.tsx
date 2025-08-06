@@ -19,6 +19,7 @@ export default function Applications() {
     filteredApplications,
     applicationStats,
     selectedAppData,
+    selectedApplications,
     applicationsByStage,
     stagesOrder,
     loading,
@@ -73,6 +74,8 @@ export default function Applications() {
     handleDeleteApplication,
     handleBulkDelete,
     handleStageChange,
+    handleBulkStageChange,
+    handleBulkEdit,
     handleIncrementStage,
     handleDecrementStage,
     handleToggleShortlist,
@@ -164,6 +167,8 @@ export default function Applications() {
             isColumnMenuOpen={isColumnMenuOpen}
             quickFilters={quickFilters}
             visibleColumns={visibleColumns}
+            selectedRows={selectedRows}
+            selectedApplications={selectedApplications}
             onViewModeChange={setViewMode}
             onMobileViewToggle={() => setIsMobileView(!isMobileView)}
             onAutosizeToggle={() => setIsAutosizeEnabled(!isAutosizeEnabled)}
@@ -172,20 +177,12 @@ export default function Applications() {
             onAdvancedFiltersToggle={() => setShowAdvancedFilters(!showAdvancedFilters)}
             onColumnMenuToggle={() => setIsColumnMenuOpen(!isColumnMenuOpen)}
             onVisibleColumnsChange={setVisibleColumns}
+            onClearSelection={() => setSelectedRows([])}
+            onBulkDelete={handleBulkDelete}
+            onBulkStageChange={handleBulkStageChange}
+            onExport={handleExport}
+            onBulkEdit={handleBulkEdit}
           />
-
-          {/* Quick Actions - Show when rows are selected */}
-          {selectedRows.length > 0 && (
-            <div className="quick-actions">
-              <span className="selection-count">{selectedRows.length} selected</span>
-              <div className="action-buttons">
-                <button className="btn btn-primary">Move Stage</button>
-                <button className="btn btn-secondary" onClick={handleExport}>Export</button>
-                <button className="btn btn-danger" onClick={handleBulkDelete}>Delete</button>
-                <button className="btn btn-ghost" onClick={() => setSelectedRows([])}>Clear</button>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Data Table */}
@@ -316,63 +313,6 @@ export default function Applications() {
           padding: 0 var(--space-6);
           background: var(--surface);
           border-bottom: 1px solid var(--border-light);
-        }
-
-        /* Quick Actions - Using Theme Colors */
-        .quick-actions {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-top: var(--space-4);
-          padding: var(--space-3) var(--space-4);
-          background: var(--primary);
-          border-radius: var(--border-radius-md);
-          color: var(--text-inverse);
-          animation: slideDown var(--duration-300) var(--ease-liquid);
-        }
-
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            transform: translateY(-8px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .selection-count {
-          font-size: var(--font-size-sm);
-          font-weight: var(--font-weight-medium);
-          font-family: var(--font-interface);
-        }
-
-        .action-buttons {
-          display: flex;
-          gap: var(--space-2);
-        }
-
-        .quick-actions .btn {
-          background: rgba(255, 255, 255, 0.1);
-          border-color: rgba(255, 255, 255, 0.2);
-          color: var(--text-inverse);
-          backdrop-filter: var(--glass-backdrop);
-        }
-
-        .quick-actions .btn:hover {
-          background: rgba(255, 255, 255, 0.2);
-          transform: translateY(var(--morph-translate));
-        }
-
-        .quick-actions .btn-danger {
-          background: var(--error);
-          border-color: var(--error);
-        }
-
-        .quick-actions .btn-danger:hover {
-          background: #b91c1c;
-          transform: translateY(var(--morph-translate)) scale(var(--morph-scale));
         }
 
         /* Button Styles - Using Theme System */
@@ -561,16 +501,6 @@ export default function Applications() {
 
           .toolbar {
             padding: var(--space-4);
-          }
-
-          .quick-actions {
-            flex-direction: column;
-            gap: var(--space-3);
-            align-items: stretch;
-          }
-
-          .action-buttons {
-            justify-content: center;
           }
         }
 
