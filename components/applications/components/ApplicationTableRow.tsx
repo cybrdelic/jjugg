@@ -337,224 +337,234 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
       <style jsx>{`
         /* ===================================
            PROFESSIONAL TABLE ROW DESIGN
-           Clean Flat Design System
+           Enhanced Visual Quality & Polish
            ===================================== */
 
         .table-row {
           display: grid;
-          grid-template-columns: 48px minmax(150px, 2fr) minmax(200px, 2.5fr) minmax(120px, 1.2fr) minmax(100px, 1.5fr) minmax(80px, 1fr) minmax(80px, 1fr) minmax(80px, 1fr) minmax(60px, 0.8fr);
-          gap: var(--space-3);
+          grid-template-columns: 36px minmax(140px, 2fr) minmax(180px, 2.5fr) minmax(100px, 1.2fr) minmax(90px, 1.5fr) minmax(70px, 1fr) minmax(70px, 1fr) minmax(70px, 1fr) minmax(60px, 0.8fr);
+          gap: var(--space-2);
           align-items: center;
-          padding: var(--space-3) var(--space-4);
-          background: var(--background);
-          border-bottom: 1px solid var(--border-subtle);
+          padding: var(--space-1) var(--space-3);
+          background: var(--surface);
+          border-bottom: 1px solid var(--border);
           position: relative;
           cursor: pointer;
-          transition: all var(--duration-150) var(--ease-out);
-          min-height: 48px;
+          transition: all var(--duration-200) cubic-bezier(0.4, 0, 0.2, 1);
+          min-height: 32px;
           overflow: hidden;
+          isolation: isolate;
         }
 
         .table-row.autosize {
-          grid-template-columns: 48px repeat(8, minmax(100px, auto));
+          grid-template-columns: 36px repeat(8, minmax(80px, auto));
         }
 
-        /* Amazing row hover and selection states */
+        /* Professional hover and selection states with enhanced visual feedback */
         .table-row {
-          transition: all var(--duration-200) var(--ease-out);
+          transition: all var(--duration-200) cubic-bezier(0.4, 0, 0.2, 1);
           position: relative;
           overflow: hidden;
-          z-index: 1;
+          isolation: isolate;
         }
 
         .table-row::before {
           content: '';
           position: absolute;
-          left: -100%;
-          top: 0;
-          bottom: 0;
-          width: 100%;
+          inset: 0;
           background: linear-gradient(
             90deg,
             transparent 0%,
-            rgba(var(--primary-rgb), 0.05) 50%,
+            rgba(var(--primary-rgb), 0.04) 50%,
             transparent 100%
           );
-          transition: left var(--duration-300) var(--ease-out);
+          transform: translateX(-100%);
+          transition: transform var(--duration-300) cubic-bezier(0.4, 0, 0.2, 1);
           z-index: 0;
         }
 
         .table-row:hover::before {
-          left: 100%;
+          transform: translateX(100%);
         }
 
         .table-row:hover {
-          background: var(--hover-bg);
-          border-color: var(--hover-border);
-          transform: translateY(-0.5px);
-          box-shadow: var(--shadow-sm);
+          background: var(--card-hover);
+          border-color: var(--border-strong);
+          transform: translateY(-1px);
+          box-shadow:
+            0 2px 8px -2px rgba(0, 0, 0, 0.08),
+            0 4px 16px -4px rgba(0, 0, 0, 0.04);
           z-index: 10;
-        }
-
-        .table-row:hover .cell {
-          transform: translateY(0);
         }
 
         .table-row:focus-within {
-          background: var(--hover-bg);
+          background: var(--card-hover);
           outline: 2px solid var(--primary);
           outline-offset: -2px;
-          transform: translateY(-0.5px);
-          box-shadow: 0 0 0 3px var(--highlight-primary);
-          z-index: 10;
+          transform: translateY(-1px);
+          box-shadow:
+            0 0 0 4px rgba(var(--primary-rgb), 0.12),
+            0 2px 8px -2px rgba(0, 0, 0, 0.08);
+          z-index: 15;
         }
 
-        /* Modern selection state - clean and minimal */
+        /* Enhanced selection state with premium styling */
         .table-row.selected {
-          background: var(--highlight-primary);
-          border-color: var(--primary);
+          background: rgba(var(--primary-rgb), 0.06);
+          border-color: rgba(var(--primary-rgb), 0.2);
           position: relative;
           z-index: 5;
         }
 
-        .table-row.selected::before {
+        .table-row.selected::after {
           content: '';
           position: absolute;
           left: 0;
           top: 0;
           bottom: 0;
-          width: 3px;
-          background: var(--primary);
+          width: 4px;
+          background: linear-gradient(180deg, var(--primary), var(--primary-light));
           border-radius: 0 2px 2px 0;
+          box-shadow: 0 0 8px rgba(var(--primary-rgb), 0.3);
         }
 
         .table-row.selected:hover {
-          background: var(--highlight-hover);
-          transform: translateY(-0.5px);
-          box-shadow: var(--shadow-sm);
-          z-index: 15;
-        }        /* Cell content improvements */
+          background: rgba(var(--primary-rgb), 0.08);
+          transform: translateY(-1px);
+          box-shadow:
+            0 2px 12px -2px rgba(var(--primary-rgb), 0.15),
+            0 4px 20px -4px rgba(0, 0, 0, 0.06);
+          z-index: 20;
+        }        /* Enhanced cell design with superior typography and spacing */
         .cell {
-          transition: all var(--duration-150) var(--ease-out);
+          transition: all var(--duration-200) cubic-bezier(0.4, 0, 0.2, 1);
           position: relative;
           z-index: 1;
         }
 
         .table-row:hover .cell {
           color: var(--text-primary);
+          transform: translateY(0);
         }
 
         .table-row.selected .cell {
           color: var(--text-primary);
         }
 
-        /* Checkbox improvements */
-        .checkbox-cell {
+        /* Premium checkbox design with enhanced visual feedback */
+        .checkbox-wrapper {
           position: relative;
+          width: 18px;
+          height: 18px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
-        .checkbox-cell input[type="checkbox"] {
-          transition: all var(--duration-200) var(--ease-out);
+        .checkbox-wrapper input[type="checkbox"] {
+          transition: all var(--duration-200) cubic-bezier(0.4, 0, 0.2, 1);
           transform: scale(1);
         }
 
-        .table-row:hover .checkbox-cell input[type="checkbox"] {
+        .table-row:hover .checkbox-wrapper input[type="checkbox"] {
           transform: scale(1.05);
         }
 
-        .table-row.selected .checkbox-cell input[type="checkbox"] {
+        .table-row.selected .checkbox-wrapper input[type="checkbox"] {
           transform: scale(1.05);
         }
 
-        /* Density Variations */
+        /* Density variations with optimized spacing and proportions */
         .table-row.density-compact {
-          padding: var(--space-2) var(--space-4);
-          min-height: 40px;
-          grid-template-columns: 40px 2fr 2.5fr 1.2fr 1.5fr 1fr 1fr 1fr 0.8fr;
-          gap: 10px;
-          min-height: 32px;
+          padding: var(--space-0-5) var(--space-2);
+          min-height: 24px;
+          grid-template-columns: 32px minmax(120px, 2fr) minmax(160px, 2.5fr) minmax(80px, 1.2fr) minmax(70px, 1.5fr) minmax(60px, 1fr) minmax(60px, 1fr) minmax(60px, 1fr) minmax(50px, 0.8fr);
+          gap: var(--space-1);
         }
 
         .table-row.density-comfortable {
-          padding: 8px 16px;
-          grid-template-columns: 44px 2fr 2.5fr 1.2fr 1.5fr 1fr 1fr 1fr 0.8fr;
-          gap: 12px;
-          min-height: 40px;
+          padding: var(--space-1) var(--space-3);
+          grid-template-columns: 36px minmax(140px, 2fr) minmax(180px, 2.5fr) minmax(100px, 1.2fr) minmax(90px, 1.5fr) minmax(70px, 1fr) minmax(70px, 1fr) minmax(70px, 1fr) minmax(60px, 0.8fr);
+          gap: var(--space-2);
+          min-height: 32px;
         }
 
         .table-row.density-spacious {
-          padding: 12px 20px;
-          grid-template-columns: 52px 2fr 2.5fr 1.2fr 1.5fr 1fr 1fr 1fr 0.8fr;
-          gap: 14px;
-          min-height: 48px;
+          padding: var(--space-2) var(--space-4);
+          grid-template-columns: 44px minmax(160px, 2fr) minmax(200px, 2.5fr) minmax(120px, 1.2fr) minmax(100px, 1.5fr) minmax(80px, 1fr) minmax(80px, 1fr) minmax(80px, 1fr) minmax(70px, 0.8fr);
+          gap: var(--space-3);
+          min-height: 40px;
         }
 
-        /* Smooth entry animations */
+        /* Enhanced entry animations with premium feel */
         .table-row.animate-in {
-          animation: rowSlideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+          animation: rowSlideIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
         @keyframes rowSlideIn {
           from {
             opacity: 0;
-            transform: translateY(16px) scale(0.98);
+            transform: translateY(20px) scale(0.96);
+            filter: blur(2px);
           }
           to {
             opacity: 1;
             transform: translateY(0) scale(1);
+            filter: blur(0);
           }
         }
 
-        /* Enhanced Cell Design - Left Aligned & Compact */
+        /* Superior cell design with enhanced typography hierarchy */
         .cell {
           display: flex;
           align-items: center;
           justify-content: flex-start;
-          gap: 8px;
-          font-size: 13px;
-          color: var(--text-primary, #ffffff);
+          gap: var(--space-1);
+          font-family: var(--font-interface);
+          font-size: var(--text-xs);
+          font-weight: var(--font-medium);
+          color: var(--text-primary);
           position: relative;
-          min-height: 28px;
-          padding: 4px 0;
+          min-height: 20px;
+          padding: 0;
           z-index: 1;
-          line-height: 1.3;
-          font-weight: 500;
+          line-height: var(--leading-tight);
+          letter-spacing: var(--tracking-tight);
           text-align: left;
         }
 
         .cell-icon {
-          color: var(--text-tertiary, rgba(255, 255, 255, 0.5));
+          color: var(--text-tertiary);
           flex-shrink: 0;
-          width: 18px;
-          height: 18px;
-          transition: color 0.2s ease;
+          width: 14px;
+          height: 14px;
+          transition: color var(--duration-200) cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .table-row:hover .cell-icon {
-          color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+          color: var(--text-secondary);
         }
 
         .cell-value {
-          font-weight: 500;
-          color: var(--text-primary, #ffffff);
+          font-weight: var(--font-medium);
+          color: var(--text-primary);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-          font-size: 13px;
-          letter-spacing: -0.01em;
+          font-size: var(--text-xs);
+          letter-spacing: var(--tracking-tight);
           text-align: left;
         }
 
-        /* Modern Checkbox Design */
         /* ===================================
-           PROFESSIONAL CHECKBOX STYLING
-           Enhanced Visibility & Interaction
+           PREMIUM CHECKBOX DESIGN
+           Enhanced Accessibility & Visual Polish
            ===================================== */
 
         .checkbox-wrapper {
           position: relative;
-          width: 20px;
-          height: 20px;
+          width: 18px;
+          height: 18px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -569,39 +579,45 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
 
         .checkbox-label {
           position: relative;
-          width: 18px;
-          height: 18px;
+          width: 16px;
+          height: 16px;
           background: var(--surface);
-          border: 2px solid var(--border-strong);
-          border-radius: var(--radius-sm);
+          border: 1px solid var(--border-strong);
+          border-radius: var(--radius-xs);
           cursor: pointer;
-          transition: all var(--duration-150) var(--ease-out);
+          transition: all var(--duration-200) cubic-bezier(0.4, 0, 0.2, 1);
           display: flex;
           align-items: center;
           justify-content: center;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
 
         .checkbox-label:hover {
           border-color: var(--primary);
-          transform: scale(1.1);
-          box-shadow: 0 0 0 2px var(--primary-alpha-20);
+          transform: scale(1.05);
+          box-shadow:
+            0 0 0 4px rgba(var(--primary-rgb), 0.12),
+            0 2px 4px rgba(0, 0, 0, 0.08);
         }
 
         .checkbox-label::after {
           content: '';
-          width: 10px;
-          height: 6px;
-          border: 2px solid transparent;
+          width: 8px;
+          height: 4px;
+          border: 1px solid transparent;
           border-top: none;
           border-right: none;
           transform: rotate(-45deg) scale(0);
-          transition: transform var(--duration-150) var(--ease-out);
+          transition: transform var(--duration-200) cubic-bezier(0.34, 1.56, 0.64, 1);
           margin-top: -1px;
         }
 
         .custom-checkbox:checked + .checkbox-label {
           background: var(--primary);
           border-color: var(--primary);
+          box-shadow:
+            0 0 0 4px rgba(var(--primary-rgb), 0.12),
+            0 2px 8px rgba(var(--primary-rgb), 0.2);
         }
 
         .custom-checkbox:checked + .checkbox-label::after {
@@ -610,24 +626,27 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
         }
 
         .custom-checkbox:focus + .checkbox-label {
-          outline: 2px solid var(--border-focus);
+          outline: 2px solid var(--primary);
           outline-offset: 2px;
         }
 
         /* ===================================
-           PROFESSIONAL CELL STYLING
-           Clean Content Layout
+           PREMIUM CELL STYLING
+           Enhanced Content Layout & Typography
            ===================================== */
 
         .cell {
-          padding: var(--space-2) var(--space-1);
+          padding: 0;
           color: var(--text-primary);
-          font-size: var(--text-sm);
-          line-height: var(--leading-5);
+          font-family: var(--font-interface);
+          font-size: var(--text-xs);
+          font-weight: var(--font-medium);
+          line-height: var(--leading-tight);
+          letter-spacing: var(--tracking-tight);
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
-          transition: all var(--duration-150) var(--ease-out);
+          transition: all var(--duration-200) cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .cell:first-child {
@@ -637,19 +656,13 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
         .cell:last-child {
           padding-right: 0;
         }
-        }
 
-        .checkbox-label:hover {
-          border-color: var(--accent-blue, #3b82f6);
-          background: var(--glass-hover-bg, rgba(255, 255, 255, 0.12));
-        }
-
-        /* Enhanced Company Cell */
+        /* Enhanced company cell with premium typography */
         .company-cell {
           display: flex;
           align-items: center;
           justify-content: flex-start;
-          gap: 8px;
+          gap: var(--space-1);
           min-width: 0;
         }
 
@@ -660,22 +673,23 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
         }
 
         .company-name {
-          font-weight: 600;
-          color: var(--text-primary, #ffffff);
-          font-size: 13px;
+          font-family: var(--font-interface);
+          font-weight: var(--font-semibold);
+          color: var(--text-primary);
+          font-size: var(--text-xs);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-          letter-spacing: -0.01em;
-          line-height: 1.2;
+          letter-spacing: var(--tracking-tight);
+          line-height: var(--leading-tight);
           text-align: left;
         }
 
-        /* Enhanced Position Cell */
+        /* Enhanced position cell with improved hierarchy */
         .position-cell {
           display: flex;
           flex-direction: column;
-          gap: 2px;
+          gap: 0;
           min-width: 0;
           align-items: flex-start;
           justify-content: flex-start;
@@ -688,41 +702,43 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
         }
 
         .position-title {
-          font-weight: 600;
-          color: var(--text-primary, #ffffff);
-          font-size: 13px;
+          font-family: var(--font-interface);
+          font-weight: var(--font-semibold);
+          color: var(--text-primary);
+          font-size: var(--text-xs);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-          letter-spacing: -0.01em;
-          line-height: 1.2;
-          margin-bottom: 1px;
+          letter-spacing: var(--tracking-tight);
+          line-height: var(--leading-tight);
           text-align: left;
         }
 
         .position-description {
-          font-size: 11px;
-          color: var(--text-secondary, rgba(255, 255, 255, 0.7));
-          line-height: 1.3;
+          font-family: var(--font-body);
+          font-size: 10px;
+          font-weight: var(--font-normal);
+          color: var(--text-secondary);
+          line-height: var(--leading-tight);
           display: -webkit-box;
-          -webkit-line-clamp: 2;
+          -webkit-line-clamp: 1;
           -webkit-box-orient: vertical;
           overflow: hidden;
           text-overflow: ellipsis;
-          max-height: 28px;
+          max-height: 14px;
           text-align: left;
         }
 
         /* ===================================
-           PROFESSIONAL STAGE BADGE
-           Clean Flat Design
+           PREMIUM STAGE BADGE DESIGN
+           Enhanced Visual Hierarchy & Interaction
            ===================================== */
 
         .stage-container {
           display: flex;
           align-items: center;
           justify-content: flex-start;
-          gap: var(--space-2);
+          gap: var(--space-1);
           width: 100%;
           cursor: pointer;
           position: relative;
@@ -733,14 +749,15 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
           display: inline-flex;
           align-items: center;
           gap: var(--space-1);
-          padding: var(--space-1) var(--space-2);
+          padding: 2px var(--space-2);
           border-radius: var(--radius-sm);
-          font-size: var(--text-xs);
-          font-weight: var(--font-medium);
+          font-family: var(--font-interface);
+          font-size: 10px;
+          font-weight: var(--font-semibold);
           text-transform: capitalize;
           letter-spacing: var(--tracking-wide);
-          transition: all var(--duration-150) var(--ease-out);
-          border: 1px solid var(--border-default);
+          transition: all var(--duration-200) cubic-bezier(0.4, 0, 0.2, 1);
+          border: 1px solid var(--border-strong);
           white-space: nowrap;
           flex-shrink: 0;
           background: var(--surface);
@@ -748,14 +765,17 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
           position: relative;
           overflow: hidden;
           text-align: left;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
 
         .stage-badge.clickable:hover {
-          background: var(--bg-hover);
+          background: var(--card-hover);
           border-color: var(--border-strong);
           color: var(--text-primary);
           transform: translateY(-1px);
-          box-shadow: var(--shadow-sm);
+          box-shadow:
+            0 2px 8px -2px rgba(0, 0, 0, 0.1),
+            0 4px 16px -4px rgba(0, 0, 0, 0.06);
         }
 
         .stage-indicator {
@@ -764,38 +784,40 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
           border-radius: 50%;
           flex-shrink: 0;
           box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+          transition: all var(--duration-200) cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .stage-label {
-          font-weight: 600;
+          font-weight: var(--font-semibold);
           position: relative;
           z-index: 1;
           text-align: left;
-        }        /* Compact Progress Visualization */
+        }        /* Enhanced progress visualization with premium animations */
         .stage-progress-container {
           flex: 1;
           min-width: 60px;
-          max-width: 100px;
+          max-width: 80px;
         }
 
         .stage-progress-background {
           width: 100%;
           height: 4px;
-          border-radius: 2px;
-          background: var(--glass-card-bg, rgba(255, 255, 255, 0.1));
+          border-radius: var(--radius-full);
+          background: var(--surface);
           overflow: hidden;
           position: relative;
           display: flex;
           gap: 1px;
-          box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);
+          box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+          border: 1px solid var(--border);
         }
 
         .stage-step {
           flex: 1;
           height: 100%;
-          border-radius: 1px;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          min-width: 8px;
+          border-radius: var(--radius-xs);
+          transition: all var(--duration-300) cubic-bezier(0.34, 1.56, 0.64, 1);
+          min-width: 6px;
           position: relative;
           overflow: hidden;
         }
@@ -807,13 +829,13 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
           left: -100%;
           width: 100%;
           height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-          transition: left 0.4s ease;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+          transition: left var(--duration-500) cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .stage-step.completed {
           opacity: 1;
-          box-shadow: 0 0 4px rgba(var(--accent-blue-rgb, 59, 130, 246), 0.3);
+          box-shadow: 0 0 6px rgba(var(--primary-rgb), 0.4);
         }
 
         .stage-step.completed::before {
@@ -821,14 +843,14 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
         }
 
         .stage-step:not(.completed) {
-          opacity: 0.3;
+          opacity: 0.25;
         }
 
-        /* Compact Alert System */
+        /* Enhanced alert system with premium styling */
         .alerts-cell {
           display: flex;
           flex-direction: column;
-          gap: 3px;
+          gap: 1px;
           width: 100%;
           align-items: flex-start;
           justify-content: flex-start;
@@ -837,77 +859,87 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
         .alert-item {
           display: flex;
           align-items: center;
-          gap: 6px;
-          padding: 4px 8px;
-          border-radius: 3px;
-          font-size: 11px;
-          font-weight: 600;
-          margin-bottom: 2px;
-          transition: all 0.2s ease;
+          gap: var(--space-1);
+          padding: 1px var(--space-1);
+          border-radius: var(--radius-xs);
+          font-family: var(--font-interface);
+          font-size: 10px;
+          font-weight: var(--font-semibold);
+          margin-bottom: 1px;
+          transition: all var(--duration-200) cubic-bezier(0.4, 0, 0.2, 1);
           backdrop-filter: blur(8px);
           -webkit-backdrop-filter: blur(8px);
           border: 1px solid transparent;
-          animation: slideIn 0.3s ease forwards;
+          animation: slideIn var(--duration-300) cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
           text-align: left;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         .alert-icon {
           flex-shrink: 0;
-          width: 12px;
-          height: 12px;
+          width: 10px;
+          height: 10px;
         }
 
         .interview-alert {
-          background: rgba(var(--info-rgb, 59, 130, 246), 0.15);
+          background: rgba(var(--info-rgb, 59, 130, 246), 0.12);
           color: var(--info, #3b82f6);
-          border-color: rgba(var(--info-rgb, 59, 130, 246), 0.3);
+          border-color: rgba(var(--info-rgb, 59, 130, 246), 0.25);
         }
 
         .task-alert {
-          background: rgba(var(--error-rgb, 239, 68, 68), 0.15);
+          background: rgba(var(--error-rgb, 239, 68, 68), 0.12);
           color: var(--error, #ef4444);
-          border-color: rgba(var(--error-rgb, 239, 68, 68), 0.3);
+          border-color: rgba(var(--error-rgb, 239, 68, 68), 0.25);
         }
 
         .offer-alert {
-          background: rgba(var(--success-rgb, 34, 197, 94), 0.15);
+          background: rgba(var(--success-rgb, 34, 197, 94), 0.12);
           color: var(--success, #22c55e);
-          border-color: rgba(var(--success-rgb, 34, 197, 94), 0.3);
-          animation: pulseAlert 2s infinite, slideIn 0.4s ease forwards;
+          border-color: rgba(var(--success-rgb, 34, 197, 94), 0.25);
+          animation: pulseAlert 2.5s infinite, slideIn var(--duration-400) cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
-        /* Compact Tasks Visualization */
+        /* Enhanced tasks visualization with premium progress indicators */
         .tasks-cell {
           display: flex;
           flex-direction: column;
-          gap: 3px;
+          gap: 1px;
           width: 100%;
           align-items: flex-start;
           justify-content: flex-start;
         }
 
+        .tasks-count-container {
+          display: flex;
+          align-items: center;
+          gap: var(--space-1);
+          margin-bottom: 1px;
+        }
+
         .tasks-progress-container {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: var(--space-1);
           width: 100%;
         }
 
         .tasks-progress-bar {
           height: 4px;
-          background: var(--glass-card-bg, rgba(255, 255, 255, 0.1));
-          border-radius: 2px;
+          background: var(--surface);
+          border-radius: var(--radius-full);
           flex-grow: 1;
           overflow: hidden;
-          box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);
+          box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
           position: relative;
+          border: 1px solid var(--border);
         }
 
         .tasks-progress-fill {
           height: 100%;
-          background: linear-gradient(90deg, var(--accent-blue, #3b82f6), var(--accent-purple, #8b5cf6));
-          border-radius: 2px;
-          transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          background: linear-gradient(90deg, var(--primary), var(--primary-light));
+          border-radius: var(--radius-full);
+          transition: width var(--duration-500) cubic-bezier(0.34, 1.56, 0.64, 1);
           position: relative;
           overflow: hidden;
         }
@@ -919,8 +951,8 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
           left: -50%;
           width: 50%;
           height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-          animation: progressShine 2s infinite;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+          animation: progressShine 2.5s infinite;
         }
 
         @keyframes progressShine {
@@ -929,177 +961,196 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
         }
 
         .tasks-pending-count {
-          font-size: 11px;
-          color: var(--text-secondary, rgba(255, 255, 255, 0.7));
-          font-weight: 500;
+          font-family: var(--font-interface);
+          font-size: 10px;
+          font-weight: var(--font-medium);
+          color: var(--text-secondary);
           white-space: nowrap;
           text-align: left;
         }
 
-        /* Compact Location & Compensation */
+        /* Enhanced location and compensation styling with premium badges */
         .location-cell,
         .compensation-cell {
           display: flex;
           flex-direction: column;
-          gap: 2px;
+          gap: 1px;
           width: 100%;
           align-items: flex-start;
           justify-content: flex-start;
           text-align: left;
         }
 
+        .location-info {
+          display: flex;
+          align-items: center;
+          gap: var(--space-1);
+          flex-wrap: wrap;
+        }
+
         .comp-value {
-          font-weight: 600;
-          color: var(--text-primary, #ffffff);
-          font-size: 12px;
-          padding: 3px 6px;
-          background: var(--glass-card-bg, rgba(255, 255, 255, 0.08));
-          border-radius: 3px;
+          font-family: var(--font-interface);
+          font-weight: var(--font-semibold);
+          color: var(--text-primary);
+          font-size: 10px;
+          padding: 1px var(--space-1);
+          background: var(--surface);
+          border-radius: var(--radius-xs);
           backdrop-filter: blur(8px);
           -webkit-backdrop-filter: blur(8px);
-          border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+          border: 1px solid var(--border);
           max-width: fit-content;
-          transition: all 0.2s ease;
-          letter-spacing: -0.01em;
+          transition: all var(--duration-200) cubic-bezier(0.4, 0, 0.2, 1);
+          letter-spacing: var(--tracking-tight);
           text-align: left;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
 
         .table-row:hover .comp-value {
-          background: var(--glass-hover-bg, rgba(255, 255, 255, 0.12));
+          background: var(--card-hover);
           transform: translateY(-1px);
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
         }
 
         .bonus-value {
-          color: var(--success, #22c55e);
-          background: rgba(var(--success-rgb, 34, 197, 94), 0.15);
-          border-color: rgba(var(--success-rgb, 34, 197, 94), 0.3);
+          color: var(--success);
+          background: rgba(var(--success-rgb, 34, 197, 94), 0.12);
+          border-color: rgba(var(--success-rgb, 34, 197, 94), 0.25);
         }
 
         .remote-indicator {
-          color: var(--success, #22c55e);
-          font-weight: 600;
+          color: var(--success);
+          font-family: var(--font-interface);
+          font-weight: var(--font-semibold);
           font-size: 10px;
-          padding: 2px 4px;
-          background: rgba(var(--success-rgb, 34, 197, 94), 0.15);
-          border-radius: 2px;
-          border: 1px solid rgba(var(--success-rgb, 34, 197, 94), 0.3);
+          padding: 1px var(--space-1);
+          background: rgba(var(--success-rgb, 34, 197, 94), 0.12);
+          border-radius: var(--radius-xs);
+          border: 1px solid rgba(var(--success-rgb, 34, 197, 94), 0.25);
           text-align: left;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
 
-        /* Compact Dropdown */
+        /* Premium dropdown design with enhanced visual hierarchy */
         .stage-dropdown {
-          background: var(--glass-card-bg, rgba(20, 20, 20, 0.9));
-          border: 1px solid var(--border-active, rgba(255, 255, 255, 0.2));
-          border-radius: 6px;
+          background: var(--surface);
+          border: 1px solid var(--border-strong);
+          border-radius: var(--radius-lg);
           box-shadow:
-            0 10px 25px rgba(0, 0, 0, 0.25),
-            0 2px 8px rgba(0, 0, 0, 0.15);
+            0 10px 38px -10px rgba(0, 0, 0, 0.35),
+            0 10px 20px -15px rgba(0, 0, 0, 0.2);
           backdrop-filter: blur(16px);
           -webkit-backdrop-filter: blur(16px);
           z-index: 1001;
-          animation: dropdownSlideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-          min-width: 160px;
-          max-height: 200px;
+          animation: dropdownSlideIn var(--duration-300) cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          min-width: 180px;
+          max-height: 240px;
           overflow-y: auto;
-          padding: 4px;
+          padding: var(--space-2);
         }
 
         @keyframes dropdownSlideIn {
           from {
             opacity: 0;
-            transform: translateY(-8px) scale(0.95);
+            transform: translateY(-12px) scale(0.94);
+            filter: blur(4px);
           }
           to {
             opacity: 1;
             transform: translateY(0) scale(1);
+            filter: blur(0);
           }
         }
 
         .stage-option {
           display: flex;
           align-items: center;
-          gap: 8px;
-          padding: 8px 12px;
+          gap: var(--space-3);
+          padding: var(--space-3) var(--space-4);
           cursor: pointer;
-          transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-          border-radius: 4px;
-          font-size: 12px;
-          font-weight: 500;
+          transition: all var(--duration-200) cubic-bezier(0.4, 0, 0.2, 1);
+          border-radius: var(--radius-md);
+          font-family: var(--font-interface);
+          font-size: var(--text-sm);
+          font-weight: var(--font-medium);
           position: relative;
-          margin-bottom: 1px;
+          margin-bottom: var(--space-1);
           text-align: left;
         }
 
         .stage-option:hover {
-          background: var(--glass-hover-bg, rgba(255, 255, 255, 0.08));
-          transform: translateX(2px);
+          background: var(--card-hover);
+          transform: translateX(4px);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
 
         .stage-option.current {
-          background: rgba(var(--accent-blue-rgb, 59, 130, 246), 0.15);
-          color: var(--accent-blue, #3b82f6);
-          border: 1px solid rgba(var(--accent-blue-rgb, 59, 130, 246), 0.3);
+          background: rgba(var(--primary-rgb), 0.12);
+          color: var(--primary);
+          border: 1px solid rgba(var(--primary-rgb), 0.25);
+          box-shadow: 0 0 0 1px rgba(var(--primary-rgb), 0.12);
         }
 
         .stage-option-indicator {
-          width: 8px;
-          height: 8px;
+          width: 10px;
+          height: 10px;
           border-radius: 50%;
           flex-shrink: 0;
           box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+          transition: all var(--duration-200) cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .current-badge {
           margin-left: auto;
-          font-size: 9px;
-          font-weight: 600;
-          background: var(--accent-blue, #3b82f6);
+          font-family: var(--font-interface);
+          font-size: var(--text-xs);
+          font-weight: var(--font-bold);
+          background: var(--primary);
           color: white;
-          padding: 2px 6px;
-          border-radius: 8px;
+          padding: var(--space-1) var(--space-2);
+          border-radius: var(--radius-full);
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
         }
 
         /* ===================================
-           PROFESSIONAL RESPONSIVE DESIGN
-           Mobile-First Approach
+           ENHANCED RESPONSIVE DESIGN
+           Mobile-First with Better Breakpoints
            ===================================== */
 
         @media (max-width: 1400px) {
           .table-row {
-            grid-template-columns: 40px minmax(120px, 2fr) minmax(180px, 2.5fr) minmax(100px, 1fr) minmax(100px, 1.2fr) minmax(80px, 1fr) minmax(100px, 1.5fr) minmax(80px, 1.2fr) 0;
-            gap: var(--space-2);
+            grid-template-columns: 32px minmax(120px, 2fr) minmax(160px, 2.5fr) minmax(90px, 1fr) minmax(80px, 1.2fr) minmax(70px, 1fr) minmax(80px, 1.5fr) minmax(70px, 1.2fr) 0;
+            gap: var(--space-1);
           }
         }
 
         @media (max-width: 1200px) {
           .table-row {
-            grid-template-columns: 40px minmax(120px, 1.8fr) minmax(150px, 2fr) minmax(80px, 1fr) minmax(100px, 1.2fr) minmax(60px, 0.8fr) 0 0 0;
-            gap: var(--space-2);
-            padding: var(--space-2-5) var(--space-4);
+            grid-template-columns: 32px minmax(110px, 1.8fr) minmax(140px, 2fr) minmax(80px, 1fr) minmax(80px, 1.2fr) minmax(60px, 0.8fr) 0 0 0;
+            gap: var(--space-1);
+            padding: var(--space-1) var(--space-2);
           }
         }
 
         @media (max-width: 992px) {
           .table-row {
-            grid-template-columns: 40px minmax(120px, 2fr) minmax(150px, 2fr) minmax(80px, 1fr) minmax(100px, 1.2fr) 0 0 0 0;
-            gap: var(--space-2);
-            padding: var(--space-2-5) var(--space-3);
+            grid-template-columns: 28px minmax(100px, 2fr) minmax(120px, 2fr) minmax(70px, 1fr) minmax(70px, 1.2fr) 0 0 0 0;
+            gap: var(--space-1);
+            padding: var(--space-1) var(--space-2);
           }
         }
 
         @media (max-width: 768px) {
           .table-row {
-            grid-template-columns: 36px minmax(100px, 2fr) minmax(120px, 2fr) minmax(80px, 1fr) minmax(80px, 1fr) 0 0 0 0;
-            gap: var(--space-2);
-            padding: var(--space-2) var(--space-3);
-            min-height: 40px;
+            grid-template-columns: 24px minmax(80px, 2fr) minmax(100px, 2fr) minmax(60px, 1fr) minmax(60px, 1fr) 0 0 0 0;
+            gap: var(--space-1);
+            padding: var(--space-0-5) var(--space-2);
+            min-height: 28px;
           }
 
           .cell {
-            font-size: var(--text-xs);
-            line-height: var(--leading-4);
+            font-size: 10px;
+            line-height: var(--leading-tight);
           }
 
           .checkbox-wrapper {
@@ -1108,50 +1159,64 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
           }
 
           .checkbox-label {
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
           }
-        }        /* Tooltip styles */
+        }        /* Enhanced tooltip styles with premium typography */
         .company-tooltip h4,
         .position-tooltip h4 {
-          margin: 0 0 8px 0;
-          color: var(--accent-blue);
-          font-size: 15px;
+          margin: 0 0 var(--space-2) 0;
+          color: var(--primary);
+          font-family: var(--font-interface);
+          font-size: var(--text-base);
+          font-weight: var(--font-semibold);
         }
 
         .company-tooltip p,
         .position-tooltip p {
-          margin: 4px 0;
-          font-size: 13px;
+          margin: var(--space-1) 0;
+          font-family: var(--font-body);
+          font-size: var(--text-sm);
+          line-height: var(--leading-relaxed);
         }
 
         .position-tooltip p {
-          max-width: 400px;
+          max-width: 420px;
           white-space: normal;
-          line-height: 1.4;
+          line-height: var(--leading-relaxed);
         }
 
-        /* Animation Performance */
+        /* Enhanced animation performance and accessibility */
         @keyframes slideIn {
-          from { opacity: 0; transform: translateX(12px); }
-          to { opacity: 1; transform: translateX(0); }
+          from {
+            opacity: 0;
+            transform: translateX(16px);
+            filter: blur(2px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+            filter: blur(0);
+          }
         }
 
         @keyframes pulseAlert {
           0%, 100% {
-            box-shadow: 0 0 0 0 rgba(var(--success-rgb, 34, 197, 94), 0.4);
+            box-shadow: 0 0 0 0 rgba(var(--success-rgb, 34, 197, 94), 0.5);
           }
           50% {
-            box-shadow: 0 0 0 8px rgba(var(--success-rgb, 34, 197, 94), 0);
+            box-shadow: 0 0 0 10px rgba(var(--success-rgb, 34, 197, 94), 0);
           }
         }
 
-        /* Accessibility & Performance */
+        /* Accessibility and performance optimizations */
         @media (prefers-reduced-motion: reduce) {
           .table-row,
           .stage-badge,
           .comp-value,
-          .alert-item {
+          .alert-item,
+          .checkbox-label,
+          .stage-option {
             transition: none;
             animation: none;
           }
@@ -1160,6 +1225,22 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
           .tasks-progress-fill::after {
             animation: none;
           }
+
+          .table-row::before {
+            display: none;
+          }
+        }
+
+        /* Enhanced focus states for better accessibility */
+        .table-row:focus-visible {
+          outline: 3px solid var(--primary);
+          outline-offset: 2px;
+        }
+
+        .stage-badge:focus-visible,
+        .comp-value:focus-visible {
+          outline: 2px solid var(--primary);
+          outline-offset: 2px;
         }
       `}</style>
     </div>
