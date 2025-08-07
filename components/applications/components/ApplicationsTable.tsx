@@ -1,12 +1,13 @@
 /**
  * Applications Table Component
- * World-Class Professional Design
+ * World-Class Professional Design with Performance Optimizations
  */
 
-import React from 'react';
+import React, { useMemo, useCallback, useEffect, useState, useRef } from 'react';
 import { ArrowUp, ArrowDown, Loader2 } from 'lucide-react';
 import { Application, ApplicationStage } from '@/types';
 import ApplicationTableRow from './ApplicationTableRow';
+import { usePerformanceMonitor } from '../utils/performanceMonitor';
 
 interface ApplicationsTableProps {
   // Data
@@ -70,16 +71,85 @@ export function ApplicationsTable({
   lastRowRef,
   stagesOrder
 }: ApplicationsTableProps) {
-  const getSortIcon = (column: keyof Application | 'company.name') => {
+  // Performance monitoring
+  const { startMeasurement, endMeasurement, measureScrollPerformance } = usePerformanceMonitor('ApplicationsTable');
+
+  // Simple virtual scrolling for performance
+  const [scrollTop, setScrollTop] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(600);
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  // Calculate visible items with improved performance
+  const ROW_HEIGHT = tableViewDensity === 'compact' ? 48 : tableViewDensity === 'spacious' ? 64 : 56;
+  const OVERSCAN = 3; // Reduced overscan for better performance
+  const VIRTUAL_THRESHOLD = 20; // Lower threshold for more aggressive virtualization
+
+  const visibleRange = useMemo(() => {
+    if (applications.length <= VIRTUAL_THRESHOLD) {
+      // For small datasets, render all
+      return { start: 0, end: applications.length, offset: 0 };
+    }
+
+    const startIndex = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN);
+    const endIndex = Math.min(
+      applications.length,
+      startIndex + Math.ceil(containerHeight / ROW_HEIGHT) + OVERSCAN * 2
+    );
+
+    return {
+      start: startIndex,
+      end: endIndex,
+      offset: startIndex * ROW_HEIGHT
+    };
+  }, [scrollTop, containerHeight, applications.length, ROW_HEIGHT]);
+
+  // Handle scroll with throttling for better performance
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const newScrollTop = e.currentTarget.scrollTop;
+
+    // Only update if scroll changed significantly (reduces re-renders)
+    if (Math.abs(newScrollTop - scrollTop) > ROW_HEIGHT / 4) {
+      setScrollTop(newScrollTop);
+    }
+
+    measureScrollPerformance(() => {
+      // Handle scroll performance measurement
+    });
+  }, [measureScrollPerformance, scrollTop, ROW_HEIGHT]);
+
+  // Measure container height
+  useEffect(() => {
+    if (bodyRef.current) {
+      const resizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          setContainerHeight(entry.contentRect.height);
+        }
+      });
+      resizeObserver.observe(bodyRef.current);
+      return () => resizeObserver.disconnect();
+    }
+  }, []);
+
+  // Start performance measurement on component render
+  useEffect(() => {
+    startMeasurement();
+    return () => {
+      endMeasurement(applications.length);
+    };
+  }, [applications.length, startMeasurement, endMeasurement]);
+
+  // Memoize sort icon computation to prevent unnecessary re-renders
+  const getSortIcon = useCallback((column: keyof Application | 'company.name') => {
     if (sortConfig.column !== column) {
       return <ArrowUp size={12} style={{ opacity: 0.3, transform: 'rotate(0deg)' }} />;
     }
     return sortConfig.direction === 'asc' ?
       <ArrowUp size={12} style={{ color: 'var(--primary)' }} /> :
       <ArrowDown size={12} style={{ color: 'var(--primary)' }} />;
-  };
+  }, [sortConfig.column, sortConfig.direction]);
 
-  const formatColumnHeader = (column: string): string => {
+  // Memoize column header formatting
+  const formatColumnHeader = useCallback((column: string): string => {
     switch (column) {
       case 'company': return 'Company';
       case 'position': return 'Position';
@@ -91,7 +161,44 @@ export function ApplicationsTable({
       case 'bonus': return 'Bonus';
       default: return column.charAt(0).toUpperCase() + column.slice(1);
     }
-  };
+  }, []);
+
+  // Memoize select all checkbox state to prevent unnecessary computations
+  const selectAllState = useMemo(() => ({
+    checked: selectedRows.length === applications.length && applications.length > 0,
+    indeterminate: selectedRows.length > 0 && selectedRows.length < applications.length
+  }), [selectedRows.length, applications.length]);
+
+  // Memoize select all handler to prevent prop drilling re-renders
+  const handleSelectAll = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const allSelected = e.target.checked;
+    applications.forEach(app => {
+      onRowSelect(app.id, allSelected);
+    });
+  }, [applications, onRowSelect]);
+
+  // Memoize column sort handler to prevent re-renders
+  const handleColumnSort = useCallback((column: keyof Application | 'company.name') => {
+    onSort(column);
+  }, [onSort]);
+
+  // Memoize filter change handler
+  const handleFilterChange = useCallback((column: string) => {
+    return (e: React.ChangeEvent<HTMLInputElement>) => {
+      onFilterChange(column, e.target.value);
+    };
+  }, [onFilterChange]);
+
+  // Memoize visible applications to prevent unnecessary re-renders
+  const visibleApplications = useMemo(() => {
+    if (applications.length <= VIRTUAL_THRESHOLD) {
+      return applications;
+    }
+    return applications.slice(visibleRange.start, visibleRange.end);
+  }, [applications, visibleRange.start, visibleRange.end, VIRTUAL_THRESHOLD]);
+
+  // Memoize visible columns for header rendering
+  const memoizedVisibleColumns = useMemo(() => visibleColumns, [visibleColumns]);
 
   if (applications.length === 0 && !isLoading) {
     return (
@@ -116,22 +223,20 @@ export function ApplicationsTable({
             <input
               type="checkbox"
               className="professional-checkbox"
-              checked={selectedRows.length === applications.length && applications.length > 0}
-              onChange={(e) => {
-                const allSelected = e.target.checked;
-                applications.forEach(app => {
-                  onRowSelect(app.id, allSelected);
-                });
+              checked={selectAllState.checked}
+              ref={(el) => {
+                if (el) el.indeterminate = selectAllState.indeterminate;
               }}
+              onChange={handleSelectAll}
             />
           </div>
 
           {/* Column Headers */}
-          {visibleColumns.map(column => (
+          {memoizedVisibleColumns.map(column => (
             <div
               key={column}
               className={`professional-header-cell ${sortConfig.column === column ? 'sorted' : ''}`}
-              onClick={() => onSort(column as keyof Application | 'company.name')}
+              onClick={() => handleColumnSort(column as keyof Application | 'company.name')}
             >
               <div className="header-label">
                 <span className="text-label">
@@ -144,7 +249,7 @@ export function ApplicationsTable({
                 className="minimal-input header-filter"
                 placeholder={`Filter ${formatColumnHeader(column).toLowerCase()}...`}
                 value={columnFilters[column] || ''}
-                onChange={(e) => onFilterChange(column, e.target.value)}
+                onChange={handleFilterChange(column)}
                 onClick={(e) => e.stopPropagation()}
               />
             </div>
@@ -152,30 +257,79 @@ export function ApplicationsTable({
         </div>
 
         {/* Professional Table Body */}
-        <div className="professional-table-body">
-          {applications.map((app, index) => (
-            <ApplicationTableRow
-              key={app.id}
-              application={app}
-              visibleColumns={visibleColumns}
-              isSelected={selectedRows.includes(app.id)}
-              isLastRow={index === applications.length - 1}
-              mounted={mounted}
-              isMobileView={isMobileView}
-              isAutosizeEnabled={isAutosizeEnabled}
-              tableViewDensity={tableViewDensity}
-              inlineEditingId={inlineEditingId}
-              activeStageDropdown={activeStageDropdown}
-              animationDelay={index * 0.05}
-              onSelect={(selected: boolean) => onRowSelect(app.id, selected)}
-              onRowClick={(e: React.MouseEvent) => onRowClick(app.id, e)}
-              onContextMenu={(e: React.MouseEvent) => onContextMenu(app.id, e)}
-              onStageClick={(e: React.MouseEvent) => onStageClick(app.id, e)}
-              onStageChange={(stage: ApplicationStage) => onStageChange(app.id, stage)}
-              stagesOrder={stagesOrder}
-              ref={index === applications.length - 1 ? lastRowRef : null}
-            />
-          ))}
+        <div
+          className="professional-table-body"
+          ref={bodyRef}
+          onScroll={handleScroll}
+          style={{ contain: 'layout style paint' }} // CSS containment for better performance
+        >
+          {applications.length > VIRTUAL_THRESHOLD ? (
+            /* Virtual scrolling for large datasets */
+            <div style={{
+              height: applications.length * ROW_HEIGHT,
+              position: 'relative',
+              contain: 'layout style'
+            }}>
+              <div style={{
+                transform: `translate3d(0, ${visibleRange.offset}px, 0)`, // Use translate3d for GPU acceleration
+                willChange: 'transform' // Hint browser for optimization
+              }}>
+                {visibleApplications.map((app, virtualIndex) => {
+                  const actualIndex = visibleRange.start + virtualIndex;
+                  return (
+                    <ApplicationTableRow
+                      key={`${app.id}-${app.dateApplied}`}
+                      application={app}
+                      visibleColumns={memoizedVisibleColumns}
+                      isSelected={selectedRows.includes(app.id)}
+                      isLastRow={actualIndex === applications.length - 1}
+                      mounted={mounted}
+                      isMobileView={isMobileView}
+                      isAutosizeEnabled={isAutosizeEnabled}
+                      tableViewDensity={tableViewDensity}
+                      inlineEditingId={inlineEditingId}
+                      activeStageDropdown={activeStageDropdown}
+                      animationDelay={0} // Disable staggered animation for virtual rows
+                      onSelect={(selected: boolean) => onRowSelect(app.id, selected)}
+                      onRowClick={(e: React.MouseEvent) => onRowClick(app.id, e)}
+                      onContextMenu={(e: React.MouseEvent) => onContextMenu(app.id, e)}
+                      onStageClick={(e: React.MouseEvent) => onStageClick(app.id, e)}
+                      onStageChange={(stage: ApplicationStage) => onStageChange(app.id, stage)}
+                      stagesOrder={stagesOrder}
+                      ref={actualIndex === applications.length - 1 ? lastRowRef : null}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            /* Regular rendering for small datasets */
+            <div style={{ contain: 'layout style' }}>
+              {applications.map((app, index) => (
+                <ApplicationTableRow
+                  key={`${app.id}-${app.dateApplied}`}
+                  application={app}
+                  visibleColumns={memoizedVisibleColumns}
+                  isSelected={selectedRows.includes(app.id)}
+                  isLastRow={index === applications.length - 1}
+                  mounted={mounted}
+                  isMobileView={isMobileView}
+                  isAutosizeEnabled={isAutosizeEnabled}
+                  tableViewDensity={tableViewDensity}
+                  inlineEditingId={inlineEditingId}
+                  activeStageDropdown={activeStageDropdown}
+                  animationDelay={Math.min(index * 0.01, 0.5)} // Reduced animation delay
+                  onSelect={(selected: boolean) => onRowSelect(app.id, selected)}
+                  onRowClick={(e: React.MouseEvent) => onRowClick(app.id, e)}
+                  onContextMenu={(e: React.MouseEvent) => onContextMenu(app.id, e)}
+                  onStageClick={(e: React.MouseEvent) => onStageClick(app.id, e)}
+                  onStageChange={(stage: ApplicationStage) => onStageChange(app.id, stage)}
+                  stagesOrder={stagesOrder}
+                  ref={index === applications.length - 1 ? lastRowRef : null}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Professional Loading State */}
           {isLoading && (
@@ -432,9 +586,14 @@ export function ApplicationsTable({
 
         .professional-table-body {
           background: var(--background);
-          max-height: calc(100vh - 300px);
+          max-height: 45vh;
           overflow-y: auto;
           overflow-x: hidden;
+          /* Performance optimizations */
+          will-change: scroll-position;
+          transform: translateZ(0); /* Force GPU layer */
+          backface-visibility: hidden;
+          perspective: 1000;
         }
 
         /* ===================================

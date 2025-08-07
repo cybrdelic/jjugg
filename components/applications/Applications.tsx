@@ -4,14 +4,17 @@
  */
 
 'use client';
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useApplicationsLogic } from './hooks/useApplicationsLogic';
 import { ApplicationsHeader } from './components/ApplicationsHeader';
 import { ApplicationsControls } from './components/ApplicationsControls';
 import { ApplicationsTable } from './components/ApplicationsTable';
+import { VirtualizedApplicationsTable } from './components/VirtualizedApplicationsTable';
 import { ApplicationsKanban } from './components/ApplicationsKanban';
 import { ApplicationsContextMenu } from './components/ApplicationsContextMenu';
 import ApplicationDetailDrawer from './ApplicationDetailDrawer';
+import { getAdaptivePerformanceConfig, detectDeviceCapabilities } from './utils/performanceConfig';
+import { usePerformanceMonitor } from './utils/performanceMonitor';
 
 export default function Applications() {
   const {
@@ -88,6 +91,33 @@ export default function Applications() {
     handleStageClick,
     handleExport,
   } = useApplicationsLogic();
+
+  // Determine if we should use virtualization based on dataset size
+  const shouldUseVirtualization = useMemo(() => {
+    return filteredApplications.length > 50; // Use virtualization for datasets > 50 items
+  }, [filteredApplications.length]);
+
+  // Get adaptive performance configuration based on device capabilities and dataset size
+  const performanceConfig = useMemo(() => {
+    const deviceCapabilities = detectDeviceCapabilities();
+    return getAdaptivePerformanceConfig(filteredApplications.length, deviceCapabilities);
+  }, [filteredApplications.length]);
+
+  // Performance monitoring
+  const { startMeasurement, endMeasurement, generateReport } = usePerformanceMonitor('Applications');
+
+  // Monitor component performance
+  useEffect(() => {
+    startMeasurement();
+    return () => {
+      endMeasurement(filteredApplications.length);
+
+      // Log performance report in development
+      if (process.env.NODE_ENV === 'development' && filteredApplications.length > 100) {
+        console.log('Applications Performance Report:', generateReport());
+      }
+    };
+  }, [filteredApplications.length, startMeasurement, endMeasurement, generateReport]);
 
   // Global click handler for closing dropdowns and menus
   useEffect(() => {
@@ -199,6 +229,46 @@ export default function Applications() {
               onDeleteApplication={handleDeleteApplication}
               onToggleShortlist={handleToggleShortlist}
               onOpenDetailModal={handleOpenDetailModal}
+            />
+          ) : false && filteredApplications.length > 50 ? (
+            <VirtualizedApplicationsTable
+              applications={filteredApplications}
+              visibleColumns={visibleColumns}
+              sortConfig={sortConfig}
+              selectedRows={selectedRows}
+              columnFilters={columnFilters}
+              isAutosizeEnabled={isAutosizeEnabled}
+              tableViewDensity={tableViewDensity}
+              isMobileView={isMobileView}
+              mounted={mounted}
+              inlineEditingId={inlineEditingId}
+              activeStageDropdown={activeStageDropdown}
+              isLoading={isLoading}
+              hasMore={hasMore}
+              stagesOrder={stagesOrder}
+              tableRef={tableRef}
+              lastRowRef={lastRowRef}
+              enableVirtualization={true}
+              itemHeight={tableViewDensity === 'compact' ? 40 : tableViewDensity === 'spacious' ? 60 : 48}
+              overscan={10}
+              onSort={(column) => {
+                const newDirection = sortConfig.column === column && sortConfig.direction === 'asc' ? 'desc' : 'asc';
+                setSortConfig({ column, direction: newDirection });
+              }}
+              onFilterChange={(column, value) => {
+                setColumnFilters({ ...columnFilters, [column]: value });
+              }}
+              onRowSelect={(appId, selected) => {
+                if (selected) {
+                  setSelectedRows([...selectedRows, appId]);
+                } else {
+                  setSelectedRows(selectedRows.filter(id => id !== appId));
+                }
+              }}
+              onRowClick={handleRowClick}
+              onContextMenu={handleContextMenu}
+              onStageClick={handleStageClick}
+              onStageChange={handleStageChange}
             />
           ) : (
             <ApplicationsTable

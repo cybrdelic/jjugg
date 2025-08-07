@@ -261,10 +261,12 @@ export default function ModernNavbar({
           left: 0;
           right: 0;
           height: var(--navbar-height);
-          background: var(--background);
+          background: var(--glass-bg);
           border-bottom: 1px solid var(--border);
           z-index: 1000;
           transition: all var(--transition);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
         }
 
         .navbar-container {
@@ -323,11 +325,40 @@ export default function ModernNavbar({
           color: var(--text-inverse);
           font-size: var(--font-size-md);
           font-weight: var(--font-weight-bold);
+          transition: all var(--duration-300) var(--ease-magnetic);
+          box-shadow: 0 0 0 1px var(--primary-alpha-20);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .logo-icon:after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
+          transform: translateX(-100%);
+          transition: transform 0.6s ease;
+        }
+
+        .navbar-logo:hover .logo-icon {
+          transform: scale(1.05);
+          box-shadow:
+            0 0 0 1px var(--primary-alpha-20),
+            0 4px 12px var(--primary-alpha-20);
+        }
+
+        .navbar-logo:hover .logo-icon:after {
+          transform: translateX(100%);
         }
 
         .logo-text {
           font-size: var(--font-size-md);
           letter-spacing: var(--letter-spacing);
+          transition: color var(--duration-150) var(--ease-out);
+        }
+
+        .navbar-logo:hover .logo-text {
+          color: var(--primary);
         }
 
         /* Desktop Navigation */
@@ -354,19 +385,42 @@ export default function ModernNavbar({
           font-size: var(--font-size-sm);
           font-weight: var(--font-weight-medium);
           cursor: pointer;
-          transition: all var(--transition-fast);
+          transition: all var(--duration-200) var(--ease-magnetic);
           white-space: nowrap;
+          overflow: hidden;
+        }
+
+        .nav-item::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: var(--highlight-gradient);
+          opacity: 0;
+          transition: opacity var(--duration-200) var(--ease-magnetic);
+          z-index: 0;
         }
 
         .nav-item:hover {
-          background: var(--hover-bg);
+          background: var(--glass-hover-bg);
           color: var(--text-primary);
+          transform: translateY(-1px);
+        }
+
+        .nav-item:hover::before {
+          opacity: 0.1;
         }
 
         .nav-item.active {
           background: var(--primary);
           color: var(--text-inverse);
-          box-shadow: var(--shadow-sm);
+          box-shadow:
+            0 4px 12px var(--primary-alpha-20),
+            0 0 0 1px var(--primary-alpha-20);
+          transform: translateY(-1px);
+        }
+
+        .nav-item.active::before {
+          opacity: 0.15;
         }
 
         .nav-icon {
@@ -426,19 +480,38 @@ export default function ModernNavbar({
           display: flex;
           align-items: center;
           justify-content: center;
-          background: var(--surface);
+          background: var(--glass-bg);
           border: 1px solid var(--border);
           border-radius: var(--border-radius);
           color: var(--text-secondary);
           cursor: pointer;
-          transition: all var(--transition-fast);
+          transition: all var(--duration-200) var(--ease-magnetic);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          overflow: hidden;
+        }
+
+        .icon-btn::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: var(--highlight-gradient);
+          opacity: 0;
+          transition: opacity var(--duration-200) var(--ease-magnetic);
         }
 
         .icon-btn:hover {
-          background: var(--hover-bg);
+          background: var(--glass-hover-bg);
           color: var(--text-primary);
-          border-color: var(--border-strong);
-          transform: translateY(-1px);
+          border-color: var(--border-focus);
+          transform: translateY(-2px) scale(1.05);
+          box-shadow:
+            0 4px 12px var(--shadow-color),
+            0 0 0 1px var(--border-focus);
+        }
+
+        .icon-btn:hover::before {
+          opacity: 0.1;
         }
 
         .badge {
@@ -470,23 +543,34 @@ export default function ModernNavbar({
           top: calc(100% + 8px);
           right: 0;
           min-width: 240px;
-          background: var(--surface);
-          border: 1px solid var(--border);
+          background: var(--glass-bg);
+          border: 1px solid var(--border-focus);
           border-radius: var(--border-radius-lg);
-          box-shadow: var(--shadow-lg);
+          box-shadow:
+            0 8px 24px var(--shadow-color),
+            0 2px 8px var(--highlight-primary-alpha);
           overflow: hidden;
           z-index: 1001;
-          animation: dropdownIn 0.2s ease;
+          animation: dropdownIn 0.3s var(--ease-magnetic);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
         }
 
         @keyframes dropdownIn {
-          from {
+          0% {
             opacity: 0;
-            transform: translateY(-8px);
+            transform: translateY(-12px) scale(0.98);
+            filter: blur(8px);
           }
-          to {
+          50% {
+            opacity: 0.5;
+            transform: translateY(-6px) scale(0.99);
+            filter: blur(4px);
+          }
+          100% {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateY(0) scale(1);
+            filter: blur(0);
           }
         }
 

@@ -1,12 +1,37 @@
 /**
  * Central business logic hook for Applications component
- * Manages all application state, operations, and side effects
+ * Manages all application state, operations, and side effects with performance optimizations
  */
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Application, ApplicationStage, StatusUpdate } from '@/types';
 import { useAppData } from '@/contexts/AppDataContext';
 import { createErrorHandler, ApplicationsErrorHandler } from '../utils/errorHandler';
+
+// Custom hook for debouncing values to improve performance
+function useDebounce<T>(value: T, delay: number): T {
+    const [debouncedValue, setDebouncedValue] = useState<T>(value);
+    const isFirstRender = useRef(true);
+
+    useEffect(() => {
+        // On first render, set the value immediately to avoid empty state
+        if (isFirstRender.current) {
+            setDebouncedValue(value);
+            isFirstRender.current = false;
+            return;
+        }
+
+        const handler = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [value, delay]);
+
+    return debouncedValue;
+}
 
 export interface ApplicationsState {
     // UI State
@@ -226,15 +251,19 @@ export function useApplicationsLogic(): ApplicationsHookReturn {
         return () => window.removeEventListener('resize', checkMobileView);
     }, [loadInitialApplications, checkMobileView, updateState]);
 
-    // Filtered applications computation
+    // Debounce search term and column filters for better performance
+    const debouncedSearchTerm = useDebounce(state.searchTerm, 300);
+    const debouncedColumnFilters = useDebounce(state.columnFilters, 300);
+
+    // Filtered applications computation with performance optimizations
     const filteredApplications = useMemo(() => {
         if (!applicationsData) return [];
 
         let filtered = [...applicationsData];
 
-        // Apply search filter
-        if (state.searchTerm) {
-            const search = state.searchTerm.toLowerCase();
+        // Apply search filter (debounced)
+        if (debouncedSearchTerm) {
+            const search = debouncedSearchTerm.toLowerCase();
             filtered = filtered.filter((app: Application) =>
                 app.position.toLowerCase().includes(search) ||
                 app.company.name.toLowerCase().includes(search) ||
@@ -243,8 +272,8 @@ export function useApplicationsLogic(): ApplicationsHookReturn {
             );
         }
 
-        // Apply column filters
-        Object.entries(state.columnFilters).forEach(([column, filterValue]) => {
+        // Apply column filters (debounced)
+        Object.entries(debouncedColumnFilters).forEach(([column, filterValue]) => {
             if (filterValue) {
                 filtered = filtered.filter((app: Application) => {
                     let value: string | undefined;
@@ -322,7 +351,16 @@ export function useApplicationsLogic(): ApplicationsHookReturn {
         });
 
         return filtered;
-    }, [applicationsData, state.searchTerm, state.columnFilters, state.quickFilters, state.sortConfig]);
+    }, [applicationsData, debouncedSearchTerm, debouncedColumnFilters, state.quickFilters, state.sortConfig]);
+
+    // Debug logging for filtered applications
+    useEffect(() => {
+        console.log('useApplicationsLogic - applicationsData:', applicationsData?.length || 0, applicationsData);
+        console.log('useApplicationsLogic - filteredApplications:', filteredApplications.length, filteredApplications);
+        console.log('useApplicationsLogic - debouncedSearchTerm:', debouncedSearchTerm);
+        console.log('useApplicationsLogic - debouncedColumnFilters:', debouncedColumnFilters);
+        console.log('useApplicationsLogic - quickFilters:', state.quickFilters);
+    }, [applicationsData, filteredApplications, debouncedSearchTerm, debouncedColumnFilters, state.quickFilters]);
 
     // Computed values
     const applicationStats = useMemo(() => ({

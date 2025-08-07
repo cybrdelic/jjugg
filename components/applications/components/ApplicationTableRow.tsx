@@ -1,9 +1,9 @@
 /**
  * Application Table Row Component
- * Individual row in the applications table
+ * Individual row in the applications table with performance optimizations
  */
 
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useMemo, useCallback } from 'react';
 import {
   Clock, CheckSquare, Briefcase, MapPin, DollarSign,
   Users, ArrowUp, ArrowDown, User
@@ -56,59 +56,80 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
 }, ref) => {
   const { applicationStage } = useThemeColors();
 
-  const formatDate = (date: Date): string =>
-    new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
+  // Memoize expensive computations
+  const formatDate = useCallback((date: Date): string =>
+    new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date), []);
 
-  const getStageColor = (stage: ApplicationStage): string => {
+  const getStageColor = useCallback((stage: ApplicationStage): string => {
     return applicationStage.getColor(stage);
-  };
+  }, [applicationStage]);
 
-  const getStageBackgroundColor = (stage: ApplicationStage): string => {
+  const getStageBackgroundColor = useCallback((stage: ApplicationStage): string => {
     return applicationStage.getBackgroundColor(stage);
-  };
+  }, [applicationStage]);
 
-  const getStageLabel = (stage: ApplicationStage): string =>
-    stage.charAt(0).toUpperCase() + stage.slice(1);
+  const getStageLabel = useCallback((stage: ApplicationStage): string =>
+    stage.charAt(0).toUpperCase() + stage.slice(1), []);
 
-  const calculateStageProgress = (stage: ApplicationStage): number => {
+  const calculateStageProgress = useCallback((stage: ApplicationStage): number => {
     return Math.min(((stagesOrder.indexOf(stage) + 1) / stagesOrder.length) * 100, 100);
-  };
+  }, [stagesOrder]);
 
-  const getNextInterview = () => {
+  // Memoize next interview computation
+  const nextInterview = useMemo(() => {
     if (!application.interviews) return null;
     const upcoming = application.interviews
       .filter(i => !i.completed && i.date > new Date())
       .sort((a, b) => a.date.getTime() - b.date.getTime());
     return upcoming[0] || null;
-  };
+  }, [application.interviews]);
 
-  const getPendingTasks = () => {
+  // Memoize pending tasks computation
+  const pendingTasks = useMemo(() => {
     if (!application.tasks) return [];
     return application.tasks.filter(t => !t.completed && t.dueDate && new Date(t.dueDate) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
-  };
+  }, [application.tasks]);
+
+  // Memoize handlers to prevent re-renders
+  const handleSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    onSelect(e.target.checked);
+  }, [onSelect]);
+
+  const handleCheckboxClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+  }, []);
+
+  // Memoize CSS classes for better performance
+  const cssClasses = useMemo(() =>
+    `table-row ${isSelected ? 'selected' : ''} ${mounted ? 'animate-in' : ''} ${isMobileView ? 'mobile-view' : ''} ${isAutosizeEnabled ? 'autosize' : ''} density-${tableViewDensity} ${inlineEditingId === application.id ? 'editing' : ''}`,
+    [isSelected, mounted, isMobileView, isAutosizeEnabled, tableViewDensity, inlineEditingId, application.id]
+  );
+
+  // Memoize style object
+  const rowStyle = useMemo(() => ({
+    animationDelay: `${animationDelay}s`
+  }), [animationDelay]);
 
   return (
     <div
       ref={ref}
-      className={`table-row ${isSelected ? 'selected' : ''} ${mounted ? 'animate-in' : ''} ${isMobileView ? 'mobile-view' : ''} ${isAutosizeEnabled ? 'autosize' : ''} density-${tableViewDensity} ${inlineEditingId === application.id ? 'editing' : ''}`}
-      style={{ animationDelay: `${animationDelay}s` }}
+      className={cssClasses}
+      style={rowStyle}
       onClick={onRowClick}
       onContextMenu={onContextMenu}
     >
       {/* Checkbox */}
-      <div className="checkbox-wrapper" onClick={(e) => e.stopPropagation()}>
+      <div className="checkbox-wrapper" onClick={handleCheckboxClick}>
         <input
           type="checkbox"
           className="custom-checkbox"
           checked={isSelected}
-          onChange={(e) => {
-            e.stopPropagation();
-            onSelect(e.target.checked);
-          }}
-          onClick={(e) => e.stopPropagation()}
+          onChange={handleSelect}
+          onClick={handleCheckboxClick}
           id={`checkbox-${application.id}`}
         />
-        <label htmlFor={`checkbox-${application.id}`} className="checkbox-label" onClick={(e) => e.stopPropagation()}></label>
+        <label htmlFor={`checkbox-${application.id}`} className="checkbox-label" onClick={handleCheckboxClick}></label>
       </div>
 
       {/* Company */}
@@ -243,16 +264,16 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
       {visibleColumns.includes('alert') && (
         <div className="cell" data-label="Alerts">
           <div className="alerts-cell">
-            {getNextInterview() && (
+            {nextInterview && (
               <div className="alert-item interview-alert">
                 <Clock size={14} className="alert-icon" />
-                <span>{formatDate(getNextInterview()!.date)}</span>
+                <span>{formatDate(nextInterview.date)}</span>
               </div>
             )}
-            {getPendingTasks().length > 0 && (
+            {pendingTasks.length > 0 && (
               <div className="alert-item task-alert">
                 <CheckSquare size={14} className="alert-icon" />
-                <span>{getPendingTasks().length} due soon</span>
+                <span>{pendingTasks.length} due soon</span>
               </div>
             )}
             {application.stage === 'offer' && (
