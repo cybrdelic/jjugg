@@ -19,7 +19,18 @@
     "analyze-components": "node scripts/analyze-components.js",
     "analyze-components:top10": "node scripts/analyze-components.js -- --top 10",
     "analyze-components:large": "node scripts/analyze-components.js -- --min-lines 100 --top 15",
-    "analyze-components:feature-flag-activated": "node scripts/analyze-components.js -- --feature-flag-activated"
+    "analyze-components:feature-flag-activated": "node scripts/analyze-components.js -- --feature-flag-activated",
+    "apps:stats": "node scripts/manage-apps.js stats",
+    "apps:list": "node scripts/manage-apps.js list",
+    "apps:list:active": "node scripts/manage-apps.js list --status=active",
+    "apps:list:shortlisted": "node scripts/manage-apps.js list --status=shortlisted",
+    "apps:list:archived": "node scripts/manage-apps.js list --status=archived",
+    "apps:archive": "node scripts/manage-apps.js archive",
+    "apps:unarchive": "node scripts/manage-apps.js unarchive",
+    "apps:shortlist": "node scripts/manage-apps.js shortlist",
+    "apps:unshortlist": "node scripts/manage-apps.js unshortlist",
+    "apps:export:json": "curl -s http://localhost:3001/api/admin/export > applications-export.json && echo 'Exported to applications-export.json'",
+    "apps:export:csv": "curl -s http://localhost:3001/api/admin/export?format=csv > applications-export.csv && echo 'Exported to applications-export.csv'"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -35,6 +46,7 @@
     "react-pdf": "^9.2.1"
   },
   "devDependencies": {
+    "@faker-js/faker": "^9.9.0",
     "@tailwindcss/aspect-ratio": "^0.4.2",
     "@tailwindcss/container-queries": "^0.1.1",
     "@tailwindcss/forms": "^0.5.10",

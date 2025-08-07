@@ -1,177 +1,175 @@
+import { faker } from '@faker-js/faker';
 import { db } from './connection';
 
 export const seedData = () => {
-    console.log('🌱 Starting database seeding...');
+    console.log('🌱 Starting database seeding with Faker.js...');
+
+    // Set seed for reproducible data
+    faker.seed(12345);
 
     // Insert users
     const insertUser = db.prepare(`
-    INSERT INTO users (name, email, avatar)
-    VALUES (?, ?, ?)
-  `);
+        INSERT INTO users (name, email, avatar)
+        VALUES (?, ?, ?)
+    `);
 
     const userId = insertUser.run(
         'Alex Foster',
-        'alex.foster@example.com',
+        `alex.foster.${Date.now()}@example.com`,
         '/avatar.jpg'
     ).lastInsertRowid;
 
-    // Insert companies
+    // Generate 75 companies with realistic data
     const insertCompany = db.prepare(`
-    INSERT INTO companies (name, logo, industry, website, description)
-    VALUES (?, ?, ?, ?, ?)
-  `);
+        INSERT INTO companies (name, logo, industry, website, description)
+        VALUES (?, ?, ?, ?, ?)
+    `);
 
-    const companies = [
-        {
-            name: 'TechFlow Inc',
-            logo: '/company-logos/techflow.png',
-            industry: 'Technology',
-            website: 'https://techflow.com',
-            description: 'A leading software development company'
-        },
-        {
-            name: 'DataVision Analytics',
-            logo: '/company-logos/datavision.png',
-            industry: 'Data Analytics',
-            website: 'https://datavision.com',
-            description: 'Advanced data analytics and machine learning solutions'
-        },
-        {
-            name: 'CloudSync Solutions',
-            logo: '/company-logos/cloudsync.png',
-            industry: 'Cloud Computing',
-            website: 'https://cloudsync.com',
-            description: 'Cloud infrastructure and DevOps solutions'
-        },
-        {
-            name: 'InnovateLab',
-            logo: '/company-logos/innovatelab.png',
-            industry: 'Research & Development',
-            website: 'https://innovatelab.com',
-            description: 'Innovation laboratory for emerging technologies'
-        },
-        {
-            name: 'SecureNet Corp',
-            logo: '/company-logos/securenet.png',
-            industry: 'Cybersecurity',
-            website: 'https://securenet.com',
-            description: 'Enterprise cybersecurity solutions'
-        }
+    const industries = [
+        'Technology', 'Healthcare', 'Finance', 'E-commerce', 'Gaming',
+        'SaaS', 'Fintech', 'Biotech', 'AI/ML', 'Cybersecurity',
+        'Cloud Computing', 'Data Analytics', 'EdTech', 'Marketing',
+        'Manufacturing', 'Consulting', 'Media', 'Real Estate',
+        'Transportation', 'Energy', 'Retail', 'Entertainment'
     ];
 
-    const companyIds = companies.map(company => {
-        return insertCompany.run(
+    const companies = [];
+    const companyIds = [];
+
+    for (let i = 0; i < 75; i++) {
+        const industry = faker.helpers.arrayElement(industries);
+        const companyName = faker.company.name();
+        const company = {
+            name: companyName,
+            logo: `/company-logos/${faker.lorem.slug()}.png`,
+            industry,
+            website: `https://${faker.internet.domainName()}`,
+            description: faker.company.catchPhrase() + '. ' + faker.lorem.sentence()
+        };
+
+        companies.push(company);
+        const companyId = insertCompany.run(
             company.name,
             company.logo,
             company.industry,
             company.website,
             company.description
         ).lastInsertRowid;
-    });
+        companyIds.push(companyId);
+    }
 
-    // Insert applications
+    // Generate 250 applications across different stages
     const insertApplication = db.prepare(`
-    INSERT INTO applications (user_id, company_id, position, stage, date_applied, salary_range, notes)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `);
+        INSERT INTO applications (user_id, company_id, position, stage, date_applied, salary_range, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
 
-    const applications = [
-        {
-            companyIndex: 0,
-            position: 'Senior Full Stack Developer',
-            stage: 'interview',
-            dateApplied: '2024-01-15',
-            salaryRange: '$120k - $150k',
-            notes: 'Excellent company culture, remote-first approach'
-        },
-        {
-            companyIndex: 1,
-            position: 'Data Scientist',
-            stage: 'screening',
-            dateApplied: '2024-01-20',
-            salaryRange: '$110k - $140k',
-            notes: 'Strong focus on ML and AI projects'
-        },
-        {
-            companyIndex: 2,
-            position: 'DevOps Engineer',
-            stage: 'applied',
-            dateApplied: '2024-01-25',
-            salaryRange: '$105k - $135k',
-            notes: 'AWS and Kubernetes heavy environment'
-        },
-        {
-            companyIndex: 3,
-            position: 'Frontend Developer',
-            stage: 'offer',
-            dateApplied: '2024-01-10',
-            salaryRange: '$100k - $125k',
-            notes: 'React and TypeScript focused role'
-        },
-        {
-            companyIndex: 4,
-            position: 'Security Engineer',
-            stage: 'rejected',
-            dateApplied: '2024-01-05',
-            salaryRange: '$115k - $145k',
-            notes: 'Required more cybersecurity experience'
-        }
+    const stages = ['applied', 'screening', 'interview', 'offer', 'rejected'];
+    const techPositions = [
+        'Senior Software Engineer', 'Full Stack Developer', 'Frontend Developer',
+        'Backend Developer', 'DevOps Engineer', 'Data Scientist', 'ML Engineer',
+        'Product Manager', 'Engineering Manager', 'Staff Engineer', 'Principal Engineer',
+        'Solutions Architect', 'Security Engineer', 'Mobile Developer', 'QA Engineer',
+        'Platform Engineer', 'Site Reliability Engineer', 'Data Engineer', 'Research Scientist',
+        'Technical Lead', 'Engineering Director', 'CTO', 'VP of Engineering'
     ];
 
-    const applicationIds = applications.map(app => {
-        return insertApplication.run(
+    const applications = [];
+    const applicationIds = [];
+
+    for (let i = 0; i < 250; i++) {
+        const companyId = faker.helpers.arrayElement(companyIds);
+        const position = faker.helpers.arrayElement(techPositions);
+        const stage = faker.helpers.arrayElement(stages);
+        const salaryMin = faker.number.int({ min: 80, max: 200 });
+        const salaryMax = salaryMin + faker.number.int({ min: 20, max: 50 });
+        const dateApplied = faker.date.between({
+            from: '2023-09-01',
+            to: '2024-01-31'
+        }).toISOString().split('T')[0];
+
+        const notes = faker.helpers.arrayElements([
+            'Great company culture mentioned in reviews',
+            'Strong technical team and growth opportunities',
+            'Remote-first company with flexible hours',
+            'Competitive benefits and equity package',
+            'Fast-growing startup with innovative products',
+            'Established company with stable technology stack',
+            'Excellent learning and development programs',
+            'Strong engineering practices and code quality',
+            'Interesting technical challenges and scale',
+            'Good work-life balance according to Glassdoor'
+        ], { min: 1, max: 3 }).join('. ');
+
+        const application = {
             userId,
-            companyIds[app.companyIndex],
-            app.position,
-            app.stage,
-            app.dateApplied,
-            app.salaryRange,
-            app.notes
+            companyId,
+            position,
+            stage,
+            dateApplied,
+            salaryRange: `$${salaryMin}k - $${salaryMax}k`,
+            notes
+        };
+
+        applications.push(application);
+        const applicationId = insertApplication.run(
+            application.userId,
+            application.companyId,
+            application.position,
+            application.stage,
+            application.dateApplied,
+            application.salaryRange,
+            application.notes
         ).lastInsertRowid;
-    });
+        applicationIds.push(applicationId);
+    }
 
-    // Insert interviews
+    // Generate interviews for applications in interview stages
     const insertInterview = db.prepare(`
-    INSERT INTO interviews (application_id, type, scheduled_date, duration, interviewer_name, interviewer_role, notes, outcome)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `);
+        INSERT INTO interviews (application_id, type, scheduled_date, duration, interviewer_name, interviewer_role, notes, outcome)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
 
-    const interviews = [
-        {
-            applicationIndex: 0,
-            type: 'technical',
-            scheduledDate: '2024-01-22 14:00:00',
-            duration: 90,
-            interviewerName: 'Sarah Johnson',
-            interviewerRole: 'Senior Engineering Manager',
-            notes: 'Technical coding interview focusing on React and Node.js',
-            outcome: 'passed'
-        },
-        {
-            applicationIndex: 0,
-            type: 'behavioral',
-            scheduledDate: '2024-01-25 10:00:00',
-            duration: 60,
-            interviewerName: 'Mike Chen',
-            interviewerRole: 'VP of Engineering',
-            notes: 'Culture fit and leadership discussion',
-            outcome: 'pending'
-        },
-        {
-            applicationIndex: 1,
-            type: 'phone',
-            scheduledDate: '2024-01-23 15:30:00',
-            duration: 45,
-            interviewerName: 'Dr. Lisa Park',
-            interviewerRole: 'Lead Data Scientist',
-            notes: 'Initial screening for data science role',
-            outcome: 'passed'
-        }
+    const interviewTypes = ['phone', 'video', 'onsite', 'technical', 'behavioral'];
+    const interviewRoles = [
+        'Engineering Manager', 'Senior Engineer', 'Tech Lead', 'VP of Engineering',
+        'HR Manager', 'Product Manager', 'Architect', 'Director of Engineering',
+        'Principal Engineer', 'Team Lead', 'CTO', 'Hiring Manager'
     ];
+    const outcomes = ['passed', 'failed', 'pending', 'cancelled'];
 
-    interviews.forEach(interview => {
+    const interviewApplications = applications.filter(app =>
+        ['screening', 'interview', 'offer'].includes(app.stage)
+    );
+
+    const interviews = [];
+    for (let i = 0; i < Math.min(400, interviewApplications.length * 2); i++) {
+        const application = faker.helpers.arrayElement(interviewApplications);
+        const applicationIndex = applications.indexOf(application);
+        const interviewType = faker.helpers.arrayElement(interviewTypes);
+        const duration = interviewType === 'phone' ?
+            faker.number.int({ min: 30, max: 45 }) :
+            faker.number.int({ min: 45, max: 120 });
+
+        const scheduledDate = faker.date.between({
+            from: application.dateApplied,
+            to: '2024-02-15'
+        });
+
+        const interview = {
+            applicationId: applicationIds[applicationIndex],
+            type: interviewType,
+            scheduledDate: scheduledDate.toISOString().replace('T', ' ').substring(0, 19),
+            duration,
+            interviewerName: faker.person.fullName(),
+            interviewerRole: faker.helpers.arrayElement(interviewRoles),
+            notes: `${interviewType} interview covering ${faker.lorem.sentence()}`,
+            outcome: faker.helpers.arrayElement(outcomes)
+        };
+
+        interviews.push(interview);
         insertInterview.run(
-            applicationIds[interview.applicationIndex],
+            interview.applicationId,
             interview.type,
             interview.scheduledDate,
             interview.duration,
@@ -180,145 +178,152 @@ export const seedData = () => {
             interview.notes,
             interview.outcome
         );
-    });
+    }
 
-    // Insert activities
+    // Generate activities
     const insertActivity = db.prepare(`
-    INSERT INTO activities (user_id, application_id, type, title, description, priority, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `);
+        INSERT INTO activities (user_id, application_id, type, title, description, priority, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
 
-    const activities = [
-        {
-            applicationIndex: 0,
-            type: 'interview',
-            title: 'Technical Interview with TechFlow',
-            description: 'Completed technical coding interview',
-            priority: 'high',
-            status: 'completed'
-        },
-        {
-            applicationIndex: 1,
-            type: 'application',
-            title: 'Applied to DataVision Analytics',
-            description: 'Submitted application for Data Scientist position',
-            priority: 'medium',
-            status: 'completed'
-        },
-        {
-            applicationIndex: 2,
-            type: 'follow_up',
-            title: 'Follow up on CloudSync application',
-            description: 'Send follow-up email to HR department',
-            priority: 'medium',
-            status: 'pending'
-        },
-        {
-            applicationIndex: null,
-            type: 'network',
-            title: 'LinkedIn networking',
-            description: 'Connect with 5 professionals in target companies',
-            priority: 'low',
-            status: 'pending'
-        }
-    ];
+    const activityTypes = ['application', 'interview', 'network', 'follow_up', 'offer', 'rejection'];
+    const priorities = ['low', 'medium', 'high'];
+    const statuses = ['pending', 'completed', 'cancelled'];
 
-    activities.forEach(activity => {
-        insertActivity.run(
+    const activities = [];
+    for (let i = 0; i < 300; i++) {
+        const shouldHaveApplication = faker.datatype.boolean({ probability: 0.7 });
+        const applicationId = shouldHaveApplication ?
+            faker.helpers.arrayElement(applicationIds) : null;
+
+        const activityType = faker.helpers.arrayElement(activityTypes);
+        const priority = faker.helpers.arrayElement(priorities);
+        const status = faker.helpers.arrayElement(statuses);
+
+        const titles: Record<string, () => string> = {
+            application: () => `Applied to ${faker.company.name()}`,
+            interview: () => `${faker.helpers.arrayElement(['Technical', 'Behavioral', 'Phone'])} Interview`,
+            follow_up: () => `Follow up on ${faker.company.name()} application`,
+            network: () => `Connect with ${faker.person.jobTitle()} at ${faker.company.name()}`,
+            offer: () => `Received offer from ${faker.company.name()}`,
+            rejection: () => `Rejection from ${faker.company.name()}`
+        };
+
+        const activity = {
             userId,
-            activity.applicationIndex !== null ? applicationIds[activity.applicationIndex] : null,
+            applicationId,
+            type: activityType,
+            title: titles[activityType](),
+            description: faker.lorem.sentence(),
+            priority,
+            status
+        };
+
+        activities.push(activity);
+        insertActivity.run(
+            activity.userId,
+            activity.applicationId,
             activity.type,
             activity.title,
             activity.description,
             activity.priority,
             activity.status
         );
-    });
+    }
 
-    // Insert events/reminders
+    // Generate events/reminders
     const insertEvent = db.prepare(`
-    INSERT INTO events (user_id, application_id, title, description, event_date, event_type, is_completed)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `);
+        INSERT INTO events (user_id, application_id, title, description, event_date, event_type, is_completed)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
 
-    const events = [
-        {
-            applicationIndex: 0,
-            title: 'Final Interview with TechFlow',
-            description: 'Final round interview with VP of Engineering',
-            eventDate: '2024-01-25 10:00:00',
-            eventType: 'interview',
-            isCompleted: false
-        },
-        {
-            applicationIndex: 1,
-            title: 'Follow up on DataVision application',
-            description: 'Send thank you email after phone screening',
-            eventDate: '2024-01-24 09:00:00',
-            eventType: 'follow_up',
-            isCompleted: false
-        },
-        {
-            applicationIndex: 2,
-            title: 'CloudSync application deadline',
-            description: 'Application review period ends',
-            eventDate: '2024-01-30 23:59:00',
-            eventType: 'deadline',
-            isCompleted: false
-        }
-    ];
+    const eventTypes = ['interview', 'follow_up', 'deadline', 'networking', 'other'];
+    const events = [];
 
-    events.forEach(event => {
-        insertEvent.run(
+    for (let i = 0; i < 150; i++) {
+        const shouldHaveApplication = faker.datatype.boolean({ probability: 0.8 });
+        const applicationId = shouldHaveApplication ?
+            faker.helpers.arrayElement(applicationIds) : null;
+
+        const eventType = faker.helpers.arrayElement(eventTypes);
+        const eventDate = faker.date.between({
+            from: '2024-01-01',
+            to: '2024-03-31'
+        });
+        const isCompleted = eventDate < new Date() ? faker.datatype.boolean() : false;
+
+        const eventTitles: Record<string, () => string> = {
+            interview: () => `${faker.helpers.arrayElement(['Phone', 'Technical', 'Behavioral'])} Interview`,
+            follow_up: () => `Follow up with ${faker.person.fullName()}`,
+            deadline: () => `Application deadline for ${faker.company.name()}`,
+            networking: () => `Coffee chat with ${faker.person.fullName()}`,
+            other: () => `${faker.lorem.words(3)}`
+        };
+
+        const event = {
             userId,
-            event.applicationIndex !== null ? applicationIds[event.applicationIndex] : null,
+            applicationId,
+            title: eventTitles[eventType](),
+            description: faker.lorem.sentence(),
+            eventDate: eventDate.toISOString().replace('T', ' ').substring(0, 19),
+            eventType,
+            isCompleted
+        };
+
+        events.push(event);
+        insertEvent.run(
+            event.userId,
+            event.applicationId,
             event.title,
             event.description,
             event.eventDate,
             event.eventType,
             event.isCompleted ? 1 : 0
         );
-    });
+    }
 
-    // Insert goals
+    // Generate goals
     const insertGoal = db.prepare(`
-    INSERT INTO goals (user_id, title, description, target_value, current_value, target_date, category, is_completed)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `);
+        INSERT INTO goals (user_id, title, description, target_value, current_value, target_date, category, is_completed)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
 
-    const goals = [
-        {
-            title: 'Apply to 20 companies this month',
-            description: 'Submit high-quality applications to target companies',
-            targetValue: 20,
-            currentValue: 5,
-            targetDate: '2024-01-31',
-            category: 'applications',
-            isCompleted: false
-        },
-        {
-            title: 'Complete 10 technical interviews',
-            description: 'Successfully complete technical interview rounds',
-            targetValue: 10,
-            currentValue: 3,
-            targetDate: '2024-02-29',
-            category: 'interviews',
-            isCompleted: false
-        },
-        {
-            title: 'Build network of 50 connections',
-            description: 'Connect with professionals in target industry',
-            targetValue: 50,
-            currentValue: 15,
-            targetDate: '2024-03-31',
-            category: 'networking',
-            isCompleted: false
-        }
-    ];
+    const goalCategories = ['applications', 'interviews', 'networking', 'skills', 'other'];
+    const goals = [];
 
-    goals.forEach(goal => {
-        insertGoal.run(
+    for (let i = 0; i < 25; i++) {
+        const category = faker.helpers.arrayElement(goalCategories);
+        const targetValue = faker.number.int({ min: 5, max: 100 });
+        const currentValue = faker.number.int({ min: 0, max: targetValue });
+        const isCompleted = currentValue >= targetValue;
+
+        const targetDate = faker.date.between({
+            from: '2024-02-01',
+            to: '2024-06-30'
+        }).toISOString().split('T')[0];
+
+        const goalTitles: Record<string, () => string> = {
+            applications: () => `Apply to ${targetValue} companies`,
+            interviews: () => `Complete ${targetValue} interviews`,
+            networking: () => `Connect with ${targetValue} professionals`,
+            skills: () => `Learn ${targetValue} new technologies`,
+            other: () => `Complete ${targetValue} job search tasks`
+        };
+
+        const goal = {
             userId,
+            title: goalTitles[category](),
+            description: faker.lorem.sentence(),
+            targetValue,
+            currentValue,
+            targetDate,
+            category,
+            isCompleted
+        };
+
+        goals.push(goal);
+        insertGoal.run(
+            goal.userId,
             goal.title,
             goal.description,
             goal.targetValue,
@@ -327,48 +332,39 @@ export const seedData = () => {
             goal.category,
             goal.isCompleted ? 1 : 0
         );
-    });
+    }
 
-    // Insert contacts
+    // Generate contacts
     const insertContact = db.prepare(`
-    INSERT INTO contacts (user_id, company_id, name, role, email, linkedin, notes, relationship)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `);
+        INSERT INTO contacts (user_id, company_id, name, role, email, linkedin, notes, relationship)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
 
-    const contacts = [
-        {
-            companyIndex: 0,
-            name: 'Sarah Johnson',
-            role: 'Senior Engineering Manager',
-            email: 'sarah.johnson@techflow.com',
-            linkedin: 'https://linkedin.com/in/sarahjohnson',
-            notes: 'Very helpful and responsive, great technical insights',
-            relationship: 'hiring_manager'
-        },
-        {
-            companyIndex: 1,
-            name: 'Dr. Lisa Park',
-            role: 'Lead Data Scientist',
-            email: 'lisa.park@datavision.com',
-            linkedin: 'https://linkedin.com/in/drlisamark',
-            notes: 'Expert in ML/AI, conducted phone screening',
-            relationship: 'hiring_manager'
-        },
-        {
-            companyIndex: 3,
-            name: 'Tom Rodriguez',
-            role: 'Software Engineer',
-            email: 'tom.rodriguez@innovatelab.com',
-            linkedin: 'https://linkedin.com/in/tomrodriguez',
-            notes: 'Former colleague, provided referral',
-            relationship: 'referral'
-        }
-    ];
+    const relationships = ['hiring_manager', 'recruiter', 'employee', 'referral', 'other'];
+    const contacts = [];
 
-    contacts.forEach(contact => {
-        insertContact.run(
+    for (let i = 0; i < 200; i++) {
+        const companyId = faker.helpers.arrayElement(companyIds);
+        const firstName = faker.person.firstName();
+        const lastName = faker.person.lastName();
+        const fullName = `${firstName} ${lastName}`;
+        const relationship = faker.helpers.arrayElement(relationships);
+
+        const contact = {
             userId,
-            companyIds[contact.companyIndex],
+            companyId,
+            name: fullName,
+            role: faker.person.jobTitle(),
+            email: faker.internet.email({ firstName, lastName }),
+            linkedin: `https://linkedin.com/in/${firstName.toLowerCase()}${lastName.toLowerCase()}`,
+            notes: faker.lorem.sentence(),
+            relationship
+        };
+
+        contacts.push(contact);
+        insertContact.run(
+            contact.userId,
+            contact.companyId,
             contact.name,
             contact.role,
             contact.email,
@@ -376,8 +372,16 @@ export const seedData = () => {
             contact.notes,
             contact.relationship
         );
-    });
+    }
 
-    console.log('✅ Database seeded successfully with sample data');
-    console.log(`📊 Created ${applications.length} applications, ${interviews.length} interviews, ${activities.length} activities`);
+    console.log('✅ Database seeded successfully with comprehensive Faker.js data');
+    console.log(`📊 Statistics:`);
+    console.log(`   👥 Companies: ${companies.length}`);
+    console.log(`   📝 Applications: ${applications.length}`);
+    console.log(`   🎤 Interviews: ${interviews.length}`);
+    console.log(`   📋 Activities: ${activities.length}`);
+    console.log(`   📅 Events: ${events.length}`);
+    console.log(`   🎯 Goals: ${goals.length}`);
+    console.log(`   👤 Contacts: ${contacts.length}`);
+    console.log(`   💾 Total records: ${companies.length + applications.length + interviews.length + activities.length + events.length + goals.length + contacts.length + 1}`);
 };
