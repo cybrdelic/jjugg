@@ -46,6 +46,9 @@ interface ApplicationsControlsProps {
   onBulkStageChange: (appIds: string[], newStage: ApplicationStage) => Promise<void>;
   onExport: () => Promise<void>;
   onBulkEdit: (appIds: string[]) => void;
+  onResetFilters?: () => void;
+  activeFilters?: Record<string, string>;
+  onOpenFilterBuilder?: () => void;
 }
 
 export function ApplicationsControls({
@@ -71,7 +74,10 @@ export function ApplicationsControls({
   onBulkDelete,
   onBulkStageChange,
   onExport,
-  onBulkEdit
+  onBulkEdit,
+  onResetFilters,
+  activeFilters = {},
+  onOpenFilterBuilder
 }: ApplicationsControlsProps) {
   const [stageDropdownOpen, setStageDropdownOpen] = useState(false);
   const [dateDropdownOpen, setDateDropdownOpen] = useState(false);
@@ -239,6 +245,35 @@ export function ApplicationsControls({
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Reset Filters Button */}
+          {Object.values(activeFilters).some(value => value) && (
+            <div className="control-section reset-section">
+              <button
+                className="reset-filters-button"
+                onClick={() => onResetFilters?.()}
+                title="Clear all active filters"
+              >
+                <Filter size={14} />
+                <span>Clear Filters</span>
+                <span className="filter-count">
+                  ({Object.values(activeFilters).filter(value => value).length})
+                </span>
+              </button>
+            </div>
+          )}
+
+          {/* Advanced Filter Builder */}
+          <div className="control-section advanced-filters-section">
+            <button
+              className="advanced-filters-button"
+              onClick={() => onOpenFilterBuilder?.()}
+              title="Open advanced filter builder"
+            >
+              <Filter size={14} />
+              <span>Advanced Filters</span>
+            </button>
           </div>
 
           {/* Right side - Quick Actions inline with controls */}
@@ -723,6 +758,110 @@ export function ApplicationsControls({
           color: var(--primary);
           font-weight: bold;
           font-size: 10px;
+        }
+
+        /* Reset Filters Button */
+        .reset-section {
+          margin-left: auto;
+        }
+
+        .reset-filters-button {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 12px;
+          background: rgba(var(--error-rgb, 239, 68, 68), 0.1);
+          border: 1px solid rgba(var(--error-rgb, 239, 68, 68), 0.2);
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: 500;
+          color: var(--error, #ef4444);
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          backdrop-filter: blur(var(--blur-amount));
+          -webkit-backdrop-filter: blur(var(--blur-amount));
+          position: relative;
+          overflow: hidden;
+        }
+
+        .reset-filters-button::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(90deg, transparent, rgba(var(--error-rgb, 239, 68, 68), 0.1), transparent);
+          transform: translateX(-100%);
+          transition: transform 0.5s ease;
+        }
+
+        .reset-filters-button:hover {
+          background: rgba(var(--error-rgb, 239, 68, 68), 0.15);
+          border-color: rgba(var(--error-rgb, 239, 68, 68), 0.3);
+          transform: translateY(-1px);
+          box-shadow: var(--shadow-sm);
+        }
+
+        .reset-filters-button:hover::before {
+          transform: translateX(100%);
+        }
+
+        .reset-filters-button:active {
+          transform: translateY(0);
+          transition-duration: 0.1s;
+        }
+
+        .reset-filters-button .filter-count {
+          font-size: 10px;
+          font-weight: 600;
+          background: rgba(var(--error-rgb, 239, 68, 68), 0.2);
+          padding: 2px 6px;
+          border-radius: 4px;
+          line-height: 1;
+        }
+
+        /* Advanced Filters Button */
+        .advanced-filters-button {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 12px;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: 500;
+          color: var(--text-secondary);
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .advanced-filters-button::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(var(--primary-rgb), 0.1), transparent);
+          transition: left 0.5s ease;
+        }
+
+        .advanced-filters-button:hover {
+          background: rgba(var(--primary-rgb), 0.05);
+          border-color: var(--primary);
+          color: var(--primary);
+          transform: translateY(-1px);
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .advanced-filters-button:hover::before {
+          left: 100%;
+        }
+
+        .advanced-filters-button:active {
+          transform: translateY(0);
+          transition-duration: 0.1s;
         }
 
         /* Responsive Design */

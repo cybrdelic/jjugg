@@ -4,7 +4,7 @@
  */
 
 'use client';
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useApplicationsLogic } from './hooks/useApplicationsLogic';
 import { ApplicationsHeader } from './components/ApplicationsHeader';
 import { ApplicationsControls } from './components/ApplicationsControls';
@@ -12,11 +12,14 @@ import { ApplicationsTable } from './components/ApplicationsTable';
 import { VirtualizedApplicationsTable } from './components/VirtualizedApplicationsTable';
 import { ApplicationsKanban } from './components/ApplicationsKanban';
 import { ApplicationsContextMenu } from './components/ApplicationsContextMenu';
+import { FilterBuilder } from './components/FilterBuilder';
 import ApplicationDetailDrawer from './ApplicationDetailDrawer';
 import { getAdaptivePerformanceConfig, detectDeviceCapabilities } from './utils/performanceConfig';
 import { usePerformanceMonitor } from './utils/performanceMonitor';
 
 export default function Applications() {
+  const [isFilterBuilderOpen, setIsFilterBuilderOpen] = useState(false);
+
   const {
     // Data
     filteredApplications,
@@ -199,6 +202,7 @@ export default function Applications() {
             visibleColumns={visibleColumns}
             selectedRows={selectedRows}
             selectedApplications={selectedApplications}
+            activeFilters={columnFilters}
             onViewModeChange={setViewMode}
             onMobileViewToggle={() => setIsMobileView(!isMobileView)}
             onAutosizeToggle={() => setIsAutosizeEnabled(!isAutosizeEnabled)}
@@ -212,6 +216,10 @@ export default function Applications() {
             onBulkStageChange={handleBulkStageChange}
             onExport={handleExport}
             onBulkEdit={handleBulkEdit}
+            onResetFilters={() => {
+              setColumnFilters({});
+            }}
+            onOpenFilterBuilder={() => setIsFilterBuilderOpen(true)}
           />
         </div>
 
@@ -277,6 +285,7 @@ export default function Applications() {
               sortConfig={sortConfig}
               selectedRows={selectedRows}
               columnFilters={columnFilters}
+              applicationStats={applicationStats}
               isAutosizeEnabled={isAutosizeEnabled}
               tableViewDensity={tableViewDensity}
               isMobileView={isMobileView}
@@ -301,6 +310,60 @@ export default function Applications() {
                 } else {
                   setSelectedRows(selectedRows.filter(id => id !== appId));
                 }
+              }}
+              onBulkSelect={(appIds, selected) => {
+                if (selected) {
+                  // Select all applications
+                  setSelectedRows(appIds);
+                } else {
+                  // Deselect all applications
+                  setSelectedRows([]);
+                }
+              }}
+              activeFilters={columnFilters}
+              onResetFilters={() => {
+                setColumnFilters({});
+              }}
+              onQuickFilter={(filterType, value) => {
+                // Handle quick filter actions
+                const newFilters = { ...columnFilters };
+
+                switch (filterType) {
+                  case 'stage':
+                    newFilters.stage = value || '';
+                    break;
+                  case 'timeframe':
+                    if (value === 'thisWeek') {
+                      const weekAgo = new Date();
+                      weekAgo.setDate(weekAgo.getDate() - 7);
+                      newFilters.dateApplied = weekAgo.toISOString().split('T')[0];
+                    } else if (value === 'thisMonth') {
+                      const monthStart = new Date();
+                      monthStart.setDate(1);
+                      newFilters.dateApplied = monthStart.toISOString().split('T')[0];
+                    } else {
+                      // Clear timeframe filter
+                      delete newFilters.dateApplied;
+                    }
+                    break;
+                  case 'remote':
+                    newFilters.remote = value === 'true' ? 'true' : '';
+                    break;
+                  case 'shortlisted':
+                    newFilters.isShortlisted = value === 'true' ? 'true' : '';
+                    break;
+                  case 'salary':
+                    newFilters.salary = value === 'hasValue' ? 'has-value' : '';
+                    break;
+                  case 'tasks':
+                  case 'interviews':
+                    // These would need special handling in the filtering logic
+                    break;
+                  default:
+                    break;
+                }
+
+                setColumnFilters(newFilters);
               }}
               onRowClick={handleRowClick}
               onContextMenu={handleContextMenu}
@@ -348,6 +411,27 @@ export default function Applications() {
           onStageChange={(newStage) => handleStageChange(selectedAppData.id, newStage)}
         />
       )}
+
+      {/* Advanced Filter Builder */}
+      <FilterBuilder
+        isVisible={isFilterBuilderOpen}
+        onClose={() => setIsFilterBuilderOpen(false)}
+        onApplyFilters={(filters) => {
+          setColumnFilters(filters);
+          setIsFilterBuilderOpen(false);
+        }}
+        currentFilters={columnFilters}
+        availableFields={[
+          { key: 'stage', label: 'Application Stage', type: 'select', options: ['applied', 'screening', 'interview', 'offer', 'rejected'] },
+          { key: 'company', label: 'Company Name', type: 'text' },
+          { key: 'position', label: 'Position Title', type: 'text' },
+          { key: 'location', label: 'Location', type: 'text' },
+          { key: 'remote', label: 'Remote Work', type: 'select', options: ['true', 'false'] },
+          { key: 'salary', label: 'Salary Range', type: 'text' },
+          { key: 'dateApplied', label: 'Date Applied', type: 'date' },
+          { key: 'isShortlisted', label: 'Shortlisted', type: 'select', options: ['true', 'false'] },
+        ]}
+      />
 
       <style jsx>{`
         /* Applications Page - Using Theme System */

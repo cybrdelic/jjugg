@@ -5,7 +5,7 @@ import { SectionKey, NavItemType } from './types';
 import NavItem from './NavItem';
 import SidebarSection from './SidebarSection.flat';
 import ResizeHandle from './ResizeHandle';
-import ThemeSwitcher from './ThemeSwitcher';
+import { ThemeSwitcher } from './ThemeSwitcher';
 import {
   Menu,
   ChevronLeft,
@@ -41,7 +41,7 @@ export default function GlassSidebar({
   userName,
   userAvatar
 }: GlassSidebarProps) {
-  const { currentTheme, toggleColorMode } = useTheme();
+  const { mode, toggleMode } = useTheme();
   const sidebarRef = useRef<HTMLDivElement>(null);
   const [expandedWidth, setExpandedWidth] = useState(width);
   const [sections, setSections] = useState<Record<string, NavItemType[]>>({ main: items });

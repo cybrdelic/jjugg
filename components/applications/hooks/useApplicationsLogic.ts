@@ -123,7 +123,28 @@ export interface ApplicationsActions {
 export interface ApplicationsHookReturn extends ApplicationsState, ApplicationsActions {
     // Computed Values
     filteredApplications: Application[];
-    applicationStats: { applications: number; interviews: number };
+    applicationStats: {
+        applications: number;
+        stageStats: {
+            applied: number;
+            screening: number;
+            interview: number;
+            offer: number;
+            rejected: number;
+        };
+        appliedThisWeek: number;
+        appliedThisMonth: number;
+        interviews: number;
+        interviewsThisWeek: number;
+        pendingTasks: number;
+        overdueTasks: number;
+        shortlisted: number;
+        remoteJobs: number;
+        withSalary: number;
+        responseRate: number;
+        successRate: number;
+        active: number;
+    };
     selectedAppData: Application | null;
     selectedApplications: Application[];
     applicationsByStage: Record<ApplicationStage, Application[]>;
@@ -363,11 +384,63 @@ export function useApplicationsLogic(): ApplicationsHookReturn {
     }, [applicationsData, filteredApplications, debouncedSearchTerm, debouncedColumnFilters, state.quickFilters]);
 
     // Computed values
-    const applicationStats = useMemo(() => ({
-        applications: applicationsData?.length || 0,
-        interviews: applicationsData?.flatMap((app: Application) => app.interviews || [])
-            .filter((i: any) => !i.completed && i.date > new Date()).length || 0,
-    }), [applicationsData]);
+    const applicationStats = useMemo(() => {
+        const apps = applicationsData || [];
+        const now = new Date();
+        const thisWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+        return {
+            // Core counts
+            applications: apps.length,
+
+            // Stage-based counts
+            stageStats: {
+                applied: apps.filter(app => app.stage === 'applied').length,
+                screening: apps.filter(app => app.stage === 'screening').length,
+                interview: apps.filter(app => app.stage === 'interview').length,
+                offer: apps.filter(app => app.stage === 'offer').length,
+                rejected: apps.filter(app => app.stage === 'rejected').length,
+            },
+
+            // Time-based counts
+            appliedThisWeek: apps.filter(app => new Date(app.dateApplied) >= thisWeek).length,
+            appliedThisMonth: apps.filter(app => new Date(app.dateApplied) >= thisMonth).length,
+
+            // Interview metrics
+            interviews: apps.flatMap(app => app.interviews || [])
+                .filter(interview => !interview.completed && new Date(interview.date) > now).length,
+            interviewsThisWeek: apps.flatMap(app => app.interviews || [])
+                .filter(interview => {
+                    const interviewDate = new Date(interview.date);
+                    return interviewDate >= thisWeek && interviewDate <= new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+                }).length,
+
+            // Task and follow-up metrics
+            pendingTasks: apps.flatMap(app => app.tasks || [])
+                .filter(task => !task.completed).length,
+            overdueTasks: apps.flatMap(app => app.tasks || [])
+                .filter(task => !task.completed && new Date(task.dueDate) < now).length,
+
+            // Quality metrics
+            shortlisted: apps.filter(app => app.isShortlisted).length,
+            remoteJobs: apps.filter(app => app.remote).length,
+            withSalary: apps.filter(app => app.salary && app.salary.trim() !== '').length,
+
+            // Response rate calculation
+            responseRate: apps.length > 0
+                ? Math.round((apps.filter(app => app.stage !== 'applied').length / apps.length) * 100)
+                : 0,
+
+            // Success rate (offers vs applications)
+            successRate: apps.length > 0
+                ? Math.round((apps.filter(app => app.stage === 'offer').length / apps.length) * 100)
+                : 0,
+
+            // Active applications (not rejected or offer accepted)
+            active: apps.filter(app => !['rejected'].includes(app.stage)).length,
+        };
+    }, [applicationsData]);
 
     const selectedAppData = useMemo(() =>
         state.selectedApplication
