@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo, startTransition } from 'react';
 
 type ThemeMode = 'light' | 'dark';
 
@@ -23,32 +23,51 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         if (savedMode && (savedMode === 'light' || savedMode === 'dark')) {
             setModeState(savedMode);
         } else {
-            // Check system preference
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             setModeState(prefersDark ? 'dark' : 'light');
         }
     }, []);
 
-    // Apply theme to document
+    // Apply theme to document (defer to next frame to avoid blocking)
     useEffect(() => {
-        if (mode === 'dark') {
-            document.documentElement.setAttribute('data-theme', 'dark');
+        const apply = () => {
+            const root = document.documentElement;
+            if (mode === 'dark') {
+                root.setAttribute('data-theme', 'dark');
+            } else {
+                root.removeAttribute('data-theme');
+            }
+        };
+        if (typeof window !== 'undefined' && 'requestAnimationFrame' in window) {
+            requestAnimationFrame(apply);
         } else {
-            document.documentElement.removeAttribute('data-theme');
+            apply();
         }
-        localStorage.setItem('theme-mode', mode);
+
+        const persist = () => {
+            try { localStorage.setItem('theme-mode', mode); } catch { /* noop */ }
+        };
+        if (typeof window !== 'undefined' && (window as any).requestIdleCallback) {
+            (window as any).requestIdleCallback(persist);
+        } else {
+            setTimeout(persist, 0);
+        }
     }, [mode]);
 
-    const toggleMode = () => {
-        setModeState(prev => prev === 'light' ? 'dark' : 'light');
-    };
+    const toggleMode = useCallback(() => {
+        startTransition(() => {
+            setModeState(prev => (prev === 'light' ? 'dark' : 'light'));
+        });
+    }, []);
 
-    const setMode = (newMode: ThemeMode) => {
-        setModeState(newMode);
-    };
+    const setMode = useCallback((newMode: ThemeMode) => {
+        startTransition(() => setModeState(newMode));
+    }, []);
+
+    const value = useMemo(() => ({ mode, toggleMode, setMode }), [mode, toggleMode, setMode]);
 
     return (
-        <ThemeContext.Provider value={{ mode, toggleMode, setMode }}>
+        <ThemeContext.Provider value={value}>
             {children}
         </ThemeContext.Provider>
     );

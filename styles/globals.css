@@ -1,0 +1,11 @@
+/* Reverted global overrides to original look */
+
+html,
+body,
+#__next {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+}
