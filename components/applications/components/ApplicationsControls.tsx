@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Grid3x3, ListFilter, Calendar, TrendingUp, ChevronDown, Filter
+  ListFilter, Calendar, TrendingUp, ChevronDown, Filter
 } from 'lucide-react';
 import Tooltip from '../../Tooltip';
 import { ApplicationStage, Application } from '@/types';
@@ -13,7 +13,6 @@ import { QuickActions } from './QuickActions';
 
 interface ApplicationsControlsProps {
   // View state
-  viewMode: 'table' | 'kanban';
   isMobileView: boolean;
   isAutosizeEnabled: boolean;
   tableViewDensity: 'compact' | 'comfortable' | 'spacious';
@@ -23,7 +22,8 @@ interface ApplicationsControlsProps {
   // Filters
   quickFilters: {
     stage: ApplicationStage | 'all',
-    dateRange: '7d' | '30d' | '90d' | 'all',
+    dateRange: '7d' | '30d' | '90d' | 'all' | 'custom',
+    customDateRange?: { start: Date | null; end: Date | null }
     salary: 'with' | 'without' | 'all'
   };
   visibleColumns: string[];
@@ -33,7 +33,6 @@ interface ApplicationsControlsProps {
   selectedApplications: Application[];
 
   // Handlers
-  onViewModeChange: (mode: 'table' | 'kanban') => void;
   onMobileViewToggle: () => void;
   onAutosizeToggle: () => void;
   onDensityChange: (density: 'compact' | 'comfortable' | 'spacious') => void;
@@ -48,11 +47,11 @@ interface ApplicationsControlsProps {
   onBulkEdit: (appIds: string[]) => void;
   onResetFilters?: () => void;
   activeFilters?: Record<string, string>;
-  onOpenFilterBuilder?: () => void;
+  // Performance hint: prefetch Kanban chunk
+  onPrefetchKanban?: () => void;
 }
 
 export function ApplicationsControls({
-  viewMode,
   isMobileView,
   isAutosizeEnabled,
   tableViewDensity,
@@ -62,7 +61,6 @@ export function ApplicationsControls({
   visibleColumns,
   selectedRows,
   selectedApplications,
-  onViewModeChange,
   onMobileViewToggle,
   onAutosizeToggle,
   onDensityChange,
@@ -77,10 +75,68 @@ export function ApplicationsControls({
   onBulkEdit,
   onResetFilters,
   activeFilters = {},
-  onOpenFilterBuilder
+  onPrefetchKanban
 }: ApplicationsControlsProps) {
   const [stageDropdownOpen, setStageDropdownOpen] = useState(false);
   const [dateDropdownOpen, setDateDropdownOpen] = useState(false);
+  // Inline range picker state
+  const [selectedStartDate, setSelectedStartDate] = useState<Date | null>(null);
+  const [selectedEndDate, setSelectedEndDate] = useState<Date | null>(null);
+  const [viewMonth, setViewMonth] = useState<Date>(() => {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), 1);
+  });
+
+  // Initialize range when opening the dropdown
+  useEffect(() => {
+    if (dateDropdownOpen) {
+      const start = quickFilters.customDateRange?.start ?? null;
+      const end = quickFilters.customDateRange?.end ?? null;
+      setSelectedStartDate(start ? new Date(start) : null);
+      setSelectedEndDate(end ? new Date(end) : null);
+      const anchor = start || end || new Date();
+      setViewMonth(new Date(anchor.getFullYear(), anchor.getMonth(), 1));
+    }
+  }, [dateDropdownOpen]);
+
+  // Date helpers
+  const startOfMonth = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1);
+  const addMonths = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth() + n, 1);
+  const isSameDay = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  const isBefore = (a: Date, b: Date) => a.getTime() < b.getTime();
+  const startOfWeek = (d: Date) => {
+    const day = d.getDay(); // 0=Sun
+    const diff = d.getDate() - day;
+    return new Date(d.getFullYear(), d.getMonth(), diff);
+  };
+  const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+  const beginOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+  const buildMonthGrid = (month: Date) => {
+    const first = startOfMonth(month);
+    const gridStart = startOfWeek(first);
+    return Array.from({ length: 42 }).map((_, i) => new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i));
+  };
+
+  const handleDayClick = (day: Date) => {
+    if (!selectedStartDate || (selectedStartDate && selectedEndDate)) {
+      // Start a new selection
+      setSelectedStartDate(day);
+      setSelectedEndDate(null);
+    } else if (selectedStartDate && !selectedEndDate) {
+      let start = selectedStartDate;
+      let end = day;
+      if (isBefore(end, start)) {
+        [start, end] = [end, start];
+      }
+      setSelectedStartDate(start);
+      setSelectedEndDate(end);
+      // Live-apply without closing the dropdown for snappy UX
+      onQuickFiltersChange({
+        dateRange: 'custom',
+        customDateRange: { start: beginOfDay(start), end: endOfDay(end) }
+      });
+    }
+  };
 
   const getStageDisplayText = (stage: ApplicationStage | 'all') => {
     switch (stage) {
@@ -94,12 +150,13 @@ export function ApplicationsControls({
     }
   };
 
-  const getDateDisplayText = (range: '7d' | '30d' | '90d' | 'all') => {
+  const getDateDisplayText = (range: '7d' | '30d' | '90d' | 'all' | 'custom') => {
     switch (range) {
       case 'all': return 'All Time';
       case '7d': return 'Last 7 days';
       case '30d': return 'Last 30 days';
       case '90d': return 'Last 90 days';
+      case 'custom': return 'Custom Range';
       default: return 'All Time';
     }
   };
@@ -120,47 +177,6 @@ export function ApplicationsControls({
       <div className="controls-main">
         {/* Left side controls */}
         <div className="controls-left">
-          {/* View Mode Toggle - Refined with Micro-interactions */}
-          <div className="control-section view-section">
-            <span className="section-label">View</span>
-            <div className="toggle-wrapper">
-              <div className="toggle-button" onClick={() => {
-                const slider = document.querySelector('.toggle-slider') as HTMLElement;
-                const currentActive = document.querySelector('.toggle-option.active');
-
-                // Add icon animation to current active
-                currentActive?.classList.add('switching');
-
-                // Smooth slider transition
-                slider?.classList.add('moving');
-                setTimeout(() => {
-                  slider?.classList.remove('moving');
-                }, 500);
-
-                // Clean up icon animation
-                setTimeout(() => {
-                  currentActive?.classList.remove('switching');
-                }, 400);
-
-                // Change view mode
-                const newMode = viewMode === 'table' ? 'kanban' : 'table';
-                onViewModeChange(newMode);
-              }}>
-                <Tooltip content="Table View - Detailed list with sortable columns" placement="bottom">
-                  <div className={`toggle-option table ${viewMode === 'table' ? 'active' : ''}`}>
-                    <ListFilter size={18} />
-                  </div>
-                </Tooltip>
-                <Tooltip content="Kanban View - Visual board organized by stages" placement="bottom">
-                  <div className={`toggle-option kanban ${viewMode === 'kanban' ? 'active' : ''}`}>
-                    <Grid3x3 size={18} />
-                  </div>
-                </Tooltip>
-                <div className={`toggle-slider ${viewMode === 'kanban' ? 'kanban' : ''}`}></div>
-              </div>
-            </div>
-          </div>
-
           {/* Filters Section - Enhanced */}
           <div className="control-section filters-section">
             <span className="section-label">
@@ -228,13 +244,17 @@ export function ApplicationsControls({
 
               {dateDropdownOpen && (
                 <div className="dropdown-menu date-dropdown">
-                  {(['all', '7d', '30d', '90d'] as const).map((range) => (
+                  {(['all', '7d', '30d', '90d', 'custom'] as const).map((range) => (
                     <button
                       key={range}
                       className={`dropdown-item ${quickFilters.dateRange === range ? 'selected' : ''}`}
                       onClick={() => {
-                        onQuickFiltersChange({ dateRange: range });
-                        setDateDropdownOpen(false);
+                        if (range === 'custom') {
+                          onQuickFiltersChange({ dateRange: 'custom' });
+                        } else {
+                          onQuickFiltersChange({ dateRange: range });
+                          setDateDropdownOpen(false);
+                        }
                       }}
                     >
                       <Calendar size={12} className="item-icon" />
@@ -242,6 +262,78 @@ export function ApplicationsControls({
                       {quickFilters.dateRange === range && <div className="checkmark">✓</div>}
                     </button>
                   ))}
+
+                  {quickFilters.dateRange === 'custom' && (
+                    <div className="range-calendar" onClick={(e) => e.stopPropagation()}>
+                      <div className="calendar-nav">
+                        <button className="nav-btn" onClick={() => setViewMonth(addMonths(viewMonth, -1))} aria-label="Previous month">‹</button>
+                        <div className="months-title">
+                          {viewMonth.toLocaleString(undefined, { month: 'long', year: 'numeric' })}
+                          {'  ·  '}
+                          {addMonths(viewMonth, 1).toLocaleString(undefined, { month: 'long', year: 'numeric' })}
+                        </div>
+                        <button className="nav-btn" onClick={() => setViewMonth(addMonths(viewMonth, 1))} aria-label="Next month">›</button>
+                      </div>
+
+                      <div className="months">
+                        {[viewMonth, addMonths(viewMonth, 1)].map((m, idx) => {
+                          const days = buildMonthGrid(m);
+                          const monthIndex = m.getMonth();
+                          const today = new Date();
+                          return (
+                            <div key={idx} className="month">
+                              <div className="weekdays">
+                                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d) => (
+                                  <div key={d} className="weekday">{d}</div>
+                                ))}
+                              </div>
+                              <div className="grid">
+                                {days.map((d, i) => {
+                                  const inThisMonth = d.getMonth() === monthIndex;
+                                  const isStart = selectedStartDate && isSameDay(d, selectedStartDate);
+                                  const isEnd = selectedEndDate && isSameDay(d, selectedEndDate);
+                                  const inRange = selectedStartDate && selectedEndDate && d >= beginOfDay(selectedStartDate) && d <= endOfDay(selectedEndDate);
+                                  const isToday = isSameDay(d, today);
+                                  return (
+                                    <button
+                                      key={i}
+                                      className={`day ${inThisMonth ? '' : 'muted'} ${isToday ? 'today' : ''} ${inRange ? 'in-range' : ''} ${isStart ? 'start' : ''} ${isEnd ? 'end' : ''}`}
+                                      onClick={() => handleDayClick(d)}
+                                    >
+                                      {d.getDate()}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="calendar-actions">
+                        <button
+                          className="clear-button"
+                          onClick={() => {
+                            setSelectedStartDate(null);
+                            setSelectedEndDate(null);
+                            onQuickFiltersChange({ dateRange: 'all', customDateRange: { start: null, end: null } });
+                            setDateDropdownOpen(false);
+                          }}
+                        >Clear</button>
+                        <button
+                          className="apply-button"
+                          disabled={!selectedStartDate}
+                          onClick={() => {
+                            // If only one date chosen, use single-day range
+                            const start = selectedStartDate ? beginOfDay(selectedStartDate) : null;
+                            const end = selectedEndDate ? endOfDay(selectedEndDate) : (selectedStartDate ? endOfDay(selectedStartDate) : null);
+                            onQuickFiltersChange({ dateRange: 'custom', customDateRange: { start, end } });
+                            setDateDropdownOpen(false);
+                          }}
+                        >Apply</button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -263,18 +355,6 @@ export function ApplicationsControls({
               </button>
             </div>
           )}
-
-          {/* Advanced Filter Builder */}
-          <div className="control-section advanced-filters-section">
-            <button
-              className="advanced-filters-button"
-              onClick={() => onOpenFilterBuilder?.()}
-              title="Open advanced filter builder"
-            >
-              <Filter size={14} />
-              <span>Advanced Filters</span>
-            </button>
-          </div>
 
           {/* Right side - Quick Actions inline with controls */}
           <div className="controls-right">
@@ -298,21 +378,21 @@ export function ApplicationsControls({
           display: flex;
           flex-direction: column;
           gap: 0;
-          margin-bottom: 16px;
+          margin-bottom: 0; /* Let parent toolbar control spacing */
         }
 
         .controls-main {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 16px;
-          padding: 12px 16px;
+          gap: 12px;
+          padding: 0; /* unify with toolbar padding */
         }
 
         .controls-left {
           display: flex;
           align-items: center;
-          gap: 16px;
+          gap: 12px;
         }
 
         .controls-right {
@@ -353,18 +433,18 @@ export function ApplicationsControls({
         .control-section:not(:last-child)::after {
           content: '';
           position: absolute;
-          right: -8px;
+          right: -6px;
           top: 50%;
           transform: translateY(-50%);
           width: 1px;
-          height: 20px;
+          height: 18px;
           background: var(--border);
         }
 
         .section-label {
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 600;
-          color: var(--text-secondary);
+          color: var(--text-tertiary);
           text-transform: uppercase;
           letter-spacing: 0.5px;
           display: flex;
@@ -373,261 +453,7 @@ export function ApplicationsControls({
           min-width: fit-content;
         }
 
-        .view-section {
-          min-width: fit-content;
-        }
-
-        /* Modern Glass Toggle - Matches Theme */
-        .toggle-wrapper {
-          position: relative;
-          background: var(--glass-bg);
-          backdrop-filter: blur(var(--blur-amount));
-          -webkit-backdrop-filter: blur(var(--blur-amount));
-          border: 1px solid var(--border);
-          border-radius: 12px;
-          padding: 3px;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          box-shadow: var(--shadow-sm);
-          overflow: hidden;
-        }
-
-        /* Liquid surface tension effect */
-        .toggle-wrapper::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(ellipse at var(--mouse-x, 50%) var(--mouse-y, 50%),
-            rgba(var(--primary-rgb), 0.05) 0%,
-            transparent 50%
-          );
-          opacity: 0;
-          transition: opacity 0.3s ease;
-          pointer-events: none;
-        }
-
-        .toggle-wrapper:hover::before {
-          opacity: 1;
-        }
-
-        .toggle-wrapper:hover {
-          border-color: var(--border-hover);
-          transform: translateY(-1px);
-          box-shadow: var(--shadow-md);
-        }
-
-        .toggle-button {
-          display: flex;
-          position: relative;
-          width: 100px;
-          height: 38px;
-          cursor: pointer;
-          overflow: visible;
-        }
-
-        .toggle-option {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-          z-index: 1;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          color: var(--text-secondary);
-          opacity: 0.7;
-          transform: scale(0.95);
-        }
-
-        .toggle-option::before {
-          content: '';
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          width: 0;
-          height: 0;
-          background: radial-gradient(ellipse at center,
-            rgba(var(--primary-rgb), 0.3) 0%,
-            rgba(var(--primary-rgb), 0.1) 40%,
-            transparent 70%
-          );
-          border-radius: 50%;
-          transform: translate(-50%, -50%);
-          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-          opacity: 0;
-          pointer-events: none;
-          filter: blur(10px);
-        }
-
-        .toggle-option:hover::before {
-          width: 40px;
-          height: 40px;
-          opacity: 0.3;
-          animation: magnetic-pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes magnetic-pulse {
-          0%, 100% { transform: translate(-50%, -50%) scale(1); }
-          50% { transform: translate(-50%, -50%) scale(1.1); }
-        }
-
-        .toggle-option.active {
-          color: var(--text-primary);
-          font-weight: 500;
-          z-index: 10;
-          opacity: 1;
-          transform: scale(1);
-        }
-
-        .toggle-option svg {
-          width: 16px;
-          height: 16px;
-          transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        .toggle-option:hover:not(.active) {
-          color: var(--text-secondary);
-          opacity: 0.85;
-          transform: scale(0.97);
-        }
-
-        .toggle-option:hover:not(.active) svg {
-          transform: scale(1.1);
-        }
-
-        .toggle-option.active svg {
-          transform: scale(1.05);
-        }
-
-        .toggle-slider {
-          position: absolute;
-          top: 3px;
-          left: 3px;
-          width: calc(50% - 3px);
-          height: calc(100% - 6px);
-          background: var(--surface);
-          border-radius: 9px;
-          transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-          z-index: 2;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-          border: 1px solid rgba(var(--border-rgb), 0.5);
-          overflow: hidden;
-        }
-
-        /* Liquid shine effect */
-        .toggle-slider::before {
-          content: '';
-          position: absolute;
-          top: -50%;
-          left: -50%;
-          width: 200%;
-          height: 200%;
-          background: radial-gradient(circle at 30% 30%,
-            rgba(255, 255, 255, 0.3) 0%,
-            rgba(255, 255, 255, 0.1) 20%,
-            transparent 40%
-          );
-          transform: rotate(-45deg);
-          transition: all 0.6s ease;
-          opacity: 0.7;
-        }
-
-        /* Liquid magnetic attraction effect */
-        .toggle-slider::after {
-          content: '';
-          position: absolute;
-          inset: -20px;
-          background: radial-gradient(ellipse at center,
-            var(--primary) 0%,
-            transparent 50%
-          );
-          opacity: 0;
-          filter: blur(20px);
-          transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-          transform: scale(0.5);
-        }
-
-        .toggle-wrapper:hover .toggle-slider::after {
-          opacity: 0.1;
-          transform: scale(1);
-        }        .toggle-slider.kanban {
-          left: calc(50%);
-        }
-
-        /* Clean press feedback */
-        .toggle-wrapper:active {
-          transform: translateY(0) scale(0.99);
-        }
-
-        .toggle-wrapper:active .toggle-slider {
-          transform: scale(0.95);
-        }
-
-        /* Icon micro-animation on toggle */
-        .toggle-option.switching svg {
-          animation: icon-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        @keyframes icon-bounce {
-          0% { transform: scale(1.05); }
-          50% { transform: scale(1.25) rotate(5deg); }
-          100% { transform: scale(1.05) rotate(0deg); }
-        }
-
-        /* Liquid smooth slider movement */
-        .toggle-slider.moving {
-          transition: left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                      transform 0.3s ease;
-        }
-
-        .toggle-slider.moving::before {
-          animation: liquid-flow 0.6s ease-out;
-        }
-
-        @keyframes liquid-flow {
-          0% { transform: rotate(-45deg) translateX(0); }
-          50% { transform: rotate(-45deg) translateX(10%); }
-          100% { transform: rotate(-45deg) translateX(0); }
-        }
-
-        /* Subtle icon animations */
-        .toggle-option.active svg {
-          animation: icon-fade-in 0.4s ease-out;
-        }
-
-        @keyframes icon-fade-in {
-          from {
-            opacity: 0.5;
-            transform: scale(0.8);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1.05);
-          }
-        }
-
-        /* Magnetic liquid effect on active option */
-        .toggle-option.active::after {
-          content: '';
-          position: absolute;
-          inset: -8px;
-          background: radial-gradient(circle at center, var(--primary) 0%, transparent 40%);
-          border-radius: 50%;
-          opacity: 0.08;
-          filter: blur(12px);
-          transform: scale(0.8);
-          transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .toggle-option.active:hover::after {
-          transform: scale(1.1);
-          opacity: 0.12;
-        }
-
-        /* Focus for accessibility */
-        .toggle-wrapper:focus-within {
-          outline: 2px solid var(--primary);
-          outline-offset: 2px;
-        }
-
+        /* Filters Section - Enhanced */
         .filters-section {
           flex: 1;
           gap: 12px;
@@ -635,20 +461,22 @@ export function ApplicationsControls({
 
         .filter-dropdown-container {
           position: relative;
+          overflow: visible; /* prevent clipping */
         }
 
         .filter-dropdown {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 8px 12px;
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: 4px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          min-width: 140px;
-          font-size: 12px;
+          padding: 6px 10px;
+           background: var(--surface);
+           border: 1px solid var(--border);
+           border-radius: 8px;
+           cursor: pointer;
+           transition: all 0.2s ease;
+           min-width: 140px;
+           height: 36px; /* unify height */
+           font-size: 13px;
         }
 
         .filter-dropdown:hover {
@@ -691,43 +519,53 @@ export function ApplicationsControls({
           top: calc(100% + 4px);
           left: 0;
           right: 0;
-          background: var(--glass-bg);
-          backdrop-filter: blur(var(--blur-amount));
-          -webkit-backdrop-filter: blur(var(--blur-amount));
-          border: 1px solid var(--border);
-          border-radius: 4px;
-          box-shadow: var(--shadow-lg);
-          z-index: 1000;
-          overflow: hidden;
-          animation: dropdownSlideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-          max-height: 240px;
-          overflow-y: auto;
+           background: var(--glass-bg);
+           backdrop-filter: blur(var(--blur-amount));
+           -webkit-backdrop-filter: blur(var(--blur-amount));
+           border: 1px solid var(--border);
+           border-radius: 4px;
+           box-shadow: var(--shadow-lg);
+           z-index: 2000;
+           overflow: hidden; /* default for list menus */
+           animation: dropdownSlideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+           max-height: 240px;
+           overflow-y: auto;
         }
 
-        @keyframes dropdownSlideIn {
-          from {
-            opacity: 0;
-            transform: translateY(-8px) scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
+        /* Date dropdown needs room for calendars */
+        .date-dropdown {
+          max-height: none;
+          overflow: visible;
+          left: auto;
+          right: 0;
+          width: max-content;
+          min-width: 560px;
         }
+
+         @keyframes dropdownSlideIn {
+           from {
+             opacity: 0;
+             transform: translateY(-8px) scale(0.95);
+           }
+           to {
+             opacity: 1;
+             transform: translateY(0) scale(1);
+           }
+         }
 
         .dropdown-item {
           display: flex;
           align-items: center;
           gap: 8px;
-          padding: 10px 12px;
-          background: transparent;
-          border: none;
-          width: 100%;
-          text-align: left;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          font-size: 12px;
-          color: var(--text-primary);
+          padding: 8px 10px;
+           background: transparent;
+           border: none;
+           width: 100%;
+           text-align: left;
+           cursor: pointer;
+           transition: all 0.2s ease;
+           font-size: 13px;
+           color: var(--text-primary);
         }
 
         .dropdown-item:hover {
@@ -818,58 +656,16 @@ export function ApplicationsControls({
           line-height: 1;
         }
 
-        /* Advanced Filters Button */
-        .advanced-filters-button {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 8px 12px;
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 12px;
-          font-weight: 500;
-          color: var(--text-secondary);
-          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-          position: relative;
-          overflow: hidden;
-        }
+        /* Custom date range panel */
+        .custom-actions { display: flex; gap: 8px; justify-content: flex-end; }
+        .apply-button, .clear-button { padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--background); }
 
-        .advanced-filters-button::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: -100%;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(var(--primary-rgb), 0.1), transparent);
-          transition: left 0.5s ease;
-        }
-
-        .advanced-filters-button:hover {
-          background: rgba(var(--primary-rgb), 0.05);
-          border-color: var(--primary);
-          color: var(--primary);
-          transform: translateY(-1px);
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .advanced-filters-button:hover::before {
-          left: 100%;
-        }
-
-        .advanced-filters-button:active {
-          transform: translateY(0);
-          transition-duration: 0.1s;
-        }
-
-        /* Responsive Design */
+         /* Responsive Design */
         @media (max-width: 768px) {
           .controls-container {
             flex-direction: column;
             gap: 12px;
-            padding: 12px;
+            padding: 12px 0;
           }
 
           .control-section {
@@ -905,21 +701,6 @@ export function ApplicationsControls({
             align-items: stretch;
             padding: var(--space-4);
           }
-
-          .selection-info {
-            justify-content: center;
-          }
-
-          .action-buttons {
-            justify-content: center;
-            flex-wrap: wrap;
-          }
-
-          .action-btn {
-            flex: 1;
-            min-width: 0;
-            justify-content: center;
-          }
         }
 
         @media (max-width: 480px) {
@@ -943,6 +724,44 @@ export function ApplicationsControls({
             grid-column: span 2;
           }
         }
+
+        .date-dropdown {
+          padding: var(--space-2, 8px);
+          min-width: 320px;
+        }
+        .range-calendar { padding: var(--space-2, 8px); }
+        .calendar-nav {
+          display: flex; align-items: center; justify-content: space-between;
+          padding: var(--space-2, 8px) var(--space-3, 12px);
+          border-bottom: 1px solid var(--border, rgba(0,0,0,0.08));
+        }
+        .months-title { font-weight: 600; color: var(--text-primary); letter-spacing: 0.2px; }
+        .nav-btn {
+          width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border);
+          background: var(--surface); color: var(--text-secondary);
+          display: inline-flex; align-items: center; justify-content: center;
+          transition: all 140ms var(--ease-microinteractive);
+        }
+        .nav-btn:hover { background: var(--background); color: var(--text-primary); }
+        .months { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4, 16px); padding: var(--space-3, 12px); }
+        .month { display: flex; flex-direction: column; gap: var(--space-2, 8px); }
+        .weekdays { display: grid; grid-template-columns: repeat(7, 1fr); padding: 0 var(--space-1, 4px); color: var(--text-tertiary); font-size: 12px; }
+        .weekday { text-align: center; }
+        .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        .day {
+          height: 32px; border-radius: 6px; border: 1px solid transparent; background: transparent;
+          color: var(--text-primary); font-size: 13px; display: inline-flex; align-items: center; justify-content: center;
+          transition: all 120ms var(--ease-microinteractive);
+        }
+        .day:hover { background: var(--background); border-color: var(--border); }
+        .day.muted { color: var(--text-tertiary); }
+        .day.today { box-shadow: inset 0 0 0 1px var(--primary); }
+        .day.in-range { background: color-mix(in oklab, var(--primary) 12%, transparent); }
+        .day.start, .day.end { background: color-mix(in oklab, var(--primary) 18%, transparent); color: var(--text-on-primary, #fff); }
+        .calendar-actions { display: flex; justify-content: space-between; padding: var(--space-3, 12px); border-top: 1px solid var(--border); }
+        .apply-button { background: var(--primary); color: var(--on-primary, #fff); border: 1px solid var(--primary); border-radius: 8px; padding: 6px 10px; font-weight: 600; }
+        .apply-button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .clear-button { background: var(--surface); color: var(--text-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; }
       `}</style>
     </div>
   );

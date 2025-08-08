@@ -74,24 +74,28 @@ export default function AppLayout({ children, currentSection }: AppLayoutProps) 
       <style jsx>{`
         .app-container {
           position: relative;
-          min-height: 100vh;
+          height: 100vh; /* use height so padding doesn't extend page */
           background: var(--actual-background, var(--background));
           color: var(--text-primary);
           padding-top: var(--navbar-height, 68px);
           overflow-x: hidden;
+          box-sizing: border-box; /* include padding within viewport height */
           transition: background 0.3s ease;
         }
 
         .glass-main {
           position: relative;
-          min-height: calc(100vh - 68px);
+          height: calc(100vh - var(--navbar-height, 68px));
           z-index: var(--z-content);
+          overflow: hidden; /* prevent outer scroll; inner regions manage their own */
         }
 
         .main-content {
-          padding: 24px;
-          max-width: 1600px;
+          padding: 24px 24px 0; /* remove bottom padding to avoid extra page scroll */
+          max-width: 2000px;
           margin: 0 auto;
+          height: 100%; /* fill .glass-main */
+          box-sizing: border-box; /* include padding in height to avoid overflow */
         }
 
         .loading-state, .error-state {
@@ -116,7 +120,7 @@ export default function AppLayout({ children, currentSection }: AppLayoutProps) 
         /* Responsive Design */
         @media (max-width: 768px) {
           .main-content {
-            padding: 16px;
+            padding: 16px 16px 0; /* remove bottom padding on mobile as well */
           }
         }
       `}</style>

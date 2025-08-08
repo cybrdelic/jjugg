@@ -4,21 +4,27 @@
  */
 
 'use client';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
 import { useApplicationsLogic } from './hooks/useApplicationsLogic';
 import { ApplicationsHeader } from './components/ApplicationsHeader';
 import { ApplicationsControls } from './components/ApplicationsControls';
 import { ApplicationsTable } from './components/ApplicationsTable';
 import { VirtualizedApplicationsTable } from './components/VirtualizedApplicationsTable';
-import { ApplicationsKanban } from './components/ApplicationsKanban';
 import { ApplicationsContextMenu } from './components/ApplicationsContextMenu';
 import { FilterBuilder } from './components/FilterBuilder';
 import ApplicationDetailDrawer from './ApplicationDetailDrawer';
 import { getAdaptivePerformanceConfig, detectDeviceCapabilities } from './utils/performanceConfig';
 import { usePerformanceMonitor } from './utils/performanceMonitor';
+import { TableSkeleton, KanbanSkeleton } from './components/ApplicationsSkeleton';
+import EnhancedSearch from '@/components/EnhancedSearch';
 
 export default function Applications() {
   const [isFilterBuilderOpen, setIsFilterBuilderOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [pendingViewMode, setPendingViewMode] = useState<'table' | 'kanban' | null>(null);
+  const [showOverlaySkeleton, setShowOverlaySkeleton] = useState(false);
+  const SKELETON_DELAY_MS = 120; // don't show if transition resolves quickly
+  const SKELETON_ITEM_THRESHOLD = 80; // only show for larger datasets
 
   const {
     // Data
@@ -32,6 +38,7 @@ export default function Applications() {
     error,
 
     // State
+    searchTerm,
     viewMode,
     sortConfig,
     mounted,
@@ -95,10 +102,27 @@ export default function Applications() {
     handleExport,
   } = useApplicationsLogic();
 
+  const isInitialLoading = loading && !mounted;
+
   // Determine if we should use virtualization based on dataset size
   const shouldUseVirtualization = useMemo(() => {
     return filteredApplications.length > 50; // Use virtualization for datasets > 50 items
   }, [filteredApplications.length]);
+
+  // Show skeleton only if transition is still pending after a short delay and dataset is large
+  useEffect(() => {
+    let timer: number | undefined;
+    if (isPending) {
+      timer = window.setTimeout(() => setShowOverlaySkeleton(true), SKELETON_DELAY_MS);
+    } else {
+      setShowOverlaySkeleton(false);
+    }
+    return () => {
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [isPending]);
+
+  const shouldShowOverlaySkeleton = isPending && showOverlaySkeleton && (filteredApplications.length > SKELETON_ITEM_THRESHOLD);
 
   // Get adaptive performance configuration based on device capabilities and dataset size
   const performanceConfig = useMemo(() => {
@@ -136,6 +160,30 @@ export default function Applications() {
         if (activeStageDropdown) setActiveStageDropdown(null);
         if (isColumnMenuOpen) setIsColumnMenuOpen(false);
         if (isDetailModalVisible) handleCloseDetailModal();
+        if (selectedRows.length) setSelectedRows([]);
+      }
+
+      // Grid hotkeys
+      // Note: basic wiring; row focus/refs should already exist via table interactions
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        // Select all visible rows
+        const allIds = filteredApplications.map(a => a.id);
+        setSelectedRows(allIds);
+      }
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selectedRows.length > 0) {
+          e.preventDefault();
+          handleBulkDelete();
+        }
+      }
+
+      if (e.key === 'Enter') {
+        if (selectedRows.length === 1) {
+          const id = selectedRows[0];
+          handleOpenDetailModal(id);
+        }
       }
     };
 
@@ -148,21 +196,12 @@ export default function Applications() {
     };
   }, [
     contextMenu, activeStageDropdown, isColumnMenuOpen, isDetailModalVisible,
-    setContextMenu, setActiveStageDropdown, setIsColumnMenuOpen, handleCloseDetailModal
+    setContextMenu, setActiveStageDropdown, setIsColumnMenuOpen, handleCloseDetailModal,
+    selectedRows, setSelectedRows, filteredApplications, handleBulkDelete, handleOpenDetailModal
   ]);
 
-  // Show loading state
-  if (loading && !mounted) {
-    return (
-      <div className="applications-loading">
-        <div className="loading-content">
-          <div className="spinner"></div>
-          <h3>Loading Applications</h3>
-          <p>Preparing your job application data...</p>
-        </div>
-      </div>
-    );
-  }
+  // Get rid of kanban: always table
+  const viewModeAlwaysTable = 'table' as const;
 
   // Show error state
   if (error) {
@@ -186,13 +225,35 @@ export default function Applications() {
   const hasGlobalUpdate = statusUpdates.some(update => !update.appId);
 
   return (
-    <div className={`applications-page ${mounted ? 'mounted' : ''}`}>
+    <div className={`applications-page ${(mounted || isInitialLoading) ? 'mounted' : ''}`}>
       {/* Main Content */}
       <main className="main-content">
         {/* Toolbar - Controls, Filters, and Quick Actions */}
         <div className="toolbar">
+          {/* Global Search */}
+          <div className="toolbar-search">
+            <EnhancedSearch
+              size="compact"
+              applications={filteredApplications}
+              value={searchTerm}
+              quickFilters={quickFilters}
+              columnFilters={columnFilters}
+              onSearch={(q, payload) => {
+                if (payload?.quickFilters) {
+                  setQuickFilters(payload.quickFilters);
+                }
+                if (payload?.columnFilters) {
+                  setColumnFilters(payload.columnFilters);
+                }
+                if (typeof q === 'string') {
+                  setSearchTerm(q);
+                }
+              }}
+              placeholder="Search companies, positions, stages…"
+            />
+          </div>
+
           <ApplicationsControls
-            viewMode={viewMode}
             isMobileView={isMobileView}
             isAutosizeEnabled={isAutosizeEnabled}
             tableViewDensity={tableViewDensity}
@@ -202,8 +263,7 @@ export default function Applications() {
             visibleColumns={visibleColumns}
             selectedRows={selectedRows}
             selectedApplications={selectedApplications}
-            activeFilters={columnFilters}
-            onViewModeChange={setViewMode}
+            activeFilters={{}}
             onMobileViewToggle={() => setIsMobileView(!isMobileView)}
             onAutosizeToggle={() => setIsAutosizeEnabled(!isAutosizeEnabled)}
             onDensityChange={setTableViewDensity}
@@ -216,55 +276,53 @@ export default function Applications() {
             onBulkStageChange={handleBulkStageChange}
             onExport={handleExport}
             onBulkEdit={handleBulkEdit}
-            onResetFilters={() => {
-              setColumnFilters({});
-            }}
-            onOpenFilterBuilder={() => setIsFilterBuilderOpen(true)}
+            onResetFilters={undefined}
           />
         </div>
 
         {/* Data Table */}
         <div className="table-container">
-          {viewMode === 'kanban' ? (
-            <ApplicationsKanban
-              applicationsByStage={applicationsByStage}
-              statusUpdates={statusUpdates}
-              isMobileView={isMobileView}
-              stagesOrder={stagesOrder}
-              onStageChange={handleStageChange}
-              onKanbanDrop={handleKanbanDrop}
-              onEditApplication={handleEditApplication}
-              onDeleteApplication={handleDeleteApplication}
-              onToggleShortlist={handleToggleShortlist}
-              onOpenDetailModal={handleOpenDetailModal}
+          {/* Instant skeleton overlay during view transitions */}
+          {shouldShowOverlaySkeleton && (
+            <TableSkeleton
+              rows={10}
+              columns={visibleColumns.length || 6}
+              dense={tableViewDensity === 'compact'}
+              hideHeader={true}
+              rowGridTemplate={
+                isAutosizeEnabled
+                  ? '36px repeat(8, minmax(80px, auto))'
+                  : (tableViewDensity === 'compact'
+                    ? '32px minmax(120px, 2fr) minmax(160px, 2.5fr) minmax(80px, 1.2fr) minmax(70px, 1.5fr) minmax(60px, 1fr) minmax(60px, 1fr) minmax(60px, 1fr) minmax(60px, 1fr) minmax(50px, 0.8fr)'
+                    : '36px minmax(140px, 2fr) minmax(180px, 2.5fr) minmax(100px, 1.2fr) minmax(90px, 1.5fr) minmax(70px, 1fr) minmax(70px, 1fr) minmax(70px, 1fr) minmax(60px, 0.8fr)'
+                  )
+              }
             />
-          ) : false && filteredApplications.length > 50 ? (
+          )}
+          {shouldUseVirtualization && performanceConfig.enableVirtualization ? (
             <VirtualizedApplicationsTable
               applications={filteredApplications}
               visibleColumns={visibleColumns}
               sortConfig={sortConfig}
               selectedRows={selectedRows}
-              columnFilters={columnFilters}
               isAutosizeEnabled={isAutosizeEnabled}
               tableViewDensity={tableViewDensity}
               isMobileView={isMobileView}
               mounted={mounted}
               inlineEditingId={inlineEditingId}
               activeStageDropdown={activeStageDropdown}
-              isLoading={isLoading}
+              isLoading={isLoading || isInitialLoading}
               hasMore={hasMore}
               stagesOrder={stagesOrder}
               tableRef={tableRef}
               lastRowRef={lastRowRef}
               enableVirtualization={true}
-              itemHeight={tableViewDensity === 'compact' ? 40 : tableViewDensity === 'spacious' ? 60 : 48}
-              overscan={10}
+              itemHeight={performanceConfig.itemHeight}
+              overscan={performanceConfig.overscan}
+              showPlaceholders={true}
               onSort={(column) => {
                 const newDirection = sortConfig.column === column && sortConfig.direction === 'asc' ? 'desc' : 'asc';
                 setSortConfig({ column, direction: newDirection });
-              }}
-              onFilterChange={(column, value) => {
-                setColumnFilters({ ...columnFilters, [column]: value });
               }}
               onRowSelect={(appId, selected) => {
                 if (selected) {
@@ -284,7 +342,6 @@ export default function Applications() {
               visibleColumns={visibleColumns}
               sortConfig={sortConfig}
               selectedRows={selectedRows}
-              columnFilters={columnFilters}
               applicationStats={applicationStats}
               isAutosizeEnabled={isAutosizeEnabled}
               tableViewDensity={tableViewDensity}
@@ -292,17 +349,15 @@ export default function Applications() {
               mounted={mounted}
               inlineEditingId={inlineEditingId}
               activeStageDropdown={activeStageDropdown}
-              isLoading={isLoading}
+              isLoading={isLoading || isInitialLoading}
               hasMore={hasMore}
               stagesOrder={stagesOrder}
               tableRef={tableRef}
               lastRowRef={lastRowRef}
+              showPlaceholders={true}
               onSort={(column) => {
                 const newDirection = sortConfig.column === column && sortConfig.direction === 'asc' ? 'desc' : 'asc';
                 setSortConfig({ column, direction: newDirection });
-              }}
-              onFilterChange={(column, value) => {
-                setColumnFilters({ ...columnFilters, [column]: value });
               }}
               onRowSelect={(appId, selected) => {
                 if (selected) {
@@ -313,20 +368,16 @@ export default function Applications() {
               }}
               onBulkSelect={(appIds, selected) => {
                 if (selected) {
-                  // Select all applications
                   setSelectedRows(appIds);
                 } else {
-                  // Deselect all applications
                   setSelectedRows([]);
                 }
               }}
-              activeFilters={columnFilters}
-              onResetFilters={() => {
-                setColumnFilters({});
-              }}
+              activeFilters={{}}
+              onResetFilters={undefined}
               onQuickFilter={(filterType, value) => {
                 // Handle quick filter actions
-                const newFilters = { ...columnFilters };
+                const newFilters: Record<string, string> = {};
 
                 switch (filterType) {
                   case 'stage':
@@ -343,7 +394,7 @@ export default function Applications() {
                       newFilters.dateApplied = monthStart.toISOString().split('T')[0];
                     } else {
                       // Clear timeframe filter
-                      delete newFilters.dateApplied;
+                      newFilters.dateApplied = '';
                     }
                     break;
                   case 'remote':
@@ -363,7 +414,8 @@ export default function Applications() {
                     break;
                 }
 
-                setColumnFilters(newFilters);
+                // If quick filters should remain, wire them to state.quickFilters instead
+                // For now we do nothing here since column filters were removed
               }}
               onRowClick={handleRowClick}
               onContextMenu={handleContextMenu}
@@ -436,231 +488,62 @@ export default function Applications() {
       <style jsx>{`
         /* Applications Page - Using Theme System */
         .applications-page {
-          max-width: var(--max-content-width);
+          position: relative;
+          height: 100%; /* was 100vh; avoid double-viewport stacking that caused extra scroll */
+          max-width: 100%;
           margin: 0 auto;
-          padding: var(--space-8) var(--space-6);
+          padding: 0; /* remove outer padding */
           font-family: var(--font-body);
+          display: flex;
+          flex-direction: column;
+          overflow: hidden; /* prevent page scroll */
           opacity: 0;
           transition: opacity var(--duration-300) var(--ease-smooth);
         }
 
-        .applications-page.mounted {
-          opacity: 1;
-        }
+        .applications-page.mounted { opacity: 1; }
 
-        /* Main Content - Using Theme Cards */
+        /* Main Content fills remaining height */
         .main-content {
-          background: var(--card);
-          border: 1px solid var(--border);
-          border-radius: var(--border-radius-lg);
-          overflow: hidden;
-          box-shadow: var(--shadow-small);
-          transition: all var(--duration-200) var(--ease-microinteractive);
-        }
-
-        .main-content:hover {
-          box-shadow: var(--shadow-medium);
-        }
-
-        /* Toolbar - Using Theme Spacing */
-        .toolbar {
-          padding: 0 var(--space-6);
+          flex: 1 1 auto;
+          display: flex;
+          flex-direction: column;
+          min-height: 0; /* allows children to shrink for overflow */
           background: var(--surface);
-          border-bottom: 1px solid var(--border-light);
-        }
-
-        /* Button Styles - Using Theme System */
-        .btn {
-          padding: var(--space-2) var(--space-4);
-          border: 1px solid var(--border);
-          border-radius: var(--border-radius);
-          cursor: pointer;
-          font-size: var(--font-size-sm);
-          font-weight: var(--font-weight-medium);
-          font-family: var(--font-interface);
-          letter-spacing: var(--letter-spacing);
-          transition: all var(--duration-150) var(--ease-microinteractive);
-          background: var(--surface);
-          color: var(--text-primary);
-          position: relative;
-          overflow: hidden;
-          transform: translateZ(0);
-        }
-
-        .btn::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: -100%;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(90deg, transparent, var(--hover-bg), transparent);
-          transition: left var(--duration-500) var(--ease-smooth);
-          pointer-events: none;
-        }
-
-        .btn:hover {
-          transform: translateY(var(--morph-translate)) scale(var(--morph-scale));
-          box-shadow: var(--shadow-small);
-        }
-
-        .btn:hover::before {
-          left: 100%;
-        }
-
-        .btn:active {
-          transform: translateY(0) scale(var(--micro-scale));
-          transition-duration: var(--duration-instant);
-        }
-
-        .btn-primary {
-          background: var(--primary);
-          border-color: var(--primary);
-          color: var(--text-inverse);
-        }
-
-        .btn-primary:hover {
-          background: var(--primary-dark);
-          border-color: var(--primary-dark);
-        }
-
-        .btn-secondary {
-          background: var(--surface-elevated);
-          border-color: var(--border);
-          color: var(--text-secondary);
-        }
-
-        .btn-secondary:hover {
-          background: var(--card-hover);
-          color: var(--text-primary);
-          border-color: var(--border-strong);
-        }
-
-        .btn-danger {
-          background: var(--error);
-          border-color: var(--error);
-          color: var(--text-inverse);
-        }
-
-        .btn-danger:hover {
-          background: #b91c1c;
-          border-color: #b91c1c;
-        }
-
-        .btn-ghost {
-          background: transparent;
+          border-radius: 0;
+          box-shadow: none;
           border: none;
-          color: var(--text-tertiary);
-          padding: var(--space-2) var(--space-3);
         }
 
-        .btn-ghost:hover {
-          background: var(--hover-bg);
-          color: var(--text-secondary);
-        }
-
-        /* Table Container - Using Theme */
-        .table-container {
-          background: transparent;
-        }
-
-        /* Loading & Error States - Using Theme Typography */
-        .applications-loading,
-        .applications-error {
+        /* Toolbar pinned at top */
+        .toolbar {
+          flex: 0 0 auto;
           display: flex;
           align-items: center;
-          justify-content: center;
-          min-height: 400px;
-          text-align: center;
+          gap: 12px;
+          padding: 8px 12px; /* tighter */
+          border-bottom: 1px solid var(--border, rgba(0,0,0,0.08));
+          background: var(--surface, #fff);
+        }
+        .toolbar-search { flex: 1; display: flex; align-items: center; min-width: 240px; }
+
+        /* Table container consumes all remaining space and scrolls internally */
+        .table-container {
+          flex: 1 1 auto;
+          min-height: 0; /* important for overflow */
+          overflow: auto; /* scroll only table, not page */
           background: var(--background);
         }
 
-        .loading-content,
-        .error-content {
-          max-width: 300px;
-          padding: var(--space-8);
-          background: var(--card);
-          border-radius: var(--border-radius-lg);
-          box-shadow: var(--shadow-medium);
-        }
+        /* Keep skeleton overlay behavior */
+        .table-container { transition: opacity var(--duration-200) ease; }
+        .table-container:has(.loading) { opacity: 0.8; }
 
-        .loading-content h3,
-        .error-content h3 {
-          margin: 0 0 var(--space-2) 0;
-          font-size: var(--text-lg);
-          font-weight: var(--font-weight-semibold);
-          font-family: var(--font-interface);
-          color: var(--text-primary);
-          line-height: var(--leading-tight);
-        }
+        /* Remove old card wrappers */
+        .main-content:hover { box-shadow: none; }
 
-        .loading-content p,
-        .error-content p {
-          margin: 0 0 var(--space-4) 0;
-          font-size: var(--font-size-sm);
-          font-family: var(--font-body);
-          color: var(--text-secondary);
-          line-height: var(--leading-normal);
-        }
-
-        .spinner {
-          width: 32px;
-          height: 32px;
-          border: 3px solid var(--border);
-          border-top: 3px solid var(--primary);
-          border-radius: 50%;
-          animation: spin var(--duration-1000) linear infinite;
-          margin: 0 auto var(--space-4);
-        }
-
-        .retry-button {
-          background: var(--primary);
-          color: var(--text-inverse);
-          border: none;
-          padding: var(--space-2) var(--space-5);
-          border-radius: var(--border-radius);
-          cursor: pointer;
-          font-size: var(--font-size-sm);
-          font-weight: var(--font-weight-medium);
-          font-family: var(--font-interface);
-          letter-spacing: var(--letter-spacing);
-          transition: all var(--duration-150) var(--ease-microinteractive);
-        }
-
-        .retry-button:hover {
-          background: var(--primary-dark);
-          transform: translateY(var(--morph-translate)) scale(var(--morph-scale));
-          box-shadow: var(--shadow-small);
-        }
-
-        .retry-button:active {
-          transform: translateY(0) scale(var(--micro-scale));
-          transition-duration: var(--duration-instant);
-        }
-
-        .error-icon {
-          font-size: var(--text-5xl);
-          margin-bottom: var(--space-4);
-        }
-
-        .error-content h3 {
-          color: var(--error);
-        }
-
-        /* Responsive Design - Using Theme Breakpoints */
         @media (max-width: 768px) {
-          .applications-page {
-            padding: var(--space-6) var(--space-4);
-          }
-
-          .toolbar {
-            padding: var(--space-4);
-          }
-        }
-
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+          .toolbar { padding: 8px; }
         }
       `}</style>
     </div>

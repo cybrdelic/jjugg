@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React from 'react';
 import { Application, ApplicationStage, StatusUpdate } from '@/types';
 import { useAppData } from '@/contexts/AppDataContext';
 import { createErrorHandler, ApplicationsErrorHandler } from '../utils/errorHandler';
@@ -59,7 +60,8 @@ export interface ApplicationsState {
     // Filters
     quickFilters: {
         stage: ApplicationStage | 'all',
-        dateRange: '7d' | '30d' | '90d' | 'all',
+        dateRange: '7d' | '30d' | '90d' | 'all' | 'custom',
+        customDateRange?: { start: Date | null; end: Date | null },
         salary: 'with' | 'without' | 'all'
     };
     showAdvancedFilters: boolean;
@@ -207,6 +209,7 @@ export function useApplicationsLogic(): ApplicationsHookReturn {
         quickFilters: {
             stage: 'all',
             dateRange: 'all',
+            customDateRange: { start: null, end: null },
             salary: 'all'
         },
         showAdvancedFilters: false,
@@ -321,11 +324,19 @@ export function useApplicationsLogic(): ApplicationsHookReturn {
                 '7d': 7,
                 '30d': 30,
                 '90d': 90
-            }[state.quickFilters.dateRange];
+            }[state.quickFilters.dateRange as '7d' | '30d' | '90d'];
 
             if (daysBack) {
                 const cutoffDate = new Date(now.getTime() - daysBack * 24 * 60 * 60 * 1000);
                 filtered = filtered.filter(app => app.dateApplied >= cutoffDate);
+            } else if (state.quickFilters.dateRange === 'custom' && state.quickFilters.customDateRange) {
+                const { start, end } = state.quickFilters.customDateRange;
+                filtered = filtered.filter(app => {
+                    const d = app.dateApplied.getTime();
+                    const afterStart = start ? d >= new Date(start).getTime() : true;
+                    const beforeEnd = end ? d <= new Date(end).getTime() : true;
+                    return afterStart && beforeEnd;
+                });
             }
         }
 
@@ -376,11 +387,13 @@ export function useApplicationsLogic(): ApplicationsHookReturn {
 
     // Debug logging for filtered applications
     useEffect(() => {
-        console.log('useApplicationsLogic - applicationsData:', applicationsData?.length || 0, applicationsData);
-        console.log('useApplicationsLogic - filteredApplications:', filteredApplications.length, filteredApplications);
-        console.log('useApplicationsLogic - debouncedSearchTerm:', debouncedSearchTerm);
-        console.log('useApplicationsLogic - debouncedColumnFilters:', debouncedColumnFilters);
-        console.log('useApplicationsLogic - quickFilters:', state.quickFilters);
+        if (process.env.NODE_ENV === 'development') {
+            console.log('useApplicationsLogic - applicationsData:', applicationsData?.length || 0, applicationsData);
+            console.log('useApplicationsLogic - filteredApplications:', filteredApplications.length, filteredApplications);
+            console.log('useApplicationsLogic - debouncedSearchTerm:', debouncedSearchTerm);
+            console.log('useApplicationsLogic - debouncedColumnFilters:', debouncedColumnFilters);
+            console.log('useApplicationsLogic - quickFilters:', state.quickFilters);
+        }
     }, [applicationsData, filteredApplications, debouncedSearchTerm, debouncedColumnFilters, state.quickFilters]);
 
     // Computed values

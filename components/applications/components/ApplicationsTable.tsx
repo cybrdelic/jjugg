@@ -15,7 +15,6 @@ interface ApplicationsTableProps {
   visibleColumns: string[];
   sortConfig: { column: keyof Application | 'company.name'; direction: 'asc' | 'desc' };
   selectedRows: string[];
-  columnFilters: Record<string, string>;
   applicationStats?: {
     applications: number;
     stageStats: {
@@ -50,10 +49,11 @@ interface ApplicationsTableProps {
   // Loading states
   isLoading: boolean;
   hasMore: boolean;
+  // Show immediate placeholders (empty rows) regardless of data presence
+  showPlaceholders?: boolean;
 
   // Handlers
   onSort: (column: keyof Application | 'company.name') => void;
-  onFilterChange: (column: string, value: string) => void;
   onRowSelect: (appId: string, selected: boolean) => void;
   onBulkSelect?: (appIds: string[], selected: boolean) => void;
   onRowClick: (appId: string, e: React.MouseEvent) => void;
@@ -77,7 +77,6 @@ export function ApplicationsTable({
   visibleColumns,
   sortConfig,
   selectedRows,
-  columnFilters,
   applicationStats,
   isAutosizeEnabled,
   tableViewDensity,
@@ -87,8 +86,8 @@ export function ApplicationsTable({
   activeStageDropdown,
   isLoading,
   hasMore,
+  showPlaceholders = false,
   onSort,
-  onFilterChange,
   onRowSelect,
   onBulkSelect,
   onRowClick,
@@ -121,45 +120,55 @@ export function ApplicationsTable({
 
   // Calculate visible items with improved performance
   const ROW_HEIGHT = tableViewDensity === 'compact' ? 48 : tableViewDensity === 'spacious' ? 64 : 56;
-  const OVERSCAN = 10; // Increased overscan for better coverage during scroll
-  const VIRTUAL_THRESHOLD = 30; // Lower threshold to ensure virtual scrolling kicks in earlier
+  // Disable internal virtualization here; top-level now chooses VirtualizedApplicationsTable for large lists
+  const VIRTUAL_THRESHOLD = Number.MAX_SAFE_INTEGER;
+
+  // Match ApplicationTableRow grid templates to avoid layout shift
+  const rowGridTemplate = useMemo(() => {
+    if (isAutosizeEnabled) return '36px repeat(8, minmax(80px, auto))';
+    if (tableViewDensity === 'compact') {
+      return '32px minmax(120px, 2fr) minmax(160px, 2.5fr) minmax(80px, 1.2fr) minmax(70px, 1.5fr) minmax(60px, 1fr) minmax(60px, 1fr) minmax(60px, 1fr) minmax(60px, 1fr) minmax(50px, 0.8fr)';
+    }
+    // comfortable and spacious share base template
+    return '36px minmax(140px, 2fr) minmax(180px, 2.5fr) minmax(100px, 1.2fr) minmax(90px, 1.5fr) minmax(70px, 1fr) minmax(70px, 1fr) minmax(70px, 1fr) minmax(60px, 0.8fr)';
+  }, [isAutosizeEnabled, tableViewDensity]);
 
   const visibleRange = useMemo(() => {
     if (applications.length <= VIRTUAL_THRESHOLD) {
-      // For small datasets, render all
-      const range = { start: 0, end: applications.length, offset: 0 };
-      setDebugInfo({
-        scrollTop,
-        containerHeight,
-        visibleStart: range.start,
-        visibleEnd: range.end,
-        totalItems: applications.length
-      });
-      return range;
+      // For small/medium datasets, render all
+      return { start: 0, end: applications.length, offset: 0 };
     }
 
-    const startIndex = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN);
+    const startIndex = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - 10);
     const endIndex = Math.min(
       applications.length,
-      startIndex + Math.ceil(containerHeight / ROW_HEIGHT) + OVERSCAN * 2
+      startIndex + Math.ceil(containerHeight / ROW_HEIGHT) + 10 * 2
     );
 
-    const range = {
+    return {
       start: startIndex,
       end: endIndex,
       offset: startIndex * ROW_HEIGHT
     };
+  }, [scrollTop, containerHeight, applications.length, ROW_HEIGHT]);
 
+  // Placeholder rows count based on container height
+  const placeholderRowCount = useMemo(() => {
+    const base = Math.ceil(containerHeight / ROW_HEIGHT) || 8;
+    // Clamp for sanity
+    return Math.min(Math.max(base, 6), 20);
+  }, [containerHeight, ROW_HEIGHT]);
+
+  // Update debug info when visible range or container metrics change
+  useEffect(() => {
     setDebugInfo({
       scrollTop,
       containerHeight,
-      visibleStart: range.start,
-      visibleEnd: range.end,
+      visibleStart: visibleRange.start,
+      visibleEnd: visibleRange.end,
       totalItems: applications.length
     });
-
-    return range;
-  }, [scrollTop, containerHeight, applications.length, ROW_HEIGHT]);
+  }, [scrollTop, containerHeight, visibleRange.start, visibleRange.end, applications.length]);
 
   // Handle scroll with throttling for better performance
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -264,12 +273,12 @@ export function ApplicationsTable({
     onSort(column);
   }, [onSort]);
 
-  // Memoize filter change handler
-  const handleFilterChange = useCallback((column: string) => {
-    return (e: React.ChangeEvent<HTMLInputElement>) => {
-      onFilterChange(column, e.target.value);
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      // Object.values(filterDebounceTimers.current).forEach(id => window.clearTimeout(id));
     };
-  }, [onFilterChange]);
+  }, []);
 
   // Memoize visible applications to prevent unnecessary re-renders
   const visibleApplications = useMemo(() => {
@@ -282,248 +291,29 @@ export function ApplicationsTable({
   // Memoize visible columns for header rendering
   const memoizedVisibleColumns = useMemo(() => visibleColumns, [visibleColumns]);
 
-  if (applications.length === 0 && !isLoading) {
+  if (applications.length === 0 && !isLoading && !showPlaceholders) {
     return (
       <div className="professional-empty-state">
-        <div className="empty-icon">📋</div>
-        <h3 className="text-h3">No applications found</h3>
-        <p className="text-body text-secondary">Get started by creating your first job application</p>
-        <button className="clean-button">
-          <span>Add Application</span>
-        </button>
+        <div className="empty-icon">🔎</div>
+        <h3 className="text-h3">No matching applications</h3>
+        <p className="text-body text-secondary">Try adjusting or clearing filters to see more results.</p>
+        {onResetFilters && Object.values(activeFilters || {}).some(Boolean) && (
+          <button className="clean-button" onClick={onResetFilters}>
+            Clear filters
+          </button>
+        )}
       </div>
     );
   }
 
   return (
     <div className="professional-table-container">
-      {/* Interactive Filter Chips Status Bar */}
-      <div className="filter-chips-bar">
-        <div className="chips-container">
-          {/* Total Applications - Always visible */}
-          <div className="chip chip-total">
-            <span className="chip-value">{applications.length}</span>
-            <span className="chip-label">
-              {applications.length === 1 ? 'application' : 'applications'}
-            </span>
-          </div>
-
-          {applicationStats && (
-            <>
-              {/* Stage Filter Chips */}
-              {applicationStats.stageStats.applied > 0 && (
-                <button
-                  className={`chip chip-filter chip-applied ${activeFilters.stage === 'applied' ? 'active' : ''}`}
-                  onClick={() => onQuickFilter?.('stage', activeFilters.stage === 'applied' ? '' : 'applied')}
-                  title={activeFilters.stage === 'applied' ? 'Clear Applied filter - Click to show all stages' : 'Filter by Applied stage - Click to show only applied applications'}
-                  data-filter-preview={activeFilters.stage === 'applied' ? 'Showing only applied applications' : `Filter to ${applicationStats.stageStats.applied} applied applications`}
-                >
-                  <span className="chip-icon">📝</span>
-                  <span className="chip-value">{applicationStats.stageStats.applied}</span>
-                  <span className="chip-label">applied</span>
-                  {activeFilters.stage === 'applied' ? (
-                    <span className="active-indicator active">✓</span>
-                  ) : (
-                    <span className="hover-indicator">+</span>
-                  )}
-                  <div className="chip-tooltip">
-                    {activeFilters.stage === 'applied' ? 'Clear filter' : 'Apply filter'}
-                  </div>
-                </button>
-              )}
-
-              {applicationStats.stageStats.screening > 0 && (
-                <button
-                  className="chip chip-filter chip-screening"
-                  onClick={() => onQuickFilter?.('stage', 'screening')}
-                  title="Filter by Screening stage"
-                >
-                  <span className="chip-icon">�</span>
-                  <span className="chip-value">{applicationStats.stageStats.screening}</span>
-                  <span className="chip-label">screening</span>
-                </button>
-              )}
-
-              {applicationStats.stageStats.interview > 0 && (
-                <button
-                  className="chip chip-filter chip-interview"
-                  onClick={() => onQuickFilter?.('stage', 'interview')}
-                  title="Filter by Interview stage"
-                >
-                  <span className="chip-icon">�</span>
-                  <span className="chip-value">{applicationStats.stageStats.interview}</span>
-                  <span className="chip-label">interviews</span>
-                </button>
-              )}
-
-              {applicationStats.stageStats.offer > 0 && (
-                <button
-                  className="chip chip-filter chip-offer"
-                  onClick={() => onQuickFilter?.('stage', 'offer')}
-                  title="Filter by Offer stage"
-                >
-                  <span className="chip-icon">🎉</span>
-                  <span className="chip-value">{applicationStats.stageStats.offer}</span>
-                  <span className="chip-label">offers</span>
-                </button>
-              )}
-
-              {/* Time-based Filter Chips */}
-              {applicationStats.appliedThisWeek > 0 && (
-                <button
-                  className="chip chip-filter chip-week"
-                  onClick={() => onQuickFilter?.('timeframe', 'thisWeek')}
-                  title="Filter applications from this week"
-                >
-                  <span className="chip-icon">📈</span>
-                  <span className="chip-value">{applicationStats.appliedThisWeek}</span>
-                  <span className="chip-label">this week</span>
-                </button>
-              )}
-
-              {applicationStats.appliedThisMonth > 0 && (
-                <button
-                  className="chip chip-filter chip-month"
-                  onClick={() => onQuickFilter?.('timeframe', 'thisMonth')}
-                  title="Filter applications from this month"
-                >
-                  <span className="chip-icon">📊</span>
-                  <span className="chip-value">{applicationStats.appliedThisMonth}</span>
-                  <span className="chip-label">this month</span>
-                </button>
-              )}
-
-              {/* Task-based Filter Chips */}
-              {applicationStats.pendingTasks > 0 && (
-                <button
-                  className="chip chip-filter chip-tasks"
-                  onClick={() => onQuickFilter?.('tasks', 'pending')}
-                  title="Filter applications with pending tasks"
-                >
-                  <span className="chip-icon">✓</span>
-                  <span className="chip-value">{applicationStats.pendingTasks}</span>
-                  <span className="chip-label">
-                    {applicationStats.overdueTasks > 0
-                      ? `tasks (${applicationStats.overdueTasks} overdue)`
-                      : 'tasks'
-                    }
-                  </span>
-                </button>
-              )}
-
-              {applicationStats.interviews > 0 && (
-                <button
-                  className="chip chip-filter chip-upcoming"
-                  onClick={() => onQuickFilter?.('interviews', 'upcoming')}
-                  title="Filter applications with upcoming interviews"
-                >
-                  <span className="chip-icon">�</span>
-                  <span className="chip-value">{applicationStats.interviews}</span>
-                  <span className="chip-label">upcoming</span>
-                </button>
-              )}
-
-              {/* Quality Filter Chips */}
-              {applicationStats.shortlisted > 0 && (
-                <button
-                  className="chip chip-filter chip-shortlisted"
-                  onClick={() => onQuickFilter?.('shortlisted', 'true')}
-                  title="Filter shortlisted applications"
-                >
-                  <span className="chip-icon">⭐</span>
-                  <span className="chip-value">{applicationStats.shortlisted}</span>
-                  <span className="chip-label">shortlisted</span>
-                </button>
-              )}
-
-              {applicationStats.remoteJobs > 0 && (
-                <button
-                  className="chip chip-filter chip-remote"
-                  onClick={() => onQuickFilter?.('remote', 'true')}
-                  title="Filter remote job applications"
-                >
-                  <span className="chip-icon">🏠</span>
-                  <span className="chip-value">{applicationStats.remoteJobs}</span>
-                  <span className="chip-label">remote</span>
-                </button>
-              )}
-
-              {applicationStats.withSalary > 0 && (
-                <button
-                  className="chip chip-filter chip-salary"
-                  onClick={() => onQuickFilter?.('salary', 'hasValue')}
-                  title="Filter applications with salary information"
-                >
-                  <span className="chip-icon">�</span>
-                  <span className="chip-value">{applicationStats.withSalary}</span>
-                  <span className="chip-label">with salary</span>
-                </button>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* Enhanced Status and Filter Actions */}
-        <div className="status-actions">
-          {/* Active Filters Summary with better UX */}
-          {Object.values(activeFilters).some(value => value) && (
-            <div className="filter-status-enhanced">
-              <div className="filter-summary">
-                <span className="filter-icon">🔍</span>
-                <span className="filter-count">
-                  {Object.values(activeFilters).filter(value => value).length} active filter{Object.values(activeFilters).filter(value => value).length > 1 ? 's' : ''}
-                </span>
-                <div className="active-filter-tags">
-                  {Object.entries(activeFilters).filter(([key, value]) => value).map(([key, value]) => (
-                    <span key={key} className="filter-tag">
-                      <span className="filter-tag-label">{key}</span>
-                      <span className="filter-tag-value">{value}</span>
-                      <button
-                        className="filter-tag-remove"
-                        onClick={() => onQuickFilter?.(key, '')}
-                        title={`Remove ${key} filter`}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <button
-                className="reset-filters-btn-enhanced"
-                onClick={() => onResetFilters?.()}
-                title="Clear all active filters"
-              >
-                <span className="reset-icon">↻</span>
-                Reset
-              </button>
-            </div>
-          )}
-
-          {/* Selection Indicator */}
-          {selectedRows.length > 0 && (
-            <div className="selected-indicator">
-              <span className="selection-dot"></span>
-              <span className="selection-text">{selectedRows.length} selected</span>
-              {selectedRows.length === applications.length && (
-                <span className="all-badge">All</span>
-              )}
-            </div>
-          )}
-
-          {/* Loading Indicator */}
-          {isLoading && (
-            <div className="loading-indicator">
-              <Loader2 size={14} className="loading-icon" />
-              <span>Loading...</span>
-            </div>
-          )}
-        </div>
-      </div>
-
       <div className="professional-table-card" ref={tableRef}>
         {/* Professional Table Header */}
-        <div className={`professional-table-header ${isAutosizeEnabled ? 'autosize' : ''}`}>
+        <div
+          className={`professional-table-header ${isAutosizeEnabled ? 'autosize' : ''}`}
+          style={{ gridTemplateColumns: rowGridTemplate }}
+        >
           {/* Selection Header */}
           <div className="header-cell-select">
             <input
@@ -550,14 +340,6 @@ export function ApplicationsTable({
                 </span>
                 {getSortIcon(column as keyof Application | 'company.name')}
               </div>
-              <input
-                type="text"
-                className="minimal-input header-filter"
-                placeholder={`Filter ${formatColumnHeader(column).toLowerCase()}...`}
-                value={columnFilters[column] || ''}
-                onChange={handleFilterChange(column)}
-                onClick={(e) => e.stopPropagation()}
-              />
             </div>
           ))}
         </div>
@@ -569,79 +351,62 @@ export function ApplicationsTable({
           onScroll={handleScroll}
           style={{
             contain: 'layout style paint',
-            scrollBehavior: 'auto' // Ensure smooth but immediate scroll updates
+            contentVisibility: 'auto',
+            containIntrinsicSize: '600px',
+            scrollbarGutter: 'stable both-edges',
+            scrollBehavior: 'auto'
           }}
         >
-          {applications.length > VIRTUAL_THRESHOLD ? (
-            /* Virtual scrolling for large datasets */
-            <div style={{
-              height: applications.length * ROW_HEIGHT,
-              position: 'relative',
-              contain: 'layout style'
-            }}>
-              <div style={{
-                transform: `translate3d(0, ${visibleRange.offset}px, 0)`, // Use translate3d for GPU acceleration
-                willChange: 'transform' // Hint browser for optimization
-              }}>
-                {visibleApplications.map((app, virtualIndex) => {
-                  const actualIndex = visibleRange.start + virtualIndex;
-                  return (
-                    <ApplicationTableRow
-                      key={`${app.id}-${actualIndex}`} // Include index in key for better tracking
-                      application={app}
-                      visibleColumns={memoizedVisibleColumns}
-                      isSelected={selectedRows.includes(app.id)}
-                      isLastRow={actualIndex === applications.length - 1}
-                      mounted={mounted}
-                      isMobileView={isMobileView}
-                      isAutosizeEnabled={isAutosizeEnabled}
-                      tableViewDensity={tableViewDensity}
-                      inlineEditingId={inlineEditingId}
-                      activeStageDropdown={activeStageDropdown}
-                      animationDelay={0} // Disable staggered animation for virtual rows
-                      onSelect={(selected: boolean) => onRowSelect(app.id, selected)}
-                      onRowClick={(e: React.MouseEvent) => onRowClick(app.id, e)}
-                      onContextMenu={(e: React.MouseEvent) => onContextMenu(app.id, e)}
-                      onStageClick={(e: React.MouseEvent) => onStageClick(app.id, e)}
-                      onStageChange={(stage: ApplicationStage) => onStageChange(app.id, stage)}
-                      stagesOrder={stagesOrder}
-                      ref={actualIndex === applications.length - 1 ? lastRowRef : null}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          ) : (
-            /* Regular rendering for small datasets */
-            <div style={{ contain: 'layout style' }}>
-              {applications.map((app, index) => (
-                <ApplicationTableRow
-                  key={`${app.id}-${app.dateApplied}`}
-                  application={app}
-                  visibleColumns={memoizedVisibleColumns}
-                  isSelected={selectedRows.includes(app.id)}
-                  isLastRow={index === applications.length - 1}
-                  mounted={mounted}
-                  isMobileView={isMobileView}
-                  isAutosizeEnabled={isAutosizeEnabled}
-                  tableViewDensity={tableViewDensity}
-                  inlineEditingId={inlineEditingId}
-                  activeStageDropdown={activeStageDropdown}
-                  animationDelay={Math.min(index * 0.01, 0.5)} // Reduced animation delay
-                  onSelect={(selected: boolean) => onRowSelect(app.id, selected)}
-                  onRowClick={(e: React.MouseEvent) => onRowClick(app.id, e)}
-                  onContextMenu={(e: React.MouseEvent) => onContextMenu(app.id, e)}
-                  onStageClick={(e: React.MouseEvent) => onStageClick(app.id, e)}
-                  onStageChange={(stage: ApplicationStage) => onStageChange(app.id, stage)}
-                  stagesOrder={stagesOrder}
-                  ref={index === applications.length - 1 ? lastRowRef : null}
-                />
-              ))}
-            </div>
-          )}
+          {/* Always render non-virtual rows here; virtualization handled by VirtualizedApplicationsTable */}
+          <div style={{ contain: 'layout style' }}>
+            {applications.map((app, index) => (
+              <ApplicationTableRow
+                key={`${app.id}-${app.dateApplied}`}
+                application={app}
+                visibleColumns={memoizedVisibleColumns}
+                isSelected={selectedRows.includes(app.id)}
+                isLastRow={index === applications.length - 1}
+                mounted={mounted}
+                isMobileView={isMobileView}
+                isAutosizeEnabled={isAutosizeEnabled}
+                tableViewDensity={tableViewDensity}
+                inlineEditingId={inlineEditingId}
+                activeStageDropdown={activeStageDropdown}
+                animationDelay={Math.min(index * 0.01, 0.5)}
+                onSelect={(selected: boolean) => onRowSelect(app.id, selected)}
+                onRowClick={(e: React.MouseEvent) => onRowClick(app.id, e)}
+                onContextMenu={(e: React.MouseEvent) => onContextMenu(app.id, e)}
+                onStageClick={(e: React.MouseEvent) => onStageClick(app.id, e)}
+                onStageChange={(stage: ApplicationStage) => onStageChange(app.id, stage)}
+                stagesOrder={stagesOrder}
+                ref={index === applications.length - 1 ? lastRowRef : null}
+              />
+            ))}
+
+            {/* Placeholder rows when we want immediate structure without data */}
+            {applications.length === 0 && (isLoading || showPlaceholders) && (
+              Array.from({ length: placeholderRowCount }).map((_, i) => (
+                <div
+                  key={`ph-${i}`}
+                  className="placeholder-row"
+                  style={{
+                    height: ROW_HEIGHT,
+                    gridTemplateColumns: rowGridTemplate
+                  }}
+                >
+                  <div className="placeholder-cell checkbox" />
+                  {memoizedVisibleColumns.map((col, j) => (
+                    <div key={`phc-${i}-${j}`} className="placeholder-cell">
+                      <div className={`skeleton-line ${j % 3 === 0 ? 'short' : j % 3 === 1 ? 'medium' : ''}`} />
+                    </div>
+                  ))}
+                </div>
+              ))
+            )}
+          </div>
 
           {/* Professional Loading State */}
-          {isLoading && (
+          {isLoading && applications.length > 0 && (
             <div className="professional-loading-state">
               <Loader2 size={20} className="loading-spinner" />
               <span className="text-body-sm text-secondary">Loading applications...</span>
@@ -668,8 +433,7 @@ export function ApplicationsTable({
                   • {selectedRows.length} selected
                 </span>
               )}
-              {/* Debug info - remove in production */}
-              {debugInfo && applications.length > VIRTUAL_THRESHOLD && (
+              {debugInfo && (
                 <span className="debug-info">
                   • Virtual: {debugInfo.visibleStart}-{debugInfo.visibleEnd} of {debugInfo.totalItems}
                   (scroll: {Math.round(debugInfo.scrollTop)}, height: {Math.round(debugInfo.containerHeight)})
@@ -701,734 +465,40 @@ export function ApplicationsTable({
           overflow: hidden;
         }
 
-        /* ===================================
-           INTERACTIVE FILTER CHIPS BAR
-           Clickable Filter System
-           ===================================== */
-
-        .filter-chips-bar {
-          display: flex;
+        /* Placeholder rows (body-only skeleton) */
+        .placeholder-row {
+          display: grid;
+          gap: var(--space-3);
           align-items: center;
-          justify-content: space-between;
-          padding: var(--space-3) var(--space-4);
+          padding: 0 var(--space-4);
+          border-bottom: 1px dashed var(--border);
           background: var(--surface);
-          border: 1px solid var(--border);
-          border-bottom: none;
-          border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-          gap: var(--space-4);
-          min-height: 60px;
-          overflow-x: auto;
-          scrollbar-width: none;
-          -ms-overflow-style: none;
         }
-
-        .filter-chips-bar::-webkit-scrollbar {
-          display: none;
+        .placeholder-cell { display: flex; align-items: center; }
+        .placeholder-cell.checkbox { justify-content: center; }
+        .skeleton-line {
+          width: 80%;
+          height: 12px;
+          border-radius: var(--radius-sm);
+          background: var(--border);
+          position: relative;
+          overflow: hidden;
         }
-
-        .chips-container {
-          display: flex;
-          align-items: center;
-          gap: var(--space-2);
-          flex: 1;
-          min-width: 0;
-        }
-
-        /* Base Chip Styles */
-        .chip {
-          display: flex;
-          align-items: center;
-          gap: var(--space-1-5);
-          padding: var(--space-2) var(--space-3);
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: var(--radius-full);
-          font-family: var(--font-interface);
-          font-size: var(--text-sm);
-          font-weight: var(--font-medium);
-          transition: all var(--duration-150) var(--ease-out);
-          white-space: nowrap;
-          flex-shrink: 0;
-        }
-
-        /* Total Applications Chip - Always visible, not clickable */
-        .chip-total {
-          background: var(--background);
-          border-color: var(--border-strong);
-          font-weight: var(--font-semibold);
-        }
-
-        .chip-total .chip-value {
-          font-size: var(--text-lg);
-          font-weight: var(--font-bold);
-          color: var(--text-primary);
-        }
-
-        .chip-total .chip-label {
-          color: var(--text-secondary);
-          text-transform: lowercase;
-        }
-
-        /* Clickable Filter Chips */
-        .chip-filter {
-          cursor: pointer;
-          transition: all var(--duration-150) var(--ease-out);
-        }
-
-        .chip-filter:hover {
-          transform: translateY(-1px);
-          box-shadow: var(--shadow-sm);
-          border-color: var(--border-strong);
-        }
-
-        .chip-filter:active {
-          transform: translateY(0);
-          transition-duration: var(--duration-instant);
-        }
-
-        /* Stage-specific chip colors */
-        .chip-applied {
-          background: rgba(156, 163, 175, 0.1);
-          border-color: rgba(156, 163, 175, 0.2);
-          color: #6b7280;
-        }
-
-        .chip-applied:hover {
-          background: rgba(156, 163, 175, 0.15);
-          border-color: rgba(156, 163, 175, 0.3);
-        }
-
-        .chip-screening {
-          background: rgba(59, 130, 246, 0.1);
-          border-color: rgba(59, 130, 246, 0.2);
-          color: #2563eb;
-        }
-
-        .chip-screening:hover {
-          background: rgba(59, 130, 246, 0.15);
-          border-color: rgba(59, 130, 246, 0.3);
-        }
-
-        .chip-interview {
-          background: rgba(139, 92, 246, 0.1);
-          border-color: rgba(139, 92, 246, 0.2);
-          color: #7c3aed;
-        }
-
-        .chip-interview:hover {
-          background: rgba(139, 92, 246, 0.15);
-          border-color: rgba(139, 92, 246, 0.3);
-        }
-
-        .chip-offer {
-          background: rgba(34, 197, 94, 0.1);
-          border-color: rgba(34, 197, 94, 0.2);
-          color: #16a34a;
-        }
-
-        .chip-offer:hover {
-          background: rgba(34, 197, 94, 0.15);
-          border-color: rgba(34, 197, 94, 0.3);
-        }
-
-        /* Time-based chips */
-        .chip-week {
-          background: rgba(var(--accent-rgb), 0.1);
-          border-color: rgba(var(--accent-rgb), 0.2);
-          color: var(--accent);
-        }
-
-        .chip-week:hover {
-          background: rgba(var(--accent-rgb), 0.15);
-          border-color: rgba(var(--accent-rgb), 0.3);
-        }
-
-        .chip-month {
-          background: rgba(var(--primary-rgb), 0.1);
-          border-color: rgba(var(--primary-rgb), 0.2);
-          color: var(--primary);
-        }
-
-        .chip-month:hover {
-          background: rgba(var(--primary-rgb), 0.15);
-          border-color: rgba(var(--primary-rgb), 0.3);
-        }
-
-        /* Quality and task chips */
-        .chip-tasks {
-          background: rgba(251, 191, 36, 0.1);
-          border-color: rgba(251, 191, 36, 0.2);
-          color: #d97706;
-        }
-
-        .chip-tasks:hover {
-          background: rgba(251, 191, 36, 0.15);
-          border-color: rgba(251, 191, 36, 0.3);
-        }
-
-        .chip-upcoming {
-          background: rgba(168, 85, 247, 0.1);
-          border-color: rgba(168, 85, 247, 0.2);
-          color: #9333ea;
-        }
-
-        .chip-upcoming:hover {
-          background: rgba(168, 85, 247, 0.15);
-          border-color: rgba(168, 85, 247, 0.3);
-        }
-
-        .chip-shortlisted {
-          background: rgba(245, 158, 11, 0.1);
-          border-color: rgba(245, 158, 11, 0.2);
-          color: #d97706;
-        }
-
-        .chip-shortlisted:hover {
-          background: rgba(245, 158, 11, 0.15);
-          border-color: rgba(245, 158, 11, 0.3);
-        }
-
-        .chip-remote {
-          background: rgba(16, 185, 129, 0.1);
-          border-color: rgba(16, 185, 129, 0.2);
-          color: #059669;
-        }
-
-        .chip-remote:hover {
-          background: rgba(16, 185, 129, 0.15);
-          border-color: rgba(16, 185, 129, 0.3);
-        }
-
-        .chip-salary {
-          background: rgba(34, 197, 94, 0.1);
-          border-color: rgba(34, 197, 94, 0.2);
-          color: #16a34a;
-        }
-
-        .chip-salary:hover {
-          background: rgba(34, 197, 94, 0.15);
-          border-color: rgba(34, 197, 94, 0.3);
-        }
-
-        /* Chip elements */
-        .chip-icon {
-          font-size: var(--text-sm);
-          opacity: 0.8;
-          flex-shrink: 0;
-        }
-
-        .chip-value {
-          font-weight: var(--font-bold);
-          color: inherit;
-          line-height: 1;
-        }
-
-        .chip-label {
-          color: inherit;
-          opacity: 0.8;
-          text-transform: lowercase;
-        }
-
-        /* Active Filter States */
-        .chip-filter.active {
-          background: var(--primary) !important;
-          border-color: var(--primary) !important;
-          color: white !important;
-          box-shadow: var(--shadow-sm);
-          transform: translateY(-1px);
-        }
-
-        .chip-filter.active .chip-icon,
-        .chip-filter.active .chip-value,
-        .chip-filter.active .chip-label {
-          color: white !important;
-          opacity: 1;
-        }
-
-        .chip-filter.active:hover {
-          background: var(--primary-dark) !important;
-          border-color: var(--primary-dark) !important;
-          transform: translateY(-2px);
-          box-shadow: var(--shadow-md);
-        }
-
-        .active-indicator {
-          margin-left: var(--space-1);
-          font-size: var(--text-xs);
-          font-weight: var(--font-bold);
-          opacity: 0.8;
-          line-height: 1;
-        }
-
-        .active-indicator.active {
-          color: white;
-          opacity: 1;
-        }
-
-        .hover-indicator {
-          margin-left: var(--space-1);
-          font-size: var(--text-xs);
-          font-weight: var(--font-bold);
-          opacity: 0;
-          line-height: 1;
-          transition: opacity var(--duration-150) var(--ease-out);
-        }
-
-        .chip-filter:hover .hover-indicator {
-          opacity: 0.6;
-        }
-
-        /* Enhanced Chip Tooltips */
-        .chip-tooltip {
-          position: absolute;
-          bottom: 100%;
-          left: 50%;
-          transform: translateX(-50%);
-          background: var(--background);
-          color: var(--text-primary);
-          padding: var(--space-1-5) var(--space-2);
-          border-radius: var(--radius-md);
-          font-size: var(--text-xs);
-          font-weight: var(--font-medium);
-          white-space: nowrap;
-          box-shadow: var(--shadow-md);
-          border: 1px solid var(--border);
-          opacity: 0;
-          pointer-events: none;
-          transition: all var(--duration-200) var(--ease-out);
-          z-index: 1000;
-          margin-bottom: var(--space-1);
-        }
-
-        .chip-tooltip::after {
+        .skeleton-line.short { width: 40%; }
+        .skeleton-line.medium { width: 60%; }
+        .skeleton-line::after {
           content: '';
           position: absolute;
-          top: 100%;
-          left: 50%;
-          transform: translateX(-50%);
-          border: 4px solid transparent;
-          border-top-color: var(--border);
+          inset: 0;
+          transform: translateX(-100%);
+          background: linear-gradient(90deg,
+            rgba(200,210,220,0) 0%,
+            rgba(200,210,220,0.35) 50%,
+            rgba(200,210,220,0) 100%
+          );
+          animation: shimmer 700ms ease-out infinite;
         }
-
-        .chip-filter:hover .chip-tooltip {
-          opacity: 1;
-          transform: translateX(-50%) translateY(-2px);
-        }
-
-        /* Enhanced Chip Interactions */
-        .chip-filter {
-          position: relative;
-          cursor: pointer;
-          transition: all var(--duration-200) var(--ease-out);
-          overflow: visible;
-        }
-
-        .chip-filter:hover {
-          transform: translateY(-2px) scale(1.02);
-          box-shadow: var(--shadow-md);
-          border-color: var(--border-strong);
-          z-index: 10;
-        }
-
-        .chip-filter:active {
-          transform: translateY(0) scale(0.98);
-          transition-duration: var(--duration-instant);
-        }
-
-        .chip-filter[data-filter-preview]::before {
-          content: attr(data-filter-preview);
-          position: absolute;
-          top: -40px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: var(--primary);
-          color: white;
-          padding: var(--space-2) var(--space-3);
-          border-radius: var(--radius-md);
-          font-size: var(--text-xs);
-          font-weight: var(--font-medium);
-          white-space: nowrap;
-          opacity: 0;
-          pointer-events: none;
-          transition: all var(--duration-200) var(--ease-out);
-          z-index: 1001;
-          box-shadow: var(--shadow-lg);
-        }
-
-        .chip-filter[data-filter-preview]:hover::before {
-          opacity: 1;
-          transform: translateX(-50%) translateY(-4px);
-        }
-
-        /* Status Actions */
-        .status-actions {
-          display: flex;
-          align-items: center;
-          gap: var(--space-3);
-          flex-shrink: 0;
-        }
-
-        .selected-indicator {
-          display: flex;
-          align-items: center;
-          gap: var(--space-2);
-          padding: var(--space-1-5) var(--space-3);
-          background: rgba(var(--primary-rgb), 0.1);
-          border: 1px solid rgba(var(--primary-rgb), 0.2);
-          border-radius: var(--radius-full);
-          font-family: var(--font-interface);
-          font-size: var(--text-sm);
-          font-weight: var(--font-medium);
-          color: var(--primary);
-        }
-
-        .selection-dot {
-          width: 8px;
-          height: 8px;
-          background: var(--primary);
-          border-radius: 50%;
-          animation: pulse 2s infinite;
-        }
-
-        .selection-text {
-          color: var(--primary);
-        }
-
-        .all-badge {
-          font-size: var(--text-xs);
-          font-weight: var(--font-bold);
-          color: var(--text-inverse);
-          background: var(--primary);
-          padding: var(--space-1) var(--space-2);
-          border-radius: var(--radius-sm);
-          text-transform: uppercase;
-          letter-spacing: var(--tracking-wide);
-        }
-
-        .filter-active {
-          display: flex;
-          align-items: center;
-          gap: var(--space-1-5);
-          padding: var(--space-1-5) var(--space-3);
-          background: rgba(var(--accent-rgb), 0.1);
-          border: 1px solid rgba(var(--accent-rgb), 0.2);
-          border-radius: var(--radius-full);
-          font-family: var(--font-interface);
-          font-size: var(--text-sm);
-          font-weight: var(--font-medium);
-          color: var(--accent);
-        }
-
-        .filter-icon {
-          font-size: var(--text-sm);
-          opacity: 0.8;
-        }
-
-        .filter-text {
-          color: var(--accent);
-        }
-
-        .loading-indicator {
-          display: flex;
-          align-items: center;
-          gap: var(--space-2);
-          color: var(--text-tertiary);
-          font-family: var(--font-interface);
-          font-size: var(--text-sm);
-          font-weight: var(--font-medium);
-        }
-
-        .loading-icon {
-          animation: spin 1s linear infinite;
-        }
-
-        /* Enhanced Filter Status */
-        .filter-status {
-          display: flex;
-          align-items: center;
-          gap: var(--space-2);
-          padding: var(--space-1-5) var(--space-3);
-          background: rgba(var(--accent-rgb), 0.1);
-          border: 1px solid rgba(var(--accent-rgb), 0.2);
-          border-radius: var(--radius-full);
-          font-family: var(--font-interface);
-          font-size: var(--text-sm);
-          font-weight: var(--font-medium);
-          color: var(--accent);
-        }
-
-        .filter-count {
-          color: var(--accent);
-          font-weight: var(--font-semibold);
-        }
-
-        .reset-filters-btn {
-          background: transparent;
-          border: none;
-          color: var(--accent);
-          cursor: pointer;
-          font-size: var(--text-xs);
-          font-weight: var(--font-medium);
-          text-decoration: underline;
-          padding: 0;
-          margin-left: var(--space-1);
-          transition: all var(--duration-150) var(--ease-out);
-        }
-
-        .reset-filters-btn:hover {
-          color: var(--accent-dark);
-          text-decoration: none;
-        }
-
-        /* Enhanced Filter Status with Better UX */
-        .filter-status-enhanced {
-          display: flex;
-          align-items: center;
-          gap: var(--space-3);
-          padding: var(--space-2) var(--space-4);
-          background: rgba(var(--accent-rgb), 0.08);
-          border: 1px solid rgba(var(--accent-rgb), 0.15);
-          border-radius: var(--radius-lg);
-          font-family: var(--font-interface);
-          box-shadow: var(--shadow-xs);
-          transition: all var(--duration-200) var(--ease-out);
-        }
-
-        .filter-summary {
-          display: flex;
-          align-items: center;
-          gap: var(--space-2);
-          flex: 1;
-        }
-
-        .filter-count {
-          color: var(--accent);
-          font-weight: var(--font-semibold);
-          font-size: var(--text-sm);
-        }
-
-        .active-filter-tags {
-          display: flex;
-          align-items: center;
-          gap: var(--space-1-5);
-          margin-left: var(--space-2);
-        }
-
-        .filter-tag {
-          display: flex;
-          align-items: center;
-          gap: var(--space-1);
-          padding: var(--space-1) var(--space-2);
-          background: var(--primary);
-          color: white;
-          border-radius: var(--radius-md);
-          font-size: var(--text-xs);
-          font-weight: var(--font-medium);
-          transition: all var(--duration-150) var(--ease-out);
-        }
-
-        .filter-tag:hover {
-          background: var(--primary-dark);
-          transform: translateY(-1px);
-          box-shadow: var(--shadow-sm);
-        }
-
-        .filter-tag-label {
-          opacity: 0.8;
-          text-transform: capitalize;
-        }
-
-        .filter-tag-value {
-          font-weight: var(--font-semibold);
-        }
-
-        .filter-tag-remove {
-          background: none;
-          border: none;
-          color: white;
-          cursor: pointer;
-          font-size: var(--text-xs);
-          font-weight: var(--font-bold);
-          padding: 0;
-          margin-left: var(--space-1);
-          opacity: 0.7;
-          transition: opacity var(--duration-150) var(--ease-out);
-        }
-
-        .filter-tag-remove:hover {
-          opacity: 1;
-        }
-
-        .reset-filters-btn-enhanced {
-          display: flex;
-          align-items: center;
-          gap: var(--space-1-5);
-          background: var(--surface);
-          border: 1px solid rgba(var(--accent-rgb), 0.2);
-          color: var(--accent);
-          cursor: pointer;
-          font-size: var(--text-sm);
-          font-weight: var(--font-medium);
-          padding: var(--space-1-5) var(--space-3);
-          border-radius: var(--radius-md);
-          transition: all var(--duration-150) var(--ease-out);
-        }
-
-        .reset-filters-btn-enhanced:hover {
-          background: var(--accent);
-          color: white;
-          border-color: var(--accent);
-          transform: translateY(-1px);
-          box-shadow: var(--shadow-sm);
-        }
-
-        .reset-icon {
-          font-size: var(--text-sm);
-          transition: transform var(--duration-200) var(--ease-out);
-        }
-
-        .reset-filters-btn-enhanced:hover .reset-icon {
-          transform: rotate(180deg);
-        }
-
-        .total-count {
-          display: flex;
-          align-items: baseline;
-          gap: var(--space-1);
-        }
-
-        .count-number {
-          font-family: var(--font-interface);
-          font-size: var(--text-lg);
-          font-weight: var(--font-bold);
-          color: var(--text-primary);
-          line-height: 1;
-        }
-
-        .count-label {
-          font-family: var(--font-interface);
-          font-size: var(--text-sm);
-          font-weight: var(--font-medium);
-          color: var(--text-secondary);
-          text-transform: lowercase;
-        }
-
-        .selected-count {
-          display: flex;
-          align-items: center;
-          gap: var(--space-2);
-          padding: var(--space-1-5) var(--space-3);
-          background: rgba(var(--primary-rgb), 0.1);
-          border: 1px solid rgba(var(--primary-rgb), 0.2);
-          border-radius: var(--radius-full);
-          animation: slideInFromLeft 0.3s var(--ease-out);
-        }
-
-        .selection-indicator {
-          display: flex;
-          align-items: center;
-          gap: var(--space-1-5);
-          font-family: var(--font-interface);
-          font-size: var(--text-sm);
-          font-weight: var(--font-medium);
-          color: var(--primary);
-        }
-
-        .selection-dot {
-          width: 8px;
-          height: 8px;
-          background: var(--primary);
-          border-radius: 50%;
-          animation: pulse 2s infinite;
-        }
-
-        .all-selected-badge {
-          font-family: var(--font-interface);
-          font-size: var(--text-xs);
-          font-weight: var(--font-bold);
-          color: var(--text-inverse);
-          background: var(--primary);
-          padding: var(--space-1) var(--space-2);
-          border-radius: var(--radius-sm);
-          text-transform: uppercase;
-          letter-spacing: var(--tracking-wide);
-        }
-
-        .filter-indicator {
-          display: flex;
-          align-items: center;
-          gap: var(--space-1-5);
-          padding: var(--space-1-5) var(--space-3);
-          background: rgba(var(--accent-rgb), 0.1);
-          border: 1px solid rgba(var(--accent-rgb), 0.2);
-          border-radius: var(--radius-full);
-          animation: slideInFromLeft 0.3s var(--ease-out) 0.1s both;
-        }
-
-        .filter-icon {
-          font-size: var(--text-sm);
-          opacity: 0.8;
-        }
-
-        .filter-text {
-          font-family: var(--font-interface);
-          font-size: var(--text-sm);
-          font-weight: var(--font-medium);
-          color: var(--accent);
-        }
-
-        .status-actions {
-          display: flex;
-          align-items: center;
-          gap: var(--space-3);
-        }
-
-        .bulk-actions {
-          display: flex;
-          align-items: center;
-          gap: var(--space-2);
-        }
-
-        .clear-selection-btn {
-          font-family: var(--font-interface);
-          font-size: var(--text-sm);
-          font-weight: var(--font-medium);
-          color: var(--text-secondary);
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: var(--radius-md);
-          padding: var(--space-1-5) var(--space-3);
-          cursor: pointer;
-          transition: all var(--duration-150) var(--ease-out);
-          display: flex;
-          align-items: center;
-          gap: var(--space-1);
-        }
-
-        .clear-selection-btn:hover {
-          color: var(--text-primary);
-          border-color: var(--border-strong);
-          background: var(--card-hover);
-          transform: translateY(-1px);
-        }
-
-        .clear-selection-btn:active {
-          transform: translateY(0);
-        }
-
-        .loading-indicator {
-          display: flex;
-          align-items: center;
-          gap: var(--space-2);
-          color: var(--text-tertiary);
-          font-family: var(--font-interface);
-          font-size: var(--text-sm);
-          font-weight: var(--font-medium);
-        }
-
-        .loading-icon {
-          animation: spin 1s linear infinite;
-        }
+        @keyframes shimmer { 100% { transform: translateX(100%); } }
 
         /* ===================================
            TABLE FOOTER
@@ -1539,11 +609,11 @@ export function ApplicationsTable({
         .professional-table-header {
           display: grid;
           grid-template-columns: 48px minmax(150px, 2fr) minmax(200px, 2.5fr) minmax(120px, 1.2fr) minmax(100px, 1.5fr) minmax(80px, 1fr) minmax(80px, 1fr) minmax(80px, 1fr) minmax(60px, 0.8fr);
-          align-items: flex-start;
-          padding: var(--space-4) var(--space-4);
+          align-items: center;
+          padding: var(--space-2) var(--space-3);
           background: var(--surface);
           border-bottom: 1px solid var(--border);
-          gap: var(--space-3);
+          gap: var(--space-2);
           position: sticky;
           top: 0;
           z-index: 10;
@@ -1640,15 +710,15 @@ export function ApplicationsTable({
 
         /* Header Content Cells */
         .professional-header-cell {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-2);
-          cursor: pointer;
-          transition: all var(--duration-150) var(--ease-out);
-          padding: var(--space-1) 0;
-          min-width: 0;
-          overflow: hidden;
-          position: relative;
+           display: flex;
+           flex-direction: column;
+           gap: var(--space-1);
+           cursor: pointer;
+           transition: all var(--duration-150) var(--ease-out);
+           padding: 0;
+           min-width: 0;
+           overflow: hidden;
+           position: relative;
         }
 
         .professional-header-cell:hover {
@@ -1660,11 +730,16 @@ export function ApplicationsTable({
           font-weight: var(--font-semibold);
         }
 
+        .professional-header-cell.filtered .header-label span {
+          color: var(--accent);
+          font-weight: var(--font-semibold);
+        }
+
         .header-label {
           display: flex;
           align-items: center;
-          gap: var(--space-1);
-          min-height: 20px;
+          gap: 6px;
+          min-height: 18px;
           flex-shrink: 0;
         }
 
@@ -1693,35 +768,6 @@ export function ApplicationsTable({
         .professional-header-cell:hover .header-label svg {
           opacity: 1 !important;
           transform: scale(1.1);
-        }
-
-        .header-filter {
-          width: 100%;
-          min-width: 0;
-          max-width: 100%;
-          font-size: var(--text-xs);
-          padding: var(--space-2) var(--space-3);
-          border: 1px solid var(--border);
-          border-radius: var(--radius-sm);
-          background: var(--surface);
-          color: var(--text-primary);
-          transition: all var(--duration-150) var(--ease-out);
-          box-sizing: border-box;
-          position: relative;
-          z-index: 1;
-        }
-
-        .header-filter:focus {
-          outline: none;
-          border-color: var(--primary);
-          background: var(--card);
-          box-shadow: 0 0 0 1px var(--primary);
-          z-index: 10;
-        }
-
-        .header-filter::placeholder {
-          color: var(--text-tertiary);
-          font-size: var(--text-xs);
         }
 
         /* ===================================
@@ -1880,90 +926,9 @@ export function ApplicationsTable({
             padding: 0;
           }
 
-          .filter-chips-bar {
-            padding: var(--space-2) var(--space-3);
-            flex-direction: column;
-            align-items: flex-start;
-            gap: var(--space-2);
-            min-height: auto;
-            overflow-x: visible;
-          }
-
-          .chips-container {
-            width: 100%;
-            flex-wrap: wrap;
-            gap: var(--space-1-5);
-          }
-
-          .chip {
-            padding: var(--space-1) var(--space-2);
-            font-size: var(--text-xs);
-          }
-
-          .chip-total .chip-value {
-            font-size: var(--text-md);
-          }
-
-          .chip-value {
-            font-size: var(--text-xs);
-          }
-
-          .chip-label {
-            font-size: var(--text-2xs);
-          }
-
-          .chip-icon {
-            font-size: var(--text-xs);
-          }
-
-          .status-actions {
-            width: 100%;
-            justify-content: flex-start;
-            flex-wrap: wrap;
-            gap: var(--space-2);
-          }
-
-          .selected-indicator {
-            padding: var(--space-1) var(--space-2);
-            font-size: var(--text-xs);
-          }
-
-          .filter-active {
-            padding: var(--space-1) var(--space-2);
-            font-size: var(--text-xs);
-          }
-
-          .status-actions {
-            width: 100%;
-            justify-content: flex-end;
-          }
-
-          .count-number {
-            font-size: var(--text-md);
-          }
-
-          .selected-count,
-          .filter-indicator {
-            padding: var(--space-1) var(--space-2);
-          }
-
-          .selection-indicator,
-          .filter-text {
-            font-size: var(--text-xs);
-          }
-
-          .clear-selection-btn {
-            padding: var(--space-1) var(--space-2);
-            font-size: var(--text-xs);
-          }
-
           .professional-table-card {
             border-radius: var(--radius-md);
             margin: 0;
-          }
-
-          .table-status-bar {
-            border-radius: var(--radius-md) var(--radius-md) 0 0;
           }
 
           .table-footer {
@@ -1995,11 +960,6 @@ export function ApplicationsTable({
           .sort-indicator {
             font-size: var(--text-2xs);
             padding: var(--space-0-5) var(--space-1-5);
-          }
-
-          .professional-table-card {
-            border-radius: var(--radius-md);
-            margin: 0;
           }
 
           .professional-table-header {
