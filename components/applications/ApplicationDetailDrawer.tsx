@@ -270,6 +270,26 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
             <div className="overview-tab">
               <div className="content-grid">
                 <div className="main-column">
+                  {/* Focus left side on content: Job Description & Notes */}
+                  <section className="content-section job-description">
+                    <h3 className="section-title">Job Description</h3>
+                    <div className="description-content">
+                      <p>{jobDescription}</p>
+                    </div>
+                  </section>
+
+                  {notes && (
+                    <section className="content-section">
+                      <h3 className="section-title">Notes</h3>
+                      <div className="notes-content">
+                        <p>{notes}</p>
+                      </div>
+                    </section>
+                  )}
+                </div>
+
+                <div className="side-column">
+                  {/* Move Job Details to the right column */}
                   <section className="content-section">
                     <h3 className="section-title">Job Details</h3>
 
@@ -339,43 +359,7 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
                     </div>
                   </section>
 
-                  <section className="content-section job-description">
-                    <h3 className="section-title">Job Description</h3>
-                    <div className="description-content">
-                      <p>{jobDescription}</p>
-                    </div>
-                  </section>
-
-                  {notes && (
-                    <section className="content-section">
-                      <h3 className="section-title">Notes</h3>
-                      <div className="notes-content">
-                        <p>{notes}</p>
-                      </div>
-                    </section>
-                  )}
-                </div>
-
-                <div className="side-column">
-                  <section className="content-section">
-                    <h3 className="section-title">Status</h3>
-
-                    <div className="stage-selector">
-                      {(['applied', 'screening', 'interview', 'offer', 'rejected'] as ApplicationStage[]).map(s => (
-                        <button
-                          key={s}
-                          className={`stage-option ${s === stage ? 'active' : ''}`}
-                          onClick={() => onStageChange(s)}
-                          style={{
-                            '--option-color': getStageColor(s)
-                          } as React.CSSProperties}
-                        >
-                          <div className="option-indicator"></div>
-                          <span>{getStageLabel(s)}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </section>
+                  {/* Remove right-side Status Stage selector to free space */}
 
                   {upcomingInterviews.length > 0 && (
                     <section className="content-section">
@@ -893,7 +877,7 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
         /* Overview Tab */
         .content-grid {
           display: grid;
-          grid-template-columns: 1fr;
+          grid-template-columns: 2fr 1fr; /* wider left column for description */
           gap: 24px;
         }
 
@@ -988,54 +972,6 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
           color: var(--text-secondary);
           font-size: 14px;
           line-height: 1.6;
-        }
-
-        /* Stage Selector */
-        .stage-selector {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .stage-option {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 10px 12px;
-          background: transparent;
-          border: 1px solid var(--border-thin);
-          border-radius: var(--border-radius);
-          cursor: pointer;
-          transition: all 0.2s var(--easing-standard);
-          position: relative;
-          text-align: left;
-        }
-
-        .stage-option:hover {
-          background: var(--hover-bg);
-          border-color: rgba(var(--option-color-rgb), 0.3);
-        }
-
-        .stage-option.active {
-          background: rgba(var(--option-color-rgb), 0.1);
-          border-color: var(--option-color);
-        }
-
-        .option-indicator {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background-color: var(--option-color);
-        }
-
-        .stage-option span {
-          font-size: 14px;
-          color: var(--text-primary);
-          font-weight: 500;
-        }
-
-        .stage-option.active span {
-          color: var(--option-color);
         }
 
         /* Next Interview */
@@ -1566,10 +1502,8 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
         }
 
         /* Media queries */
-        @media (min-width: 768px) {
-          .content-grid {
-            grid-template-columns: 3fr 2fr;
-          }
+        @media (max-width: 767px) {
+          .content-grid { grid-template-columns: 1fr; }
         }
       `}</style>
     </SideDrawer>
