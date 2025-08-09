@@ -183,11 +183,12 @@ export function useDbData() {
             stage: app.stage,
             jobDescription: app.job_description || '',
             salary: app.salary_range || '',
-            location: 'Remote', // Default since not in DB schema
-            remote: true, // Default since not in DB schema
+            location: app.location || 'Remote', // Use actual location from DB
+            remote: app.remote !== undefined ? app.remote : true, // Use actual remote flag from DB
             notes: app.notes || '',
             contacts: [], // Empty for now
-            benefits: [],
+            benefits: app.benefits ? (typeof app.benefits === 'string' ? JSON.parse(app.benefits) : app.benefits) : [],
+            tech_stack: app.tech_stack ? (typeof app.tech_stack === 'string' ? JSON.parse(app.tech_stack) : app.tech_stack) : [],
             interviews: [],
             tasks: [],
             documents: [],

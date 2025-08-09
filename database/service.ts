@@ -34,7 +34,8 @@ export interface Application {
     location?: string;
     remote?: boolean;
     bonus?: string;
-    benefits?: string;
+    benefits?: string; // JSON string
+    tech_stack?: string; // JSON string
     is_shortlisted?: boolean;
     shortlisted_at?: string;
     created_at: string;
@@ -174,6 +175,11 @@ export class DatabaseService {
             salary_range: row.salary_range,
             job_description: row.job_description,
             notes: row.notes,
+            location: row.location,
+            remote: row.remote,
+            bonus: row.bonus,
+            benefits: row.benefits,
+            tech_stack: row.tech_stack,
             created_at: row.created_at,
             updated_at: row.updated_at,
             company: row.company_name ? {
@@ -209,6 +215,11 @@ export class DatabaseService {
             salary_range: row.salary_range,
             job_description: row.job_description,
             notes: row.notes,
+            location: row.location,
+            remote: row.remote,
+            bonus: row.bonus,
+            benefits: row.benefits,
+            tech_stack: row.tech_stack,
             created_at: row.created_at,
             updated_at: row.updated_at,
             company: row.company_name ? {

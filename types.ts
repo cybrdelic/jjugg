@@ -108,6 +108,16 @@ export interface Document {
   createdAt: Date; // Date the document was uploaded or created
 }
 
+export interface Attachment {
+  id: string;
+  applicationId: string;
+  fileName: string;
+  url: string;
+  contentType?: string;
+  size?: number;
+  uploadedAt: Date;
+}
+
 export interface Application {
   id: string;
   position: string; // Job position (e.g., "Software Engineer")
@@ -118,6 +128,7 @@ export interface Application {
   salary: string; // Salary range or amount
   bonus?: string; // Optional bonus information
   benefits?: string[]; // Optional array of benefits
+  tech_stack?: string[]; // Optional array of technologies
   location: string; // Job location
   remote: boolean; // Whether the job is remote
   notes: string; // General notes about the application
@@ -128,6 +139,7 @@ export interface Application {
   allNotes?: Note[]; // Optional array of notes
   isShortlisted?: boolean; // Whether the application is shortlisted
   shortlistedAt?: Date; // Date when shortlisted
+  attachments?: Attachment[]; // New: list of uploaded attachments for this application
 }
 
 export interface StatusUpdate {

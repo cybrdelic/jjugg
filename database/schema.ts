@@ -43,6 +43,7 @@ export const createTables = () => {
       remote BOOLEAN DEFAULT FALSE,
       bonus TEXT,
       benefits TEXT, -- JSON string of benefits array
+      tech_stack TEXT, -- JSON string array of technologies
       is_shortlisted BOOLEAN DEFAULT FALSE,
       shortlisted_at DATETIME,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

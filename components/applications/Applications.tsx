@@ -457,6 +457,8 @@ export default function Applications() {
           tasks={selectedAppData.tasks || []}
           documents={selectedAppData.documents || []}
           allNotes={selectedAppData.allNotes || []}
+          techStackJson={selectedAppData.tech_stack}
+          benefitsJson={selectedAppData.benefits}
           isVisible={isDetailModalVisible}
           onClose={handleCloseDetailModal}
           onEdit={() => handleEditApplication(selectedAppData.id)}

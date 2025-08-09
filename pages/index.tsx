@@ -1,13 +1,22 @@
-import { useRouter } from 'next/router';
-import { useEffect } from 'react';
+import Link from 'next/link';
 
 export default function Home() {
-  const router = useRouter();
-
-  useEffect(() => {
-    // Redirect to dashboard/home to maintain the same default behavior
-    router.replace('/dashboard/home');
-  }, [router]);
-
-  return null; // This component doesn't render anything since it redirects
+  return (
+    <div className="container" style={{ textAlign: 'center', paddingTop: '4rem' }}>
+      <h1>Welcome to JJugg</h1>
+      <p>Your workspace for managing applications and timelines.</p>
+      <Link href="/dashboard/home" legacyBehavior>
+        <a style={{
+          display: 'inline-block',
+          padding: '0.75rem 1rem',
+          background: '#3b82f6',
+          color: '#fff',
+          borderRadius: '6px',
+          textDecoration: 'none'
+        }}>
+          Go to Dashboard
+        </a>
+      </Link>
+    </div>
+  );
 }

@@ -17,9 +17,22 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@jjugg/sql-assist": [
+        "packages/sql-assist/src"
+      ],
+      "@jjugg/sql-assist/*": [
+        "packages/sql-assist/src/*"
+      ],
+      "@jjugg/dev-sql-ui": [
+        "packages/dev-sql-ui/src"
+      ],
+      "@jjugg/dev-sql-ui/*": [
+        "packages/dev-sql-ui/src/*"
       ]
     },
     "plugins": [

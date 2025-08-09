@@ -53,8 +53,8 @@ export const seedData = () => {
 
         // Applications (10k) with long job descriptions
         const insertApplication = db.prepare(`
-            INSERT INTO applications (user_id, company_id, position, stage, date_applied, salary_range, job_description, notes, location, remote)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO applications (user_id, company_id, position, stage, date_applied, salary_range, job_description, notes, location, remote, benefits, tech_stack)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
         const stages = ['applied', 'screening', 'interview', 'offer', 'rejected'];
@@ -65,6 +65,12 @@ export const seedData = () => {
             'Solutions Architect', 'Security Engineer', 'Mobile Developer', 'QA Engineer',
             'Platform Engineer', 'Site Reliability Engineer', 'Data Engineer', 'Research Scientist',
             'Technical Lead', 'Engineering Director', 'CTO', 'VP of Engineering'
+        ];
+
+        const techCatalog = [
+            'React', 'Next.js', 'TypeScript', 'Node.js', 'GraphQL', 'REST', 'PostgreSQL', 'MySQL', 'SQLite', 'MongoDB',
+            'AWS', 'GCP', 'Azure', 'Docker', 'Kubernetes', 'Tailwind CSS', 'Styled Components', 'Zustand', 'Redux',
+            'Jest', 'Vitest', 'Cypress', 'Storybook', 'Express', 'NestJS', 'Prisma', 'Drizzle ORM', 'tRPC', 'Go', 'Python', 'Django', 'FastAPI'
         ];
 
         const makeLongJD = () => {
@@ -90,6 +96,19 @@ export const seedData = () => {
             ].join('\n');
         };
 
+        const makeTechStack = () => {
+            const size = faker.number.int({ min: 4, max: 9 });
+            const picks = faker.helpers.arrayElements(techCatalog, size);
+            // Ensure some common anchors appear often
+            if (!picks.includes('React') && Math.random() < 0.6) picks.push('React');
+            if (!picks.includes('TypeScript') && Math.random() < 0.6) picks.push('TypeScript');
+            return Array.from(new Set(picks)).slice(0, 10);
+        };
+
+        const makeBenefits = () => Array.from({ length: faker.number.int({ min: 3, max: 7 }) }, () =>
+            faker.helpers.arrayElement(['401k match', 'Remote stipend', 'Health, dental & vision', 'Annual learning budget', 'Flexible PTO', 'Parental leave'])
+        );
+
         const now = new Date();
         const start = new Date(now.getFullYear() - 1, 0, 1);
 
@@ -114,7 +133,9 @@ export const seedData = () => {
                 makeLongJD(),
                 faker.lorem.sentences(2),
                 location,
-                faker.datatype.boolean({ probability: 0.6 }) ? 1 : 0
+                faker.datatype.boolean({ probability: 0.6 }) ? 1 : 0,
+                JSON.stringify(makeBenefits()),
+                JSON.stringify(makeTechStack())
             );
 
             if (i % BATCH === 0 && i > 0) {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   X, Clock, Building, MapPin, DollarSign, Briefcase,
   CalendarDays, Phone, Mail, Link, ChevronLeft, ChevronRight,
@@ -12,6 +12,18 @@ import ActionButton from '../dashboard/ActionButton';
 import SideDrawer from '../SideDrawer';
 import { ApplicationStage, Company, Contact, InterviewEvent, Note, Task, Document } from '@/types';
 import { useFeatureFlags } from '@/contexts/FeatureFlagContext';
+
+const STAGE_COLORS: Record<ApplicationStage, string> = {
+  applied: '#3b82f6',
+  screening: '#f59e0b',
+  interview: '#8b5cf6',
+  offer: '#10b981',
+  rejected: '#ef4444'
+};
+
+export const getStageColor = (stage: ApplicationStage): string => {
+  return STAGE_COLORS[stage] ?? '#6b7280';
+};
 
 
 interface ApplicationDetailDrawerProps {
@@ -30,6 +42,8 @@ interface ApplicationDetailDrawerProps {
   tasks?: Task[];
   documents?: Document[];
   allNotes?: Note[];
+  techStackJson?: string | string[]; // new
+  benefitsJson?: string | string[]; // new
   isVisible: boolean;
   onClose: () => void;
   onEdit: () => void;
@@ -52,6 +66,8 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
   tasks = [],
   documents = [],
   allNotes = [],
+  techStackJson,
+  benefitsJson,
   isVisible,
   onClose,
   onEdit,
@@ -64,6 +80,112 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
   // Collapsible Job Description
   const [expandJD, setExpandJD] = useState(false);
   const isLongJD = (jobDescription?.length || 0) > 900;
+
+  // Infer a tech stack from the job description (baseline regex)
+  const techStack = useMemo(() => {
+    if (!jobDescription) return [] as string[];
+    const techPatterns: Array<{ re: RegExp; label: string }> = [
+      { re: /typescript\b/i, label: 'TypeScript' },
+      { re: /javascript\b|node\.js\b|nodejs\b/i, label: 'JavaScript/Node.js' },
+      { re: /react\b|react\.js\b|next\.js\b/i, label: 'React/Next.js' },
+      { re: /vue\b|vue\.js\b/i, label: 'Vue.js' },
+      { re: /angular\b/i, label: 'Angular' },
+      { re: /python\b|django\b|fastapi\b|flask\b/i, label: 'Python' },
+      { re: /java\b|spring\b/i, label: 'Java/Spring' },
+      { re: /c\#\b|\.net\b|dotnet\b/i, label: '.NET/C#' },
+      { re: /go\b|golang\b/i, label: 'Go' },
+      { re: /rust\b/i, label: 'Rust' },
+      { re: /graphql\b/i, label: 'GraphQL' },
+      { re: /rest\b|restful\b/i, label: 'REST' },
+      { re: /postgres\b|postgresql\b|mysql\b|sqlite\b/i, label: 'SQL' },
+      { re: /mongodb\b|document db\b|dynamo\b/i, label: 'NoSQL' },
+      { re: /aws\b|azure\b|gcp\b|google cloud\b/i, label: 'Cloud' },
+      { re: /docker\b|kubernetes\b|k8s\b/i, label: 'Containers' },
+      { re: /tailwind\b/i, label: 'Tailwind CSS' },
+      { re: /redux\b|zustand\b|mobx\b/i, label: 'State Mgmt' },
+      { re: /storybook\b|vitest\b|jest\b|cypress\b/i, label: 'Testing' },
+    ];
+    const found = new Set<string>();
+    techPatterns.forEach(({ re, label }) => {
+      if (re.test(jobDescription)) found.add(label);
+    });
+    return Array.from(found);
+  }, [jobDescription]);
+
+  // AI-enhanced tech stack via API (gpt-4o-mini). Fallbacks to baseline when unavailable.
+  const [aiTechStack, setAiTechStack] = useState<string[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiUsed, setAiUsed] = useState<boolean | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+
+    const run = async () => {
+      if (!jobDescription || jobDescription.trim().length < 40) {
+        setAiTechStack([]);
+        setAiUsed(null);
+        setAiError(null);
+        return;
+      }
+      try {
+        setAiLoading(true);
+        setAiError(null);
+        const res = await fetch('/api/infer-tech-stack', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobDescription }),
+          signal: controller.signal,
+        });
+        if (!active) return;
+        const data = await res.json();
+        if (!res.ok || data?.aiUsed !== true) {
+          setAiUsed(false);
+          setAiTechStack([]);
+          setAiError(data?.error || 'AI unavailable');
+          return;
+        }
+        const arr: string[] = Array.isArray(data?.stack) ? data.stack : [];
+        setAiUsed(true);
+        setAiTechStack(arr);
+      } catch (e) {
+        if (!active) return;
+        setAiUsed(false);
+        setAiTechStack([]);
+        setAiError('AI inference failed');
+      } finally {
+        if (active) setAiLoading(false);
+      }
+    };
+
+    // Debounce slightly to avoid bursts
+    const t = setTimeout(run, 250);
+    return () => {
+      active = false;
+      controller.abort();
+      clearTimeout(t);
+    };
+  }, [jobDescription]);
+
+  // Parse incoming seeded fields (JSON or array)
+  const seededStack = useMemo<string[]>(() => {
+    if (!techStackJson) return [];
+    if (Array.isArray(techStackJson)) return techStackJson as string[];
+    try { const a = JSON.parse(techStackJson); return Array.isArray(a) ? a : []; } catch { return []; }
+  }, [techStackJson]);
+  const seededBenefits = useMemo<string[]>(() => {
+    if (!benefitsJson) return [];
+    if (Array.isArray(benefitsJson)) return benefitsJson as string[];
+    try { const a = JSON.parse(benefitsJson); return Array.isArray(a) ? a : []; } catch { return []; }
+  }, [benefitsJson]);
+
+  // Final display stack respects AI-only rule; if AI used, show AI stack; else if seeded, show seeded; else none
+  const displayTechStack = useMemo(() => {
+    if (aiUsed === true) return aiTechStack;
+    // If AI failed but we have seeded data, show seeded data
+    if (seededStack.length) return seededStack;
+    return [];
+  }, [aiUsed, aiTechStack, seededStack]);
 
   const allStages: ApplicationStage[] = ['applied', 'screening', 'interview', 'offer', 'rejected'];
 
@@ -105,18 +227,6 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours}h${mins > 0 ? ` ${mins}m` : ''}`;
-  };
-
-  // Get stage color
-  const getStageColor = (stage: ApplicationStage): string => {
-    switch (stage) {
-      case 'applied': return 'var(--application-applied)';
-      case 'screening': return 'var(--application-screening)';
-      case 'interview': return 'var(--application-interview)';
-      case 'offer': return 'var(--application-offer)';
-      case 'rejected': return 'var(--application-rejected)';
-      default: return 'var(--text-secondary)';
-    }
   };
 
   // Get stage display name
@@ -166,6 +276,7 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
       width="1400px"
     >
       <div className="application-detail">
+        {/* Header remains sticky */}
         <header className="drawer-header">
           <div
             className="stage-indicator"
@@ -230,6 +341,7 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
           </div>
         </header>
 
+        {/* Enhanced sticky tabs with active indicator */}
         <nav className="drawer-nav">
           <button
             className={`nav-item ${selectedTab === 'overview' ? 'active' : ''}`}
@@ -267,15 +379,16 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
           </button>
         </nav>
 
-        <div className="drawer-content">
+        {/* Only the Job Description scrolls in Overview; other tabs scroll normally */}
+        <div className={`drawer-content ${selectedTab === 'overview' ? 'overview-mode' : ''}`}>
           {/* Overview Tab */}
           {selectedTab === 'overview' && (
             <div className="overview-tab">
               <div className="content-grid">
                 <div className="main-column">
-                  {/* Focus left side on content: Job Description & Notes */}
+                  {/* Job Description is the only scrollable area */}
                   <section className="content-section job-description">
-                    <div className="section-header">
+                    <div className="section-header sticky">
                       <h3 className="section-title">Job Description</h3>
                       <div className="section-actions">
                         {isLongJD && (
@@ -292,24 +405,56 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
                         </button>
                       </div>
                     </div>
-                    <div className={`description-wrapper ${expandJD ? 'expanded' : (isLongJD ? 'collapsed' : '')}`}>
+
+                    <div className={`description-scroll ${expandJD ? 'expanded' : (isLongJD ? 'collapsed' : '')}`}>
                       <pre className="description-content">{jobDescription}</pre>
                       {isLongJD && !expandJD && <div className="fade-out" />}
                     </div>
                   </section>
-
-                  {notes && (
-                    <section className="content-section">
-                      <h3 className="section-title">Notes</h3>
-                      <div className="notes-content">
-                        <p>{notes}</p>
-                      </div>
-                    </section>
-                  )}
                 </div>
 
                 <div className="side-column">
-                  {/* Move Job Details to the right column */}
+                  {/* Tech Stack Section (AI or Seeded) */}
+                  {(displayTechStack.length > 0 || aiLoading) && (
+                    <section className="content-section">
+                      <div className="section-header" style={{ marginBottom: 0 }}>
+                        <h3 className="section-title">Tech Stack</h3>
+                        <div className="section-actions">
+                          {aiUsed && (
+                            <span className="ai-badge" title="AI-generated">AI</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="stack-grid">
+                        {displayTechStack.map((t) => (
+                          <div key={t} className="stack-item">
+                            <div className={`stack-avatar ${t.toLowerCase().includes('react') ? 'react' : t.toLowerCase().includes('next') ? 'next' : t.toLowerCase().includes('node') ? 'node' : ''}`}>{t.charAt(0)}</div>
+                            <div className="stack-name" title={t}>{t}</div>
+                          </div>
+                        ))}
+                        {aiLoading && displayTechStack.length === 0 && (
+                          <div className="stack-item skeleton"><div className="stack-avatar" /> <div className="stack-name">Detecting…</div></div>
+                        )}
+                      </div>
+                      {aiError && aiUsed === false && displayTechStack.length === 0 && (
+                        <div className="ai-inline-error" role="status">{aiError}</div>
+                      )}
+                    </section>
+                  )}
+
+                  {/* Benefits */}
+                  {seededBenefits.length > 0 && (
+                    <section className="content-section">
+                      <h3 className="section-title">Benefits</h3>
+                      <ul className="benefits-list">
+                        {seededBenefits.map((b, i) => (
+                          <li key={i} className="benefit-item">{b}</li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+
+                  {/* Job Details on the right */}
                   <section className="content-section">
                     <h3 className="section-title">Job Details</h3>
 
@@ -451,6 +596,16 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
                             <a href={`tel:${contacts[0].phone}`}>{contacts[0].phone}</a>
                           </div>
                         )}
+                      </div>
+                    </section>
+                  )}
+
+                  {/* Notes moved to the right column to keep only JD scrollable */}
+                  {notes && (
+                    <section className="content-section">
+                      <h3 className="section-title">Notes</h3>
+                      <div className="notes-content">
+                        <p>{notes}</p>
                       </div>
                     </section>
                   )}
@@ -725,6 +880,7 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
           )}
         </div>
 
+        {/* Sticky footer */}
         <footer className="drawer-footer">
           <div className="footer-info">
             <div className="application-id">
@@ -751,7 +907,7 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
           overflow: hidden;
         }
 
-        /* Make header and nav sticky for better UX */
+        /* Sticky header */
         .drawer-header {
           display: flex;
           position: sticky;
@@ -761,6 +917,7 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
           border-bottom: 1px solid var(--border-divider);
           backdrop-filter: saturate(180%) blur(8px);
           background: color-mix(in srgb, var(--surface, #fff) 84%, transparent);
+          box-shadow: 0 1px 0 var(--border-divider), 0 8px 24px rgba(0,0,0,0.02);
         }
 
         .stage-indicator {
@@ -771,6 +928,7 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
           height: 4px;
         }
 
+        /* Sticky tabs with active underline */
         .drawer-nav {
           display: flex;
           gap: 4px;
@@ -781,20 +939,73 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
           z-index: 4;
           background: var(--surface, #fff);
         }
+        .drawer-nav .nav-item {
+          position: relative;
+          padding: 12px 10px;
+          border-radius: 8px;
+        }
+        .drawer-nav .nav-item.active::after {
+          content: '';
+          position: absolute;
+          left: 8px;
+          right: 8px;
+          bottom: -1px;
+          height: 2px;
+          background: var(--accent-primary);
+          border-radius: 2px;
+        }
 
-        /* Content Styles */
+        /* Drawer content: only Overview locks scrolling */
         .drawer-content {
           flex: 1;
           overflow-y: auto;
           padding: 20px 24px;
         }
+        .drawer-content.overview-mode {
+          overflow: hidden; /* disable page scroll in overview, only JD scrolls */
+        }
 
-        /* Overview Tab Grid */
+        /* Overview layout uses full height */
+        .overview-tab { height: 100%; }
         .content-grid {
           display: grid;
-          grid-template-columns: 2fr 1fr; /* wider left column for description */
+          grid-template-columns: 2fr 1fr;
           gap: 24px;
+          height: 100%;
+          align-items: start;
         }
+
+        .main-column {
+          display: flex;
+          flex-direction: column;
+          min-height: 0; /* allow children to flex */
+          height: 100%;
+        }
+
+        .job-description {
+          display: flex;
+          flex-direction: column;
+          min-height: 0;
+          flex: 1;
+          overflow: hidden; /* internal scroller handles overflow */
+        }
+        .section-header.sticky {
+          position: sticky;
+          top: 0;
+          z-index: 2;
+          padding-bottom: 8px;
+          margin-bottom: 8px;
+          background: linear-gradient(180deg, var(--glass-card-bg), color-mix(in srgb, var(--glass-card-bg) 90%, transparent));
+          backdrop-filter: blur(4px);
+        }
+        .description-scroll {
+          flex: 1;
+          min-height: 0;
+          overflow: auto;
+          position: relative;
+          padding-right: 4px; /* space for overlay scrollbar */
+        }
+        .description-scroll.collapsed { max-height: 320px; }
 
         .content-section {
           background: var(--glass-card-bg);
@@ -830,21 +1041,39 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
           color: var(--text-primary);
         }
 
-        /* Job Description - preserve formatting and collapse long text */
-        .description-wrapper { position: relative; }
+        /* Job Description content */
         .description-content {
           margin: 0;
           color: var(--text-secondary);
           font-size: 14px;
           line-height: 1.6;
-          white-space: pre-wrap; /* preserve bullets and line breaks */
+          white-space: pre-wrap;
         }
-        .description-wrapper.collapsed .description-content { max-height: 320px; overflow: hidden; }
-        .description-wrapper .fade-out {
+        .description-scroll .fade-out {
           position: absolute; left: 0; right: 0; bottom: 0; height: 56px;
           background: linear-gradient(to bottom, rgba(255,255,255,0), var(--glass-card-bg));
           pointer-events: none;
         }
+
+        /* Sticky right column */
+        .side-column {
+          position: sticky;
+          top: 8px; /* within content area */
+          align-self: start;
+        }
+
+        /* Tech chips */
+        .tech-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+        .tech-chip {
+          padding: 6px 10px;
+          border-radius: 999px;
+          font-size: 12px;
+          color: var(--text-primary);
+          background: var(--hover-bg);
+          border: 1px solid var(--border-thin);
+          white-space: nowrap;
+        }
+        .chip-loading { color: var(--text-tertiary); font-style: italic; }
 
         /* Detail Lists */
         .detail-list { display: flex; flex-direction: column; gap: 18px; }
@@ -1399,48 +1628,37 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
           transform: translateY(-2px);
         }
 
-        /* Footer */
+        /* Sticky footer */
         .drawer-footer {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 16px 24px;
+          position: sticky;
+          bottom: 0;
+          background: color-mix(in srgb, var(--surface, #fff) 92%, transparent);
+          backdrop-filter: saturate(180%) blur(8px);
           border-top: 1px solid var(--border-divider);
-        }
-
-        .application-id {
-          font-size: 13px;
-          color: var(--text-tertiary);
-        }
-
-        .action-btn {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 16px;
-          border-radius: var(--border-radius);
-          font-size: 14px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s var(--easing-standard);
-        }
-
-        .edit-btn {
-          background: rgba(var(--accent-blue-rgb), 0.1);
-          color: var(--accent-blue);
-          border: 1px solid rgba(var(--accent-blue-rgb), 0.3);
-        }
-
-        .edit-btn:hover {
-          background: rgba(var(--accent-blue-rgb), 0.2);
-          transform: translateY(-1px);
         }
 
         /* Media queries */
         @media (max-width: 767px) {
-          .content-grid { grid-template-columns: 1fr; }
-          .drawer-nav { top: 56px; }
+          .content-grid { grid-template-columns: 1fr; height: auto; }
+          .side-column { position: static; }
+          .drawer-content.overview-mode { overflow-y: auto; } /* allow scroll on mobile */
         }
+
+        .ai-badge { padding: 2px 8px; font-size: 11px; border-radius: 999px; background: rgba(var(--accent-purple-rgb),0.12); color: var(--accent-purple); border: 1px solid rgba(var(--accent-purple-rgb),0.3); }
+        .ai-inline-error { margin-top: 8px; color: var(--accent-red); font-size: 12px; }
+
+        .stack-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+        .stack-item { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--border-thin); border-radius: 10px; background: var(--hover-bg); }
+        .stack-item.skeleton { opacity: 0.7; font-style: italic; }
+        .stack-avatar { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); }
+        .stack-avatar.react { background: #20232a; }
+        .stack-avatar.next { background: #111; }
+        .stack-avatar.node { background: #215732; }
+        .stack-name { font-size: 13px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .benefits-list { list-style: none; padding-left: 0; display: grid; grid-template-columns: 1fr; gap: 8px; }
+        .benefit-item { position: relative; padding-left: 22px; }
+        .benefit-item::before { content: '✓'; position: absolute; left: 0; top: 0; color: var(--accent-green); }
       `}</style>
     </SideDrawer>
   );

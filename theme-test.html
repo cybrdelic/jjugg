@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JJUGG Theme Test</title>
+    <link rel="stylesheet" href="styles/theme.css">
+    <style>
+        .theme-demo {
+            padding: var(--space-8);
+            margin: var(--space-4);
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            transition: all var(--duration-200) var(--ease-smooth);
+        }
+
+        .theme-switcher {
+            position: fixed;
+            top: var(--space-4);
+            right: var(--space-4);
+            display: flex;
+            gap: var(--space-2);
+        }
+
+        .theme-btn {
+            padding: var(--space-2) var(--space-4);
+            background: var(--primary);
+            color: var(--text-inverse);
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-family: var(--font-interface);
+            font-weight: var(--font-medium);
+            transition: all var(--duration-150) var(--ease-out);
+        }
+
+        .theme-btn:hover {
+            background: var(--primary-dark);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="theme-switcher">
+        <button class="theme-btn" onclick="setTheme('light')">Light Theme</button>
+        <button class="theme-btn" onclick="setTheme('dark')">Dark Theme</button>
+        <button class="theme-btn" onclick="setTheme('')">Default (Light)</button>
+    </div>
+
+    <div class="container">
+        <div class="theme-demo">
+            <h1 class="text-h1">World-Class Typography System</h1>
+            <h2 class="text-h2">Professional Design Excellence</h2>
+            <h3 class="text-h3">Light & Dark Theme Support</h3>
+
+            <p class="text-body">
+                This demonstrates the world-class typography system with perfect rendering,
+                professional hierarchy, and seamless theme switching between light and dark modes.
+            </p>
+
+            <div style="display: flex; gap: var(--space-4); margin-top: var(--space-6);">
+                <button class="btn-primary">Primary Button</button>
+                <button class="btn-secondary">Secondary Button</button>
+            </div>
+
+            <div class="glass-card" style="margin-top: var(--space-6); padding: var(--space-4);">
+                <h4 class="text-h4">Glass Card Component</h4>
+                <p class="text-body-sm">Professional glassmorphism effect adapts to both themes.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function setTheme(theme) {
+            const html = document.documentElement;
+
+            // Remove existing theme classes
+            html.classList.remove('theme-light', 'theme-dark');
+            html.removeAttribute('data-theme');
+
+            // Apply new theme
+            if (theme === 'light') {
+                html.setAttribute('data-theme', 'light');
+            } else if (theme === 'dark') {
+                html.setAttribute('data-theme', 'dark');
+            }
+            // Default is light theme (no class needed)
+        }
+
+        // Set default light theme
+        setTheme('');
+    </script>
+</body>
+
+</html>
