@@ -161,7 +161,7 @@ export interface ApplicationsHookReturn extends ApplicationsState, ApplicationsA
     lastRowRef: React.RefObject<HTMLDivElement | null>;
 }
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 100; // increase page size for fewer incremental fetches
 const stagesOrder: ApplicationStage[] = ['applied', 'screening', 'interview', 'offer', 'rejected'];
 
 export function useApplicationsLogic(): ApplicationsHookReturn {
@@ -283,7 +283,8 @@ export function useApplicationsLogic(): ApplicationsHookReturn {
     const filteredApplications = useMemo(() => {
         if (!applicationsData) return [];
 
-        let filtered = [...applicationsData];
+        // For very large datasets, avoid copying arrays repeatedly
+        let filtered = applicationsData as Application[];
 
         // Apply search filter (debounced)
         if (debouncedSearchTerm) {
@@ -291,8 +292,8 @@ export function useApplicationsLogic(): ApplicationsHookReturn {
             filtered = filtered.filter((app: Application) =>
                 app.position.toLowerCase().includes(search) ||
                 app.company.name.toLowerCase().includes(search) ||
-                app.location.toLowerCase().includes(search) ||
-                app.notes.toLowerCase().includes(search)
+                (app.location || '').toLowerCase().includes(search) ||
+                (app.notes || '').toLowerCase().includes(search)
             );
         }
 

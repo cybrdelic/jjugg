@@ -61,6 +61,9 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
   const [showStageDropdown, setShowStageDropdown] = useState(false);
   const { ENABLE_ADVANCED_APPLICATION_FEATURES } = useFeatureFlags();
   const stageDropdownRef = useRef<HTMLDivElement>(null);
+  // Collapsible Job Description
+  const [expandJD, setExpandJD] = useState(false);
+  const isLongJD = (jobDescription?.length || 0) > 900;
 
   const allStages: ApplicationStage[] = ['applied', 'screening', 'interview', 'offer', 'rejected'];
 
@@ -160,7 +163,7 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
       isVisible={isVisible}
       onClose={onClose}
       position="right"
-      width="1200px"
+      width="1400px"
     >
       <div className="application-detail">
         <header className="drawer-header">
@@ -272,9 +275,26 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
                 <div className="main-column">
                   {/* Focus left side on content: Job Description & Notes */}
                   <section className="content-section job-description">
-                    <h3 className="section-title">Job Description</h3>
-                    <div className="description-content">
-                      <p>{jobDescription}</p>
+                    <div className="section-header">
+                      <h3 className="section-title">Job Description</h3>
+                      <div className="section-actions">
+                        {isLongJD && (
+                          <button className="section-btn" onClick={() => setExpandJD(!expandJD)}>
+                            {expandJD ? 'Show less' : 'Show more'}
+                          </button>
+                        )}
+                        <button
+                          className="section-btn"
+                          onClick={() => navigator.clipboard?.writeText(jobDescription || '')}
+                          title="Copy description"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                    </div>
+                    <div className={`description-wrapper ${expandJD ? 'expanded' : (isLongJD ? 'collapsed' : '')}`}>
+                      <pre className="description-content">{jobDescription}</pre>
+                      {isLongJD && !expandJD && <div className="fade-out" />}
                     </div>
                   </section>
 
@@ -731,12 +751,16 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
           overflow: hidden;
         }
 
-        /* Header Styles */
+        /* Make header and nav sticky for better UX */
         .drawer-header {
           display: flex;
-          position: relative;
+          position: sticky;
+          top: 0;
+          z-index: 5;
           padding: 16px 24px;
           border-bottom: 1px solid var(--border-divider);
+          backdrop-filter: saturate(180%) blur(8px);
+          background: color-mix(in srgb, var(--surface, #fff) 84%, transparent);
         }
 
         .stage-indicator {
@@ -747,124 +771,15 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
           height: 4px;
         }
 
-        .header-content {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          flex: 1;
-          padding-top: 8px;
-        }
-
-        .company-logo {
-          width: 48px;
-          height: 48px;
-          border-radius: var(--border-radius-lg);
-          background: linear-gradient(135deg, var(--primary), var(--secondary));
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: var(--text-inverse);
-          font-weight: var(--font-weight-semibold);
-          font-size: var(--text-2xl);
-          font-family: var(--font-interface);
-          overflow: hidden;
-        }
-
-        .company-logo img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .header-titles {
-          display: flex;
-          flex-direction: column;
-          flex: 1;
-        }
-
-        .position-title {
-          margin: 0;
-          font-size: 20px;
-          font-weight: 600;
-          color: var(--text-primary);
-        }
-
-        .company-name {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          color: var(--text-secondary);
-          font-size: 15px;
-          margin-top: 4px;
-        }
-
-        .stage-badge {
-          display: flex;
-          align-items: center;
-          gap: var(--space-1-5);
-          padding: var(--space-1-5) var(--space-3);
-          background-color: var(--blob-primary);
-          border-radius: var(--border-radius-full);
-          font-size: var(--font-size-sm);
-          font-weight: var(--font-weight-medium);
-          font-family: var(--font-interface);
-        }
-
-        .badge-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-        }
-
-        /* Nav Styles */
         .drawer-nav {
           display: flex;
           gap: 4px;
           padding: 0 24px;
           border-bottom: 1px solid var(--border-divider);
-        }
-
-        .nav-item {
-          padding: 12px 16px;
-          background: transparent;
-          border: none;
-          font-size: 14px;
-          color: var(--text-secondary);
-          cursor: pointer;
-          position: relative;
-          font-weight: 500;
-          transition: all 0.2s var(--easing-standard);
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .nav-item:hover {
-          color: var(--text-primary);
-        }
-
-        .nav-item.active {
-          color: var(--accent-primary);
-        }
-
-        .nav-item.active::after {
-          content: '';
-          position: absolute;
-          bottom: -1px;
-          left: 0;
-          width: 100%;
-          height: 2px;
-          background-color: var(--primary);
-          border-radius: var(--border-radius-sm) var(--border-radius-sm) 0 0;
-        }
-
-        .nav-badge {
-          padding: var(--space-0-5) var(--space-1-5);
-          background-color: var(--blob-accent);
-          color: var(--accent);
-          border-radius: 10px;
-          font-size: 11px;
-          font-weight: 500;
+          position: sticky;
+          top: 64px; /* below header */
+          z-index: 4;
+          background: var(--surface, #fff);
         }
 
         /* Content Styles */
@@ -874,7 +789,7 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
           padding: 20px 24px;
         }
 
-        /* Overview Tab */
+        /* Overview Tab Grid */
         .content-grid {
           display: grid;
           grid-template-columns: 2fr 1fr; /* wider left column for description */
@@ -889,6 +804,25 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
           margin-bottom: 20px;
         }
 
+        .section-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .section-actions { display: flex; gap: 8px; }
+        .section-btn {
+          padding: 6px 10px;
+          font-size: 12px;
+          border-radius: 8px;
+          background: var(--hover-bg);
+          border: 1px solid var(--border-thin);
+          color: var(--text-secondary);
+          cursor: pointer;
+        }
+        .section-btn:hover { color: var(--text-primary); background: rgba(0,0,0,0.03); }
+
         .section-title {
           margin: 0 0 16px 0;
           font-size: 16px;
@@ -896,27 +830,28 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
           color: var(--text-primary);
         }
 
-        /* Detail Lists */
-        .detail-list {
-          display: flex;
-          flex-direction: column;
-          gap: 18px;
-        }
-
-        .detail-item {
-          display: flex;
-          gap: 12px;
-        }
-
-        .detail-icon {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 36px;
-          height: 36px;
-          border-radius: 8px;
-          background: var(--hover-bg);
+        /* Job Description - preserve formatting and collapse long text */
+        .description-wrapper { position: relative; }
+        .description-content {
+          margin: 0;
           color: var(--text-secondary);
+          font-size: 14px;
+          line-height: 1.6;
+          white-space: pre-wrap; /* preserve bullets and line breaks */
+        }
+        .description-wrapper.collapsed .description-content { max-height: 320px; overflow: hidden; }
+        .description-wrapper .fade-out {
+          position: absolute; left: 0; right: 0; bottom: 0; height: 56px;
+          background: linear-gradient(to bottom, rgba(255,255,255,0), var(--glass-card-bg));
+          pointer-events: none;
+        }
+
+        /* Detail Lists */
+        .detail-list { display: flex; flex-direction: column; gap: 18px; }
+        .detail-item { display: flex; gap: 12px; }
+        .detail-icon {
+          display: flex; align-items: center; justify-content: center;
+          width: 36px; height: 36px; border-radius: 8px; background: var(--hover-bg); color: var(--text-secondary);
         }
 
         .detail-content {
@@ -1504,6 +1439,7 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
         /* Media queries */
         @media (max-width: 767px) {
           .content-grid { grid-template-columns: 1fr; }
+          .drawer-nav { top: 56px; }
         }
       `}</style>
     </SideDrawer>
