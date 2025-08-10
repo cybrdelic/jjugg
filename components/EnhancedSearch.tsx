@@ -497,8 +497,6 @@ export default function EnhancedSearch({ applications, onSearch, placeholder = "
                 } else if (e.key === 'Escape') {
                   if (query) {
                     setQuery('');
-                  } else if (filterChips.length > 0) {
-                    handleClearAllChips();
                   } else {
                     setShowSuggestions(false);
                     setSelectedIndex(-1);
@@ -563,13 +561,20 @@ export default function EnhancedSearch({ applications, onSearch, placeholder = "
       )}
 
       <style jsx>{`
-        .enhanced-search { position: relative; width: 100%; max-width: 680px; }
+        .enhanced-search {
+          position: relative;
+          width: 100%;
+          max-width: 680px;
+          border: var(--border-thin) solid var(--border, #e5e7eb);
+          border-radius: 14px;
+          background: var(--glass-card-bg, var(--card));
+        }
         .enhanced-search.compact { max-width: none; }
 
         .search-input-container {
           width: 100%;
           background: var(--glass-card-bg, var(--card));
-          border: 2px solid var(--border-thin);
+          border: 2px solid var(--border-);
           border-radius: 14px;
           transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -581,13 +586,13 @@ export default function EnhancedSearch({ applications, onSearch, placeholder = "
           grid-template-columns: 44px 1fr auto auto;
           align-items: center;
           gap: 8px;
-          padding: 8px 10px 8px 0;
+          padding: 4px 8px 4px 0;
         }
 
         .left-icon { display: flex; align-items: center; justify-content: center; height: 100%; }
         .search-icon { color: var(--text-tertiary); }
 
-        .center-content { display: flex; flex-direction: column; gap: 6px; min-height: 44px; padding: 4px 0; }
+        .center-content { display: flex; flex-direction: column; gap: 4px; min-height: 32px; padding: 2px 0; }
 
         .active-filters { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 

@@ -210,50 +210,17 @@ export default function Applications() {
       {/* Skip link for a11y */}
       <a href="#apps-table" className="skip-link">Skip to applications</a>
 
-      {/* ===== Page Header (cohesive, token-pure) ===== */}
-      <header className="page-header" role="banner">
-        <div className="header-grid">
-          {/* Left: Title + meta */}
-          <div className="left">
-            <div className="title-row">
-              <h1 className="title text-h2">Applications</h1>
-              {/* Only show when updating */}
-              {hasGlobalUpdate && (
-                <span className={`live-cap ${prefersReduced ? 'no-anim' : ''}`} title="Background updates in progress">
-                  <span className="dot" aria-hidden />
-                  <Activity size={14} aria-hidden />
-                  <span className="cap-txt">Live</span>
-                </span>
-              )}
-            </div>
-            <p className="subtitle text-body-sm">Manage your job applications and track progress</p>
 
-            {/* one-line status (visual); SR gets a polite single-shot below */}
-            {latestGlobalMessage && (
-              <div className="status-line" role="status">
-                <CheckCircle2 size={14} aria-hidden />
-                <span className="status-text">{latestGlobalMessage}</span>
-              </div>
-            )}
-            <div ref={liveRef} className="sr-only" aria-live="polite" />
-          </div>
-
-          {/* Right: Stats */}
-          <div className="right" aria-label="Key stats">
-            <StatPill label="Total" value={applicationStats.applications ?? 0} reduced={prefersReduced} />
-            <StatPill label="Active" value={applicationStats.active ?? 0} reduced={prefersReduced} />
-            <StatPill label="Interviews" value={applicationStats.interviews ?? 0} reduced={prefersReduced} tone="accent" />
-            {selectedRows.length > 0 && (
-              <span className="sel-pill" role="status" aria-live="polite">{selectedRows.length} selected</span>
-            )}
-          </div>
-        </div>
-      </header>
 
       {/* ===== Main Content ===== */}
       <main className="main-content">
         {/* Toolbar */}
         <div className="toolbar">
+          {/* place in a column */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+            <h1 className="title text-h2">Applications</h1>
+            <p className="subtitle text-body-sm bottom">Manage your job applications and track progress</p>
+          </div>
           <div className="toolbar-search">
             <EnhancedSearch
               size="compact"

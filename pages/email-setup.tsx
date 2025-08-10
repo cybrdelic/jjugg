@@ -259,12 +259,22 @@ const EmailSetupPage: React.FC = () => {
     const testConnection = async () => {
         setIsLoading(true);
         setTestResult(null);
-
-        // Simulate test delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        const isValid = validateCurrentStep();
-        setTestResult(isValid ? 'Connection test successful ✅' : 'Test failed - check credentials ❌');
+        try {
+            const config = buildConfig();
+            const response = await fetch('/api/test-imap', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            });
+            const result = await response.json();
+            if (result.success) {
+                setTestResult('Connection test successful ✅');
+            } else {
+                setTestResult('Test failed: ' + (result.message || 'Check credentials') + ' ❌');
+            }
+        } catch (error: any) {
+            setTestResult('Test failed: ' + (error.message || 'Unknown error') + ' ❌');
+        }
         setIsLoading(false);
     };
 
