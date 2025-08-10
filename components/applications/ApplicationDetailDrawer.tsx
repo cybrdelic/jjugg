@@ -92,7 +92,7 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
       { re: /angular\b/i, label: 'Angular' },
       { re: /python\b|django\b|fastapi\b|flask\b/i, label: 'Python' },
       { re: /java\b|spring\b/i, label: 'Java/Spring' },
-      { re: /c\#\b|\.net\b|dotnet\b/i, label: '.NET/C#' },
+      { re: /c#\b|\.net\b|dotnet\b/i, label: '.NET/C#' },
       { re: /go\b|golang\b/i, label: 'Go' },
       { re: /rust\b/i, label: 'Rust' },
       { re: /graphql\b/i, label: 'GraphQL' },
@@ -112,61 +112,6 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
     return Array.from(found);
   }, [jobDescription]);
 
-  // AI-enhanced tech stack via API (gpt-4o-mini). Fallbacks to baseline when unavailable.
-  const [aiTechStack, setAiTechStack] = useState<string[]>([]);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiUsed, setAiUsed] = useState<boolean | null>(null);
-  const [aiError, setAiError] = useState<string | null>(null);
-  useEffect(() => {
-    let active = true;
-    const controller = new AbortController();
-
-    const run = async () => {
-      if (!jobDescription || jobDescription.trim().length < 40) {
-        setAiTechStack([]);
-        setAiUsed(null);
-        setAiError(null);
-        return;
-      }
-      try {
-        setAiLoading(true);
-        setAiError(null);
-        const res = await fetch('/api/infer-tech-stack', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jobDescription }),
-          signal: controller.signal,
-        });
-        if (!active) return;
-        const data = await res.json();
-        if (!res.ok || data?.aiUsed !== true) {
-          setAiUsed(false);
-          setAiTechStack([]);
-          setAiError(data?.error || 'AI unavailable');
-          return;
-        }
-        const arr: string[] = Array.isArray(data?.stack) ? data.stack : [];
-        setAiUsed(true);
-        setAiTechStack(arr);
-      } catch (e) {
-        if (!active) return;
-        setAiUsed(false);
-        setAiTechStack([]);
-        setAiError('AI inference failed');
-      } finally {
-        if (active) setAiLoading(false);
-      }
-    };
-
-    // Debounce slightly to avoid bursts
-    const t = setTimeout(run, 250);
-    return () => {
-      active = false;
-      controller.abort();
-      clearTimeout(t);
-    };
-  }, [jobDescription]);
-
   // Parse incoming seeded fields (JSON or array)
   const seededStack = useMemo<string[]>(() => {
     if (!techStackJson) return [];
@@ -179,13 +124,13 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
     try { const a = JSON.parse(benefitsJson); return Array.isArray(a) ? a : []; } catch { return []; }
   }, [benefitsJson]);
 
-  // Final display stack respects AI-only rule; if AI used, show AI stack; else if seeded, show seeded; else none
+  // Final display stack: prefer seeded data; otherwise fallback to baseline regex inference
   const displayTechStack = useMemo(() => {
-    if (aiUsed === true) return aiTechStack;
-    // If AI failed but we have seeded data, show seeded data
-    if (seededStack.length) return seededStack;
-    return [];
-  }, [aiUsed, aiTechStack, seededStack]);
+    if (seededStack.length)
+      return seededStack;
+    return techStack;
+  }, [seededStack, techStack]);
+  const isSeededStack = useMemo(() => seededStack.length > 0, [seededStack]);
 
   const allStages: ApplicationStage[] = ['applied', 'screening', 'interview', 'offer', 'rejected'];
 
@@ -411,37 +356,32 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
                       {isLongJD && !expandJD && <div className="fade-out" />}
                     </div>
                   </section>
-                </div>
 
-                <div className="side-column">
-                  {/* Tech Stack Section (AI or Seeded) */}
-                  {(displayTechStack.length > 0 || aiLoading) && (
+                  {/* Tech Stack Section moved under Job Description */}
+                  {displayTechStack.length > 0 && (
                     <section className="content-section">
-                      <div className="section-header" style={{ marginBottom: 0 }}>
-                        <h3 className="section-title">Tech Stack</h3>
+                      <div className="section-header" style={{ marginBottom: 8 }}>
+                        <div className="section-title-wrap">
+                          <h3 className="section-title">Tech Stack</h3>
+                          <div className="section-subtitle">{isSeededStack ? 'Provided by seed data' : 'Inferred from job description'}</div>
+                        </div>
                         <div className="section-actions">
-                          {aiUsed && (
-                            <span className="ai-badge" title="AI-generated">AI</span>
-                          )}
+                          <span className={`stack-source-badge ${isSeededStack ? 'seeded' : 'inferred'}`}>{isSeededStack ? 'Seeded' : 'Inferred'}</span>
                         </div>
                       </div>
                       <div className="stack-grid">
                         {displayTechStack.map((t) => (
-                          <div key={t} className="stack-item">
+                          <div key={t} className="stack-item" title={t} aria-label={t}>
                             <div className={`stack-avatar ${t.toLowerCase().includes('react') ? 'react' : t.toLowerCase().includes('next') ? 'next' : t.toLowerCase().includes('node') ? 'node' : ''}`}>{t.charAt(0)}</div>
-                            <div className="stack-name" title={t}>{t}</div>
+                            <div className="stack-name">{t}</div>
                           </div>
                         ))}
-                        {aiLoading && displayTechStack.length === 0 && (
-                          <div className="stack-item skeleton"><div className="stack-avatar" /> <div className="stack-name">Detecting…</div></div>
-                        )}
                       </div>
-                      {aiError && aiUsed === false && displayTechStack.length === 0 && (
-                        <div className="ai-inline-error" role="status">{aiError}</div>
-                      )}
                     </section>
                   )}
+                </div>
 
+                <div className="side-column">
                   {/* Benefits */}
                   {seededBenefits.length > 0 && (
                     <section className="content-section">
@@ -928,34 +868,26 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
           height: 4px;
         }
 
-        /* Sticky tabs with active underline */
-        .drawer-nav {
-          display: flex;
-          gap: 4px;
-          padding: 0 24px;
-          border-bottom: 1px solid var(--border-divider);
-          position: sticky;
-          top: 64px; /* below header */
-          z-index: 4;
-          background: var(--surface, #fff);
-        }
-        .drawer-nav .nav-item {
-          position: relative;
-          padding: 12px 10px;
-          border-radius: 8px;
-        }
-        .drawer-nav .nav-item.active::after {
-          content: '';
-          position: absolute;
-          left: 8px;
-          right: 8px;
-          bottom: -1px;
-          height: 2px;
-          background: var(--accent-primary);
-          border-radius: 2px;
-        }
+        /* Header content and stage dropdown (missing styles) */
+        .header-content { display: flex; align-items: center; gap: 16px; width: 100%; }
+        .company-logo { width: 44px; height: 44px; border-radius: 8px; background: var(--hover-bg); display: flex; align-items: center; justify-content: center; color: var(--text-primary); font-weight: 700; font-size: 18px; overflow: hidden; flex-shrink: 0; }
+        .company-logo img { width: 100%; height: 100%; object-fit: contain; border-radius: 8px; }
+        .header-titles { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+        .position-title { margin: 0; font-size: 20px; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
+        .company-name { display: flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 13px; }
+        .stage-badge-container { margin-left: auto; position: relative; }
+        .stage-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 999px; background: var(--glass-card-bg); border: 1px solid var(--border-thin); font-size: 12px; font-weight: 600; }
+        .badge-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .clickable { cursor: pointer; }
+        .stage-dropdown { position: absolute; right: 0; top: calc(100% + 8px); min-width: 180px; background: var(--surface, #fff); border: 1px solid var(--border-divider); border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,0.12); padding: 6px; z-index: 10; }
+        .stage-option { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; cursor: pointer; }
+        .stage-option:hover { background: var(--hover-bg); }
+        .stage-option.active { background: var(--glass-background); }
 
-        /* Drawer content: only Overview locks scrolling */
+        /* Nav badge */
+        .nav-badge { margin-left: 6px; padding: 2px 6px; font-size: 11px; border-radius: 999px; background: rgba(var(--accent-primary-rgb), 0.12); color: var(--accent-primary); border: 1px solid rgba(var(--accent-primary-rgb), 0.3); }
+
+        /* Only the Job Description scrolls in Overview; other tabs scroll normally */
         .drawer-content {
           flex: 1;
           overflow-y: auto;
@@ -1035,11 +967,13 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
         .section-btn:hover { color: var(--text-primary); background: rgba(0,0,0,0.03); }
 
         .section-title {
-          margin: 0 0 16px 0;
+          margin: 0 0 4px 0;
           font-size: 16px;
           font-weight: 600;
           color: var(--text-primary);
         }
+        .section-title-wrap { display: flex; flex-direction: column; }
+        .section-subtitle { margin: 0; font-size: 12px; color: var(--text-tertiary); }
 
         /* Job Description content */
         .description-content {
@@ -1062,18 +996,33 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
           align-self: start;
         }
 
-        /* Tech chips */
-        .tech-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-        .tech-chip {
-          padding: 6px 10px;
-          border-radius: 999px;
-          font-size: 12px;
-          color: var(--text-primary);
-          background: var(--hover-bg);
+        /* Polished Tech Stack */
+        .stack-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+        .stack-item {
+          display: flex; align-items: center; gap: 12px;
+          padding: 12px;
+          border-radius: 12px;
+          background: linear-gradient(180deg,
+            color-mix(in srgb, var(--glass-card-bg) 92%, transparent),
+            color-mix(in srgb, var(--glass-card-bg) 98%, transparent)
+          );
           border: 1px solid var(--border-thin);
-          white-space: nowrap;
+          box-shadow: 0 1px 0 var(--border-divider) inset;
+          transition: transform .18s var(--easing-standard), box-shadow .18s var(--easing-standard), border-color .18s var(--easing-standard);
         }
-        .chip-loading { color: var(--text-tertiary); font-style: italic; }
+        .stack-item:hover { transform: translateY(-2px); border-color: var(--border-active); box-shadow: 0 4px 14px rgba(0,0,0,0.06), 0 1px 0 var(--border-divider) inset; }
+        .stack-item:focus-within { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+
+        .stack-avatar { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); box-shadow: 0 0 0 2px color-mix(in srgb, var(--surface, #fff) 85%, transparent), 0 1px 0 rgba(255,255,255,0.4) inset; flex-shrink: 0; }
+        .stack-avatar.react { background: linear-gradient(135deg, #61dafb, #20232a); }
+        .stack-avatar.next { background: linear-gradient(135deg, #111, #333); }
+        .stack-avatar.node { background: linear-gradient(135deg, #6cc24a, #215732); }
+
+        .stack-name { font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .stack-source-badge { padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; border: 1px solid; }
+        .stack-source-badge.seeded { background: rgba(var(--accent-green-rgb), .12); color: var(--accent-green); border-color: rgba(var(--accent-green-rgb), .35); }
+        .stack-source-badge.inferred { background: rgba(var(--accent-purple-rgb), .12); color: var(--accent-purple); border-color: rgba(var(--accent-purple-rgb), .35); }
 
         /* Detail Lists */
         .detail-list { display: flex; flex-direction: column; gap: 18px; }
@@ -1635,30 +1584,36 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
           background: color-mix(in srgb, var(--surface, #fff) 92%, transparent);
           backdrop-filter: saturate(180%) blur(8px);
           border-top: 1px solid var(--border-divider);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
         }
+        .footer-info, .footer-actions { display: flex; align-items: center; gap: 12px; padding: 12px 24px; }
 
-        /* Media queries */
-        @media (max-width: 767px) {
-          .content-grid { grid-template-columns: 1fr; height: auto; }
-          .side-column { position: static; }
-          .drawer-content.overview-mode { overflow-y: auto; } /* allow scroll on mobile */
+        .action-btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 10px; border: 1px solid var(--border-thin); background: var(--glass-card-bg); color: var(--text-primary); cursor: pointer; }
+        .action-btn.edit-btn { background: rgba(var(--accent-primary-rgb), 0.1); color: var(--accent-primary); border-color: rgba(var(--accent-primary-rgb), 0.3); }
+        .action-btn:hover { filter: brightness(0.98); }
+
+        /* Document actions spacing */
+        .document-actions { display: flex; gap: 8px; }
+
+        .drawer-nav .nav-item {
+          position: relative;
+          padding: 12px 10px;
+          border-radius: 8px;
+          background: transparent;
+          border: none;
+          color: var(--text-secondary);
+          font-weight: 600;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          cursor: pointer;
+          transition: color 0.2s var(--easing-standard), background 0.2s var(--easing-standard);
         }
-
-        .ai-badge { padding: 2px 8px; font-size: 11px; border-radius: 999px; background: rgba(var(--accent-purple-rgb),0.12); color: var(--accent-purple); border: 1px solid rgba(var(--accent-purple-rgb),0.3); }
-        .ai-inline-error { margin-top: 8px; color: var(--accent-red); font-size: 12px; }
-
-        .stack-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
-        .stack-item { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--border-thin); border-radius: 10px; background: var(--hover-bg); }
-        .stack-item.skeleton { opacity: 0.7; font-style: italic; }
-        .stack-avatar { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); }
-        .stack-avatar.react { background: #20232a; }
-        .stack-avatar.next { background: #111; }
-        .stack-avatar.node { background: #215732; }
-        .stack-name { font-size: 13px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-        .benefits-list { list-style: none; padding-left: 0; display: grid; grid-template-columns: 1fr; gap: 8px; }
-        .benefit-item { position: relative; padding-left: 22px; }
-        .benefit-item::before { content: '✓'; position: absolute; left: 0; top: 0; color: var(--accent-green); }
+        .drawer-nav .nav-item:hover { color: var(--text-primary); background: var(--hover-bg); }
+        .drawer-nav .nav-item.active { color: var(--text-primary); background: rgba(0,0,0,0.02); }
+        .drawer-nav .nav-item:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
       `}</style>
     </SideDrawer>
   );

@@ -9,8 +9,8 @@ export default function TimelinePage() {
         return (
             <AppLayout currentSection="timeline-section">
                 <div className="feature-disabled">
-                    <h2>Timeline View</h2>
-                    <p>This feature is currently disabled.</p>
+                    <h2 className="text-h2">Timeline View</h2>
+                    <p className="lead">This feature is currently disabled.</p>
                 </div>
             </AppLayout>
         );

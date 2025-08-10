@@ -12,7 +12,12 @@ export const devFlags: Partial<FeatureFlags> = {
     ENABLE_DEBUG_PAGE: true,
     ENABLE_PROFILE_ARTIFACTS: false,
     ENABLE_DEVELOPMENT_FEATURES: true,
-    ENABLE_DASHBOARD: true,
+    ENABLE_DASHBOARD: false,
+    ENABLE_PROFILE_IN_NAV: false,
+    // New flags
+    ENABLE_REMINDERS_SECTION: false,
+    ENABLE_INTERVIEWS_SECTION: false,
+    ENABLE_ANALYTICS: false,
 };
 
 // Production environment flags - disable incomplete features
@@ -25,6 +30,11 @@ export const prodFlags: Partial<FeatureFlags> = {
     ENABLE_PROFILE_ARTIFACTS: false,
     ENABLE_DEVELOPMENT_FEATURES: false,
     ENABLE_DASHBOARD: false,
+    ENABLE_PROFILE_IN_NAV: false,
+    // New flags
+    ENABLE_REMINDERS_SECTION: false,
+    ENABLE_INTERVIEWS_SECTION: false,
+    ENABLE_ANALYTICS: false,
 };
 
 // Staging environment flags - enable some features for testing
@@ -37,6 +47,11 @@ export const stagingFlags: Partial<FeatureFlags> = {
     ENABLE_PROFILE_ARTIFACTS: true,
     ENABLE_DEVELOPMENT_FEATURES: false,
     ENABLE_DASHBOARD: false,
+    ENABLE_PROFILE_IN_NAV: false,
+    // New flags
+    ENABLE_REMINDERS_SECTION: false,
+    ENABLE_INTERVIEWS_SECTION: false,
+    ENABLE_ANALYTICS: false,
 };
 
 // Determine which environment we're in and return the appropriate flags

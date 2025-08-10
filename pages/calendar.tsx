@@ -9,8 +9,8 @@ export default function CalendarPage() {
         return (
             <AppLayout currentSection="calendar-section">
                 <div className="feature-disabled">
-                    <h2>Calendar View</h2>
-                    <p>This feature is currently disabled.</p>
+                    <h2 className="text-h2">Calendar View</h2>
+                    <p className="lead">This feature is currently disabled.</p>
                 </div>
             </AppLayout>
         );

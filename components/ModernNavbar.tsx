@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SectionKey, NavItemType } from '@/types';
 import {
-  Menu, X, Search, Bell, Plus, Command, User, LogOut, Settings
+  Menu, X, Search, Bell, Plus, Command, User, LogOut, Settings, Server as ServerIcon, Mail
 } from 'lucide-react';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import ModernSearchBar from './ModernSearchBar';
+import { useRouter } from 'next/router';
 
 interface ModernNavbarProps {
   items: NavItemType[];
@@ -30,6 +31,7 @@ export default function ModernNavbar({
   const [mounted, setMounted] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
+  const { push } = useRouter();
 
   useEffect(() => {
     setMounted(true);
@@ -200,13 +202,21 @@ export default function ModernNavbar({
                     </div>
                   </div>
                   <div className="dropdown-divider" />
-                  <button className="dropdown-item">
+                  <button className="dropdown-item" onClick={() => { push('/profile'); setIsProfileMenuOpen(false); }}>
                     <User size={16} />
                     <span>Profile</span>
                   </button>
-                  <button className="dropdown-item">
+                  <button className="dropdown-item" onClick={() => { push('/profile'); setIsProfileMenuOpen(false); }}>
                     <Settings size={16} />
                     <span>Settings</span>
+                  </button>
+                  <button className="dropdown-item" onClick={() => { push('/email-setup'); setIsProfileMenuOpen(false); }}>
+                    <Mail size={16} />
+                    <span>Email Setup</span>
+                  </button>
+                  <button className="dropdown-item" onClick={() => { push('/daemon'); setIsProfileMenuOpen(false); }}>
+                    <ServerIcon size={16} />
+                    <span>Daemon</span>
                   </button>
                   <div className="dropdown-divider" />
                   <button className="dropdown-item danger">
@@ -293,7 +303,7 @@ export default function ModernNavbar({
           padding: var(--space-2);
           background: var(--surface);
           border: 1px solid var(--border);
-          border-radius: var(--border-radius);
+          border-radius: var(--radius-md);
           color: var(--text-secondary);
           cursor: pointer;
           transition: all var(--transition-fast);
@@ -309,8 +319,8 @@ export default function ModernNavbar({
           display: flex;
           align-items: center;
           gap: var(--space-3);
-          font-weight: var(--font-weight-bold);
-          font-size: var(--font-size-lg);
+          font-weight: var(--font-semibold);
+          font-size: var(--text-lg);
           color: var(--text-primary);
         }
 
@@ -318,15 +328,14 @@ export default function ModernNavbar({
           width: var(--logo-size);
           height: var(--logo-size);
           background: var(--primary);
-          border-radius: var(--border-radius);
+          border-radius: var(--radius-md);
           display: flex;
           align-items: center;
           justify-content: center;
           color: var(--text-inverse);
-          font-size: var(--font-size-md);
-          font-weight: var(--font-weight-bold);
-          transition: all var(--duration-300) var(--ease-magnetic);
-          box-shadow: 0 0 0 1px var(--primary-alpha-20);
+          font-size: var(--text-base);
+          font-weight: var(--font-semibold);
+          transition: all var(--duration-200) var(--ease-out);
           position: relative;
           overflow: hidden;
         }
@@ -337,14 +346,11 @@ export default function ModernNavbar({
           inset: 0;
           background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
           transform: translateX(-100%);
-          transition: transform 0.6s ease;
+          transition: transform var(--duration-300) var(--ease-out);
         }
 
         .navbar-logo:hover .logo-icon {
-          transform: scale(1.05);
-          box-shadow:
-            0 0 0 1px var(--primary-alpha-20),
-            0 4px 12px var(--primary-alpha-20);
+          transform: scale(1.02);
         }
 
         .navbar-logo:hover .logo-icon:after {
@@ -352,8 +358,8 @@ export default function ModernNavbar({
         }
 
         .logo-text {
-          font-size: var(--font-size-md);
-          letter-spacing: var(--letter-spacing);
+          font-size: var(--text-base);
+          letter-spacing: var(--tracking-tight);
           transition: color var(--duration-150) var(--ease-out);
         }
 
@@ -365,11 +371,7 @@ export default function ModernNavbar({
         .desktop-nav {
           display: flex;
           align-items: center;
-          gap: var(--nav-gap);
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: var(--border-radius-lg);
-          padding: var(--space-2);
+          gap: var(--space-1);
         }
 
         .nav-item {
@@ -377,79 +379,85 @@ export default function ModernNavbar({
           display: flex;
           align-items: center;
           gap: var(--space-2);
-          padding: var(--space-3) var(--space-4);
+          padding: var(--space-1-5) var(--space-2-5);
           background: none;
           border: none;
-          border-radius: var(--border-radius);
+          border-radius: var(--radius-md);
           color: var(--text-secondary);
-          font-size: var(--font-size-sm);
-          font-weight: var(--font-weight-medium);
+          font-size: var(--text-sm);
+          font-weight: var(--font-medium);
           cursor: pointer;
-          transition: all var(--duration-200) var(--ease-magnetic);
+          transition: all var(--duration-150) var(--ease-out);
           white-space: nowrap;
           overflow: hidden;
         }
 
-        .nav-item::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: var(--highlight-gradient);
-          opacity: 0;
-          transition: opacity var(--duration-200) var(--ease-magnetic);
-          z-index: 0;
-        }
-
         .nav-item:hover {
-          background: var(--glass-hover-bg);
+          background: var(--hover-bg);
           color: var(--text-primary);
-          transform: translateY(-1px);
-        }
-
-        .nav-item:hover::before {
-          opacity: 0.1;
         }
 
         .nav-item.active {
           background: var(--primary);
           color: var(--text-inverse);
-          box-shadow:
-            0 4px 12px var(--primary-alpha-20),
-            0 0 0 1px var(--primary-alpha-20);
-          transform: translateY(-1px);
-        }
-
-        .nav-item.active::before {
-          opacity: 0.15;
         }
 
         .nav-icon {
           display: flex;
           align-items: center;
-          font-size: var(--icon-size);
+          justify-content: center;
+          width: var(--icon-base);
+          height: var(--icon-base);
+        }
+
+        .nav-label {
+          font-size: var(--text-sm);
+          font-weight: var(--font-medium);
+        }
+
+        .nav-badge {
+          background: var(--error);
+          color: var(--text-inverse);
+          border-radius: var(--radius-full);
+          padding: var(--space-0-5) var(--space-1-5);
+          font-size: var(--text-2xs);
+          font-weight: var(--font-semibold);
+          min-width: 18px;
+          height: 18px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+          background: var(--primary);
+          color: white;
+        }
+
+        .nav-icon {
+          display: flex;
+          align-items: center;
+          font-size: 16px;
         }
 
         .nav-label {
           white-space: nowrap;
-          font-weight: var(--font-weight-medium);
+          font-weight: 500;
         }
 
         .nav-badge {
           position: absolute;
           top: 2px;
           right: 2px;
-          min-width: var(--badge-size);
-          height: var(--badge-size);
+          min-width: 18px;
+          height: 18px;
           background: var(--error);
-          color: var(--text-inverse);
-          border-radius: var(--border-radius-full);
-          font-size: var(--font-size-xs);
-          font-weight: var(--font-weight-bold);
+          color: white;
+          border-radius: 50%;
+          font-size: 11px;
+          font-weight: 700;
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 0 var(--space-1);
-          box-shadow: var(--shadow);
+          padding: 0 4px;
         }
 
         /* Right Section */
@@ -480,38 +488,25 @@ export default function ModernNavbar({
           display: flex;
           align-items: center;
           justify-content: center;
-          background: var(--glass-bg);
+          background: var(--surface);
           border: 1px solid var(--border);
-          border-radius: var(--border-radius);
+          border-radius: var(--radius-md);
           color: var(--text-secondary);
           cursor: pointer;
-          transition: all var(--duration-200) var(--ease-magnetic);
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
+          transition: all var(--duration-150) var(--ease-out);
           overflow: hidden;
         }
 
-        .icon-btn::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: var(--highlight-gradient);
-          opacity: 0;
-          transition: opacity var(--duration-200) var(--ease-magnetic);
-        }
-
         .icon-btn:hover {
-          background: var(--glass-hover-bg);
+          background: var(--hover-bg);
           color: var(--text-primary);
-          border-color: var(--border-focus);
-          transform: translateY(-2px) scale(1.05);
-          box-shadow:
-            0 4px 12px var(--shadow-color),
-            0 0 0 1px var(--border-focus);
+          border-color: var(--border-strong);
         }
 
-        .icon-btn:hover::before {
-          opacity: 0.1;
+        .icon-btn.active {
+          background: var(--primary);
+          color: var(--text-inverse);
+          border-color: var(--primary);
         }
 
         .badge {
@@ -522,15 +517,14 @@ export default function ModernNavbar({
           height: 20px;
           background: var(--error);
           color: var(--text-inverse);
-          border-radius: var(--border-radius-full);
-          font-size: 11px;
-          font-weight: var(--font-weight-bold);
+          border-radius: var(--radius-full);
+          font-size: var(--text-2xs);
+          font-weight: var(--font-semibold);
           display: flex;
           align-items: center;
           justify-content: center;
           padding: 0 var(--space-1);
-          box-shadow: var(--shadow);
-          border: 2px solid var(--background);
+          border: 2px solid var(--surface);
         }
 
         /* Dropdowns */
@@ -543,40 +537,29 @@ export default function ModernNavbar({
           top: calc(100% + 8px);
           right: 0;
           min-width: 240px;
-          background: var(--glass-bg);
-          border: 1px solid var(--border-focus);
-          border-radius: var(--border-radius-lg);
-          box-shadow:
-            0 8px 24px var(--shadow-color),
-            0 2px 8px var(--highlight-primary-alpha);
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-lg);
+          box-shadow: var(--shadow-md);
           overflow: hidden;
           z-index: 1001;
-          animation: dropdownIn 0.3s var(--ease-magnetic);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
+          animation: dropdownIn var(--duration-200) var(--ease-out);
         }
 
         @keyframes dropdownIn {
           0% {
             opacity: 0;
-            transform: translateY(-12px) scale(0.98);
-            filter: blur(8px);
-          }
-          50% {
-            opacity: 0.5;
-            transform: translateY(-6px) scale(0.99);
-            filter: blur(4px);
+            transform: translateY(-8px) scale(0.98);
           }
           100% {
             opacity: 1;
             transform: translateY(0) scale(1);
-            filter: blur(0);
           }
         }
 
         .dropdown-header {
-          padding: var(--card-padding, 16px);
-          border-bottom: var(--border-divider);
+          padding: var(--space-4);
+          border-bottom: 1px solid var(--border);
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -584,8 +567,8 @@ export default function ModernNavbar({
 
         .dropdown-header h3 {
           margin: 0;
-          font-size: 14px;
-          font-weight: var(--font-weight-secondary, 600);
+          font-size: var(--text-sm);
+          font-weight: var(--font-semibold);
           color: var(--text-primary);
         }
 
@@ -593,7 +576,16 @@ export default function ModernNavbar({
           background: none;
           border: none;
           color: var(--primary);
-          font-size: 12px;
+          font-size: var(--text-xs);
+          cursor: pointer;
+          padding: var(--space-1);
+          border-radius: var(--radius);
+          transition: all var(--duration-150) var(--ease-out);
+        }
+
+        .text-btn:hover {
+          background: var(--hover-bg);
+        }
           font-weight: var(--font-weight-secondary, 500);
           cursor: pointer;
         }
@@ -699,44 +691,44 @@ export default function ModernNavbar({
         }
 
         .profile-info {
-          padding: var(--card-padding, 16px);
+          padding: var(--space-4);
           display: flex;
           align-items: center;
-          gap: 12px;
-          border-bottom: var(--border-divider);
+          gap: var(--space-3);
+          border-bottom: 1px solid var(--border);
         }
 
         .user-name {
-          margin: 0 0 2px 0;
-          font-size: 14px;
-          font-weight: var(--font-weight-secondary, 600);
+          margin: 0 0 var(--space-0-5) 0;
+          font-size: var(--text-sm);
+          font-weight: var(--font-semibold);
           color: var(--text-primary);
         }
 
         .user-email {
           margin: 0;
-          font-size: 12px;
+          font-size: var(--text-xs);
           color: var(--text-tertiary);
         }
 
         .dropdown-divider {
           height: 1px;
-          background: var(--border-divider);
-          margin: 8px 0;
+          background: var(--border);
+          margin: var(--space-2) 0;
         }
 
         .dropdown-item {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: var(--space-3);
           width: 100%;
-          padding: 10px var(--card-padding, 16px);
+          padding: var(--space-2-5) var(--space-4);
           background: none;
           border: none;
           color: var(--text-primary);
-          font-size: 14px;
+          font-size: var(--text-sm);
           cursor: pointer;
-          transition: background 0.2s ease;
+          transition: background var(--duration-150) var(--ease-out);
           text-align: left;
         }
 
@@ -745,41 +737,39 @@ export default function ModernNavbar({
         }
 
         .dropdown-item.danger {
-          color: var(--accent-red);
+          color: var(--error);
         }
 
         /* Mobile Navigation */
         .mobile-nav {
           position: fixed;
-          top: var(--navbar-height, 68px);
+          top: var(--navbar-height);
           left: 0;
           right: 0;
-          background: var(--surface) !important;
-          border-bottom: var(--navbar-border, var(--border-thin));
-          padding: 12px 16px;
+          background: var(--surface);
+          border-bottom: 1px solid var(--border);
+          padding: var(--space-3) var(--space-4);
           display: none;
           z-index: 999;
-          box-shadow: var(--navbar-shadow, var(--shadow-md));
+          box-shadow: var(--shadow-md);
         }
 
         .mobile-nav-item {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: var(--space-3);
           width: 100%;
-          padding: 14px var(--card-padding, 16px);
+          padding: var(--space-3-5) var(--space-4);
           background: none;
           border: none;
-          border-radius: var(--button-border-radius, 12px);
+          border-radius: var(--radius-md);
           color: var(--text-secondary);
-          font-size: 15px;
-          font-weight: var(--font-weight-secondary, 500);
+          font-size: var(--text-base);
+          font-weight: var(--font-medium);
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all var(--duration-150) var(--ease-out);
           text-align: left;
-          margin-bottom: 4px;
-          text-transform: var(--text-transform, none);
-          letter-spacing: var(--letter-spacing, normal);
+          margin-bottom: var(--space-1);
         }
 
         .mobile-nav-item:hover {
@@ -789,8 +779,7 @@ export default function ModernNavbar({
 
         .mobile-nav-item.active {
           background: var(--primary);
-          color: white;
-          box-shadow: var(--button-shadow);
+          color: var(--text-inverse);
         }
 
         /* Responsive Design */

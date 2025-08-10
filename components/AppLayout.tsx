@@ -46,7 +46,7 @@ export default function AppLayout({ children, currentSection }: AppLayoutProps) 
       />
 
       <main className="glass-main">
-        <div className="main-content">
+        <div className="main-content typography-root">
           <div className="reveal-element">
             {/* Show loading state */}
             {dbLoading && (

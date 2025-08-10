@@ -6,7 +6,8 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npx next dev",
+    "dev:web": "npx next dev",
+    "dev": "concurrently -k -n web,daemon -c green,cyan \"npm run dev:web\" \"npm run daemon:dev\"",
     "build": "npx next build",
     "start": "next start",
     "lint": "next lint",
@@ -39,7 +40,10 @@
     "apps:export:json": "curl -s http://localhost:3001/api/admin/export > applications-export.json && echo 'Exported to applications-export.json'",
     "apps:export:csv": "curl -s http://localhost:3001/api/admin/export?format=csv > applications-export.csv && echo 'Exported to applications-export.csv'",
     "find-dead-paths": "node scripts/find-dead-paths.js",
-    "find-dead-paths:json": "node scripts/find-dead-paths.js --json"
+    "find-dead-paths:json": "node scripts/find-dead-paths.js --json",
+    "daemon:dev": "npm --workspace @jjugg/dev-api run dev",
+    "daemon:build": "npm --workspace @jjugg/dev-api run build",
+    "daemon:start": "npm --workspace @jjugg/dev-api run start"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -64,19 +68,20 @@
     "@tailwindcss/typography": "^0.5.16",
     "@types/canvas-confetti": "^1.9.0",
     "@types/formidable": "^3.4.5",
+    "@types/jsdom": "^21.1.7",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^2.0.0",
     "autoprefixer": "^10.4.21",
     "canvas-confetti": "^1.9.3",
+    "concurrently": "^9.2.0",
     "critters": "^0.0.23",
+    "jsdom": "^24.0.0",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.2.7",
     "tsx": "^4.20.3",
     "typescript": "^5",
-    "vitest": "^2.0.0",
-    "@vitest/coverage-v8": "^2.0.0",
-    "jsdom": "^24.0.0",
-    "@types/jsdom": "^21.1.7"
+    "vitest": "^2.0.0"
   }
 }

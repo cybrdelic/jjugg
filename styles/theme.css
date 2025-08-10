@@ -1143,7 +1143,7 @@ body {
 
 /* Heading Hierarchy - H1 through H6 */
 .text-h1 {
-    font-family: var(--font-interface);
+    font-family: var(--font-display);
     font-size: var(--text-4xl);
     font-weight: var(--font-bold);
     line-height: var(--leading-tight);
@@ -1152,7 +1152,7 @@ body {
 }
 
 .text-h2 {
-    font-family: var(--font-interface);
+    font-family: var(--font-display);
     font-size: var(--text-3xl);
     font-weight: var(--font-semibold);
     line-height: var(--leading-tight);
@@ -1161,7 +1161,7 @@ body {
 }
 
 .text-h3 {
-    font-family: var(--font-interface);
+    font-family: var(--font-display);
     font-size: var(--text-2xl);
     font-weight: var(--font-semibold);
     line-height: var(--leading-snug);
@@ -1500,7 +1500,7 @@ body {
 /* Headings - Automatically styled with world-class typography */
 h1,
 .h1 {
-    font-family: var(--font-interface);
+    font-family: var(--font-display);
     font-size: var(--text-4xl);
     font-weight: var(--font-bold);
     line-height: var(--leading-tight);
@@ -1513,7 +1513,7 @@ h1,
 
 h2,
 .h2 {
-    font-family: var(--font-interface);
+    font-family: var(--font-display);
     font-size: var(--text-3xl);
     font-weight: var(--font-semibold);
     line-height: var(--leading-tight);
@@ -1526,7 +1526,7 @@ h2,
 
 h3,
 .h3 {
-    font-family: var(--font-interface);
+    font-family: var(--font-display);
     font-size: var(--text-2xl);
     font-weight: var(--font-semibold);
     line-height: var(--leading-snug);
@@ -1678,442 +1678,287 @@ a:hover {
     text-decoration-thickness: 1px;
 }
 
-/* Spacing Utilities - Mathematical progression */
-.space-y-1>*+* {
-    margin-top: var(--space-1);
+/* ===================================
+   TYPOGRAPHY ROOT
+   Global Editorial Typography
+   ===================================== */
+
+/* Typography Root: apply consistent editorial typography across app content */
+.typography-root {
+    font-family: var(--font-body);
+    color: var(--text-primary);
+    line-height: var(--leading-normal);
+    letter-spacing: var(--tracking-normal);
 }
 
-.space-y-2>*+* {
+.typography-root p {
+    max-width: 70ch;
+    margin: 0 0 var(--space-4);
+}
+
+.typography-root ul,
+.typography-root ol {
+    padding-inline-start: var(--space-6);
+    margin: 0 0 var(--space-4);
+}
+
+.typography-root li {
+    margin: 0 0 var(--space-1);
+}
+
+.typography-root a {
+    color: var(--link);
+    text-underline-offset: 3px;
+}
+
+.typography-root blockquote {
+    margin: var(--space-4) 0;
+    padding-left: var(--space-4);
+    border-left: 3px solid var(--border-strong);
+    color: var(--text-secondary);
+}
+
+.typography-root code {
+    font-family: var(--font-code);
+    font-size: 0.95em;
+    background: var(--surface-1);
+    padding: 0.1em 0.35em;
+    border-radius: var(--radius-soft);
+}
+
+.typography-root pre {
+    background: var(--surface-1);
+    padding: var(--space-3);
+    border-radius: var(--radius-soft);
+    overflow: auto;
+}
+
+.typography-root pre code {
+    background: transparent;
+    padding: 0;
+}
+
+.typography-root hr {
+    border: 0;
+    height: 1px;
+    background: var(--border-soft);
+    margin: var(--space-6) 0;
+}
+
+.typography-root table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+}
+
+.typography-root th,
+.typography-root td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-soft);
+    text-align: left;
+}
+
+/* Inherit heading styles but ensure rhythm */
+.typography-root h1,
+.typography-root .h1 {
+    margin: 0 0 var(--space-5);
+}
+
+.typography-root h2,
+.typography-root .h2 {
+    margin: 0 0 var(--space-4);
+}
+
+.typography-root h3,
+.typography-root .h3 {
+    margin: 0 0 var(--space-3);
+}
+
+/* Link colors */
+:root {
+    /* ...existing code... */
+    /* Link colors */
+    --link: var(--primary);
+    --link-hover: var(--primary-dark);
+}
+
+[data-theme="light"] {
+    /* ...existing code... */
+    --link: var(--primary);
+    --link-hover: var(--primary-dark);
+}
+
+[data-theme="dark"] {
+    /* ...existing code... */
+    --link: var(--primary);
+    --link-hover: var(--primary-light);
+}
+
+/* Global text selection */
+::selection {
+    background: var(--highlight-primary);
+    color: var(--text-inverse);
+}
+
+/* Improve link styling globally */
+a {
+    color: var(--link);
+    text-decoration: none;
+    font-weight: var(--font-medium);
+    text-decoration-skip-ink: auto;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1.25px;
+    transition: color var(--duration-150) var(--ease-out), text-decoration-color var(--duration-150) var(--ease-out);
+}
+
+a:hover {
+    color: var(--link-hover);
+    text-decoration: underline;
+}
+
+/* Balance long headings */
+h1,
+h2,
+h3 {
+    text-wrap: balance;
+}
+
+/* Additional semantic elements */
+small {
+    font-size: 0.875em;
+    color: var(--text-secondary);
+}
+
+mark {
+    background: rgba(var(--color-primary-rgb), 0.12);
+    color: inherit;
+    padding: 0 .2em;
+    border-radius: var(--radius-sm);
+}
+
+kbd {
+    font-family: var(--font-code);
+    font-size: 0.9em;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: 0 .35em;
+}
+
+sup,
+sub {
+    font-size: 0.75em;
+    line-height: 0;
+    position: relative;
+}
+
+sup {
+    top: -0.5em;
+}
+
+sub {
+    bottom: -0.25em;
+}
+
+abbr[title] {
+    text-decoration: underline dotted;
+    text-underline-offset: 2px;
+    cursor: help;
+}
+
+u {
+    text-decoration-thickness: 1.25px;
+    text-underline-offset: 3px;
+}
+
+s,
+del {
+    color: var(--text-tertiary);
+}
+
+ins {
+    background: rgba(var(--color-primary-rgb), 0.06);
+    text-decoration: none;
+}
+
+figure {
+    margin: var(--space-5) 0;
+}
+
+figcaption {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
     margin-top: var(--space-2);
 }
 
-.space-y-3>*+* {
-    margin-top: var(--space-3);
-}
-
-.space-y-4>*+* {
-    margin-top: var(--space-4);
-}
-
-.space-y-6>*+* {
-    margin-top: var(--space-6);
-}
-
-.space-y-8>*+* {
-    margin-top: var(--space-8);
-}
-
-.space-y-12>*+* {
-    margin-top: var(--space-12);
-}
-
-/* ===================================
-   SUPERIOR ANIMATION FRAMEWORK
-   500hz Performance-optimized microinteractions
-   ===================================== */
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
-
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(var(--space-4));
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes shimmer {
-    from {
-        transform: translateX(-100%);
-    }
-
-    to {
-        transform: translateX(100%);
-    }
-}
-
-@keyframes pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.5;
-    }
-}
-
-@keyframes morphBlob {
-    0% {
-        border-radius: 50% 40% 60% 30%;
-        transform: rotate(0deg);
-    }
-
-    25% {
-        border-radius: 30% 60% 40% 70%;
-        transform: rotate(90deg);
-    }
-
-    50% {
-        border-radius: 70% 30% 50% 60%;
-        transform: rotate(180deg);
-    }
-
-    75% {
-        border-radius: 40% 70% 30% 50%;
-        transform: rotate(270deg);
-    }
-
-    100% {
-        border-radius: 50% 40% 60% 30%;
-        transform: rotate(360deg);
-    }
-}
-
-@keyframes liquidRise {
-    from {
-        transform: translateY(100%) scale(0.8);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateY(0) scale(1);
-        opacity: 1;
-    }
-}
-
-@keyframes professionalHighlight {
-
-    0%,
-    100% {
-        border-color: rgba(255, 255, 255, 0.1);
-    }
-
-    50% {
-        border-color: rgba(0, 112, 243, 0.3);
-    }
-}
-
-@keyframes microBounce {
-    0% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(var(--micro-bounce));
-    }
-
-    100% {
-        transform: scale(1);
-    }
-}
-
-/* Animation Classes */
-.animate-fade-in {
-    animation: fadeIn var(--duration-300) var(--ease-smooth);
-}
-
-.animate-slide-up {
-    animation: slideUp var(--duration-500) var(--ease-liquid);
-}
-
-.animate-pulse {
-    animation: pulse var(--duration-1000) var(--ease-in-out) infinite;
-}
-
-.animate-morph {
-    animation: morphBlob 8s var(--ease-smooth) infinite;
-}
-
-.animate-liquid-rise {
-    animation: liquidRise var(--duration-500) var(--ease-spring);
-}
-
-.animate-professional-highlight {
-    animation: professionalHighlight 3s var(--ease-smooth) infinite;
-}
-
-.animate-micro-bounce {
-    animation: microBounce var(--duration-200) var(--ease-spring);
-}
-
-/* GPU Acceleration for smooth performance */
-.gpu-accelerated {
-    transform: translateZ(0);
-    will-change: transform;
-    backface-visibility: hidden;
-    perspective: 1000px;
-}
-
-/* ===================================
-   SUPERIOR COMPONENT FOUNDATIONS
-   Enhanced card and button systems
-   ===================================== */
-
-.superior-card {
-    background-color: var(--background);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: var(--card-padding);
-    box-shadow: var(--shadow-sm);
-    transition: all var(--duration-200) var(--ease-out);
-}
-
-.superior-card:hover {
-    box-shadow: var(--shadow);
-    border-color: var(--border-strong);
-}
-
-/* NEW: Ultra-flat card design */
-.flat-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: var(--space-6);
-    transition: all var(--duration-150) var(--ease-out);
-    position: relative;
-    transform: translateZ(0);
-}
-
-.flat-card:hover {
-    background: var(--card-hover);
-    border-color: var(--border-strong);
-    /* No shadows - completely flat design */
-}
-
-/* NEW: Outline card - even cleaner */
-.outline-card {
-    background: transparent;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: var(--space-6);
-    transition: all var(--duration-150) var(--ease-out);
-}
-
-.outline-card:hover {
+/* Callouts / Shoutouts */
+.callout {
+    border-left: 4px solid var(--border-strong);
     background: var(--surface);
-    border-color: var(--primary);
-}
-
-/* NEW: Minimal card - borderless */
-.minimal-card {
-    background: var(--surface);
-    border: none;
+    padding: var(--space-4);
     border-radius: var(--radius-md);
-    padding: var(--space-6);
-    transition: all var(--duration-150) var(--ease-out);
+    margin: var(--space-4) 0;
 }
 
-.minimal-card:hover {
-    background: var(--card-hover);
+.callout-info {
+    border-color: var(--color-blue);
+    background: var(--color-blue-light);
 }
 
-.superior-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-2);
-    height: var(--button-height);
-    padding: 0 var(--space-4);
-    font-family: var(--font-interface);
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-    border-radius: var(--radius);
-    border: 1px solid transparent;
-    cursor: pointer;
-    transition: all var(--duration-150) var(--ease-out);
-    text-decoration: none;
+.callout-warn {
+    border-color: var(--warning);
+    background: var(--warning-light);
 }
 
-.superior-button-primary {
-    background-color: var(--primary);
-    color: var(--text-inverse);
-    border-color: var(--primary);
+.callout-success {
+    border-color: var(--success);
+    background: var(--success-light);
 }
 
-.superior-button-primary:hover {
-    background-color: var(--primary-dark);
-    border-color: var(--primary-dark);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
+.callout-error {
+    border-color: var(--error);
+    background: var(--error-light);
 }
 
-.superior-button-secondary {
-    background-color: var(--background);
+/* Shoutout text emphasis */
+.shoutout {
+    font-weight: var(--font-semibold);
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+
+/* Lead paragraph */
+.lead {
+    font-size: var(--text-md);
+    line-height: var(--leading-relaxed);
     color: var(--text-secondary);
-    border-color: var(--border);
 }
 
-.superior-button-secondary:hover {
-    background-color: var(--background-secondary);
-    border-color: var(--border-strong);
-    color: var(--text-primary);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
+/* Drop cap utility (apply on a container around a paragraph) */
+.dropcap:first-letter {
+    float: left;
+    font-size: 3.2em;
+    line-height: 0.9;
+    padding: 0 .08em 0 0;
+    font-weight: var(--font-semibold);
 }
 
-/* NEW: Ultra-flat button variants */
-.flat-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-2);
-    height: var(--button-height);
-    padding: 0 var(--space-4);
-    font-family: var(--font-interface);
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border);
-    cursor: pointer;
-    transition: all var(--duration-150) var(--ease-out);
-    text-decoration: none;
-    background: var(--surface);
-    color: var(--text-primary);
-}
-
-.flat-button:hover {
-    background: var(--card-hover);
-    border-color: var(--border-strong);
-    color: var(--text-primary);
-}
-
-.flat-button-primary {
-    background: var(--primary);
-    color: var(--text-inverse);
-    border-color: var(--primary);
-}
-
-.flat-button-primary:hover {
-    background: var(--primary-dark);
-    border-color: var(--primary-dark);
-    color: var(--text-inverse);
-}
-
-/* NEW: Ghost button - completely borderless */
-.ghost-button {
-    background: transparent;
-    border: none;
+/* Pull quote */
+.pull-quote {
+    font-size: var(--text-xl);
+    line-height: var(--leading-relaxed);
+    font-style: italic;
     color: var(--text-secondary);
-    padding: var(--space-3) var(--space-4);
-    font-family: var(--font-interface);
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: all var(--duration-150) var(--ease-out);
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
+    border-left: 3px solid var(--border-strong);
+    padding-left: var(--space-4);
+    margin: var(--space-6) 0;
 }
 
-.ghost-button:hover {
-    background: var(--surface);
-    color: var(--text-primary);
-}
-
-/* NEW: Link button - text-only style */
-.link-button {
-    background: transparent;
-    border: none;
-    color: var(--primary);
-    padding: var(--space-2);
-    font-family: var(--font-interface);
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-    cursor: pointer;
-    text-decoration: none;
-    transition: all var(--duration-150) var(--ease-out);
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1);
-}
-
-.link-button:hover {
-    color: var(--primary-dark);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-}
-
-/* NEW: Professional Components */
-.professional-card {
-    background: var(--glass-bg);
-    backdrop-filter: var(--glass-backdrop);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--radius-lg);
-    padding: var(--space-6);
-    transition: all var(--duration-150) var(--ease-out);
-}
-
-.professional-card:hover {
-    background: var(--glass-hover-bg);
-    border-color: rgba(255, 255, 255, 0.15);
-}
-
-.clean-button {
-    background: transparent;
-    color: var(--primary);
-    border: 1px solid var(--primary);
-    border-radius: var(--radius-md);
-    padding: var(--space-3) var(--space-6);
-    font-family: var(--font-interface);
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-    cursor: pointer;
-    transition: all var(--duration-150) var(--ease-out);
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    text-decoration: none;
-}
-
-.clean-button:hover {
-    background: var(--primary);
-    color: var(--text-inverse);
-}
-
-.minimal-input {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: var(--space-3) var(--space-4);
-    color: var(--text-primary);
-    font-family: var(--font-body);
-    font-size: var(--text-sm);
-    transition: all var(--duration-150) var(--ease-out);
-}
-
-.minimal-input:focus {
-    outline: none;
-    border-color: var(--primary);
-    background: var(--card);
-}
-
-/* ===================================
-   AURORA THEME POLISH (Light)
-   Creative but professional palette and motion
-   ===================================== */
-/* REMOVED: AURORA THEME POLISH (Light) and (Dark) overrides to restore original theme tokens */
-
-/* ===================================
-   Accessibility & Motion Preferences
-   ===================================== */
-@media (prefers-reduced-motion: reduce) {
-    :root {
-        --duration-150: 0ms;
-        --duration-200: 0ms;
-    }
+/* Ensure new utilities also work within typography-root */
+.typography-root a {
+    color: var(--link);
 }

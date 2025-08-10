@@ -45,6 +45,7 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
         icon: Bell,
         color: 'var(--accent-pink)',
         route: '/reminders',
+        featureFlag: 'ENABLE_REMINDERS_SECTION',
         badgeSource: 'upcomingEvents',
     },
     {
@@ -54,6 +55,7 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
         icon: Users,
         color: 'var(--accent-orange)',
         route: '/interviews',
+        featureFlag: 'ENABLE_INTERVIEWS_SECTION',
         badgeSource: 'interviewsScheduled',
     },
     {
@@ -63,7 +65,7 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
         icon: User,
         color: 'var(--accent-green)',
         route: '/profile',
-        featureFlag: 'ENABLE_PROFILE_ARTIFACTS',
+        featureFlag: 'ENABLE_PROFILE_IN_NAV', // Only show in main nav if explicitly enabled
     },
     {
         id: 'goals-section',
@@ -101,6 +103,7 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
         icon: BarChart3,
         color: 'var(--accent-teal)',
         route: '/analytics',
+        featureFlag: 'ENABLE_ANALYTICS',
     },
 ];
 

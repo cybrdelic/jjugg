@@ -1,12 +1,15 @@
 /**
- * Refactored Applications Component
- * Modern, maintainable, and performant job applications management
+ * Applications — Header upgrade (cohesive, no "idle", token-pure)
+ * - Tight 2-col layout (Title+meta | Stats)
+ * - Live capsule only when updates exist
+ * - One-shot polite announcement; no marquee
+ * - CountUp respects prefers-reduced-motion
+ * - Skip link for a11y
  */
 
 'use client';
-import React, { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useApplicationsLogic } from './hooks/useApplicationsLogic';
-import { ApplicationsHeader } from './components/ApplicationsHeader';
 import { ApplicationsControls } from './components/ApplicationsControls';
 import { ApplicationsTable } from './components/ApplicationsTable';
 import { VirtualizedApplicationsTable } from './components/VirtualizedApplicationsTable';
@@ -15,19 +18,18 @@ import { FilterBuilder } from './components/FilterBuilder';
 import ApplicationDetailDrawer from './ApplicationDetailDrawer';
 import { getAdaptivePerformanceConfig, detectDeviceCapabilities } from './utils/performanceConfig';
 import { usePerformanceMonitor } from './utils/performanceMonitor';
-import { TableSkeleton, KanbanSkeleton } from './components/ApplicationsSkeleton';
+import { TableSkeleton } from './components/ApplicationsSkeleton';
 import EnhancedSearch from '@/components/EnhancedSearch';
+import { CheckCircle2, Activity } from 'lucide-react';
 
 export default function Applications() {
   const [isFilterBuilderOpen, setIsFilterBuilderOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [pendingViewMode, setPendingViewMode] = useState<'table' | 'kanban' | null>(null);
   const [showOverlaySkeleton, setShowOverlaySkeleton] = useState(false);
-  const SKELETON_DELAY_MS = 120; // don't show if transition resolves quickly
-  const SKELETON_ITEM_THRESHOLD = 80; // only show for larger datasets
+  const SKELETON_DELAY_MS = 120;
+  const SKELETON_ITEM_THRESHOLD = 80;
 
   const {
-    // Data
     filteredApplications,
     applicationStats,
     selectedAppData,
@@ -82,7 +84,7 @@ export default function Applications() {
     setIsAutosizeEnabled,
     addStatusUpdate,
 
-    // Application Operations
+    // Ops
     handleCreateApplication,
     handleDeleteApplication,
     handleBulkDelete,
@@ -103,58 +105,40 @@ export default function Applications() {
   } = useApplicationsLogic();
 
   const isInitialLoading = loading && !mounted;
+  const shouldUseVirtualization = useMemo(() => filteredApplications.length > 50, [filteredApplications.length]);
 
-  // Determine if we should use virtualization based on dataset size
-  const shouldUseVirtualization = useMemo(() => {
-    return filteredApplications.length > 50; // Use virtualization for datasets > 50 items
-  }, [filteredApplications.length]);
-
-  // Show skeleton only if transition is still pending after a short delay and dataset is large
   useEffect(() => {
-    let timer: number | undefined;
-    if (isPending) {
-      timer = window.setTimeout(() => setShowOverlaySkeleton(true), SKELETON_DELAY_MS);
-    } else {
-      setShowOverlaySkeleton(false);
-    }
-    return () => {
-      if (timer) window.clearTimeout(timer);
-    };
+    let t: number | undefined;
+    if (isPending) t = window.setTimeout(() => setShowOverlaySkeleton(true), SKELETON_DELAY_MS);
+    else setShowOverlaySkeleton(false);
+    return () => { if (t) window.clearTimeout(t); };
   }, [isPending]);
+  const shouldShowOverlaySkeleton = isPending && showOverlaySkeleton && filteredApplications.length > SKELETON_ITEM_THRESHOLD;
 
-  const shouldShowOverlaySkeleton = isPending && showOverlaySkeleton && (filteredApplications.length > SKELETON_ITEM_THRESHOLD);
-
-  // Get adaptive performance configuration based on device capabilities and dataset size
   const performanceConfig = useMemo(() => {
-    const deviceCapabilities = detectDeviceCapabilities();
-    return getAdaptivePerformanceConfig(filteredApplications.length, deviceCapabilities);
+    const d = detectDeviceCapabilities();
+    return getAdaptivePerformanceConfig(filteredApplications.length, d);
   }, [filteredApplications.length]);
 
-  // Performance monitoring
   const { startMeasurement, endMeasurement, generateReport } = usePerformanceMonitor('Applications');
-
-  // Monitor component performance
   useEffect(() => {
     startMeasurement();
     return () => {
       endMeasurement(filteredApplications.length);
-
-      // Log performance report in development
       if (process.env.NODE_ENV === 'development' && filteredApplications.length > 100) {
         console.log('Applications Performance Report:', generateReport());
       }
     };
   }, [filteredApplications.length, startMeasurement, endMeasurement, generateReport]);
 
-  // Global click handler for closing dropdowns and menus
+  // Global dismissal
   useEffect(() => {
-    const handleGlobalClick = () => {
+    const click = () => {
       if (contextMenu) setContextMenu(null);
       if (activeStageDropdown) setActiveStageDropdown(null);
       if (isColumnMenuOpen) setIsColumnMenuOpen(false);
     };
-
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const key = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (contextMenu) setContextMenu(null);
         if (activeStageDropdown) setActiveStageDropdown(null);
@@ -162,37 +146,23 @@ export default function Applications() {
         if (isDetailModalVisible) handleCloseDetailModal();
         if (selectedRows.length) setSelectedRows([]);
       }
-
-      // Grid hotkeys
-      // Note: basic wiring; row focus/refs should already exist via table interactions
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
         e.preventDefault();
-        // Select all visible rows
-        const allIds = filteredApplications.map(a => a.id);
-        setSelectedRows(allIds);
+        setSelectedRows(filteredApplications.map(a => a.id));
       }
-
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (selectedRows.length > 0) {
-          e.preventDefault();
-          handleBulkDelete();
-        }
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedRows.length > 0) {
+        e.preventDefault();
+        handleBulkDelete();
       }
-
-      if (e.key === 'Enter') {
-        if (selectedRows.length === 1) {
-          const id = selectedRows[0];
-          handleOpenDetailModal(id);
-        }
+      if (e.key === 'Enter' && selectedRows.length === 1) {
+        handleOpenDetailModal(selectedRows[0]);
       }
     };
-
-    document.addEventListener('click', handleGlobalClick);
-    document.addEventListener('keydown', handleKeyDown);
-
+    document.addEventListener('click', click);
+    document.addEventListener('keydown', key);
     return () => {
-      document.removeEventListener('click', handleGlobalClick);
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('click', click);
+      document.removeEventListener('keydown', key);
     };
   }, [
     contextMenu, activeStageDropdown, isColumnMenuOpen, isDetailModalVisible,
@@ -200,10 +170,6 @@ export default function Applications() {
     selectedRows, setSelectedRows, filteredApplications, handleBulkDelete, handleOpenDetailModal
   ]);
 
-  // Get rid of kanban: always table
-  const viewModeAlwaysTable = 'table' as const;
-
-  // Show error state
   if (error) {
     return (
       <div className="applications-error">
@@ -211,10 +177,7 @@ export default function Applications() {
           <div className="error-icon">⚠️</div>
           <h3>Unable to Load Applications</h3>
           <p>{error}</p>
-          <button
-            className="retry-button"
-            onClick={() => window.location.reload()}
-          >
+          <button className="retry-button" onClick={() => window.location.reload()}>
             Retry
           </button>
         </div>
@@ -222,15 +185,75 @@ export default function Applications() {
     );
   }
 
-  const hasGlobalUpdate = statusUpdates.some(update => !update.appId);
+  // —— Header state —— //
+  const hasGlobalUpdate = statusUpdates.some(u => !u.appId);
+  const latestGlobalMessage = useMemo(() => {
+    const msgs = statusUpdates.filter(u => !u.appId);
+    return msgs.length ? msgs[msgs.length - 1].message : '';
+  }, [statusUpdates]);
+
+  // polite single-shot announcer
+  const liveRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (latestGlobalMessage && liveRef.current) {
+      // set text for SR, then clear after announce window
+      liveRef.current.textContent = latestGlobalMessage;
+      const id = window.setTimeout(() => { if (liveRef.current) liveRef.current.textContent = ''; }, 3500);
+      return () => window.clearTimeout(id);
+    }
+  }, [latestGlobalMessage]);
+
+  const prefersReduced = usePrefersReducedMotion();
 
   return (
     <div className={`applications-page ${(mounted || isInitialLoading) ? 'mounted' : ''}`}>
-      {/* Main Content */}
+      {/* Skip link for a11y */}
+      <a href="#apps-table" className="skip-link">Skip to applications</a>
+
+      {/* ===== Page Header (cohesive, token-pure) ===== */}
+      <header className="page-header" role="banner">
+        <div className="header-grid">
+          {/* Left: Title + meta */}
+          <div className="left">
+            <div className="title-row">
+              <h1 className="title text-h2">Applications</h1>
+              {/* Only show when updating */}
+              {hasGlobalUpdate && (
+                <span className={`live-cap ${prefersReduced ? 'no-anim' : ''}`} title="Background updates in progress">
+                  <span className="dot" aria-hidden />
+                  <Activity size={14} aria-hidden />
+                  <span className="cap-txt">Live</span>
+                </span>
+              )}
+            </div>
+            <p className="subtitle text-body-sm">Manage your job applications and track progress</p>
+
+            {/* one-line status (visual); SR gets a polite single-shot below */}
+            {latestGlobalMessage && (
+              <div className="status-line" role="status">
+                <CheckCircle2 size={14} aria-hidden />
+                <span className="status-text">{latestGlobalMessage}</span>
+              </div>
+            )}
+            <div ref={liveRef} className="sr-only" aria-live="polite" />
+          </div>
+
+          {/* Right: Stats */}
+          <div className="right" aria-label="Key stats">
+            <StatPill label="Total" value={applicationStats.applications ?? 0} reduced={prefersReduced} />
+            <StatPill label="Active" value={applicationStats.active ?? 0} reduced={prefersReduced} />
+            <StatPill label="Interviews" value={applicationStats.interviews ?? 0} reduced={prefersReduced} tone="accent" />
+            {selectedRows.length > 0 && (
+              <span className="sel-pill" role="status" aria-live="polite">{selectedRows.length} selected</span>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* ===== Main Content ===== */}
       <main className="main-content">
-        {/* Toolbar - Controls, Filters, and Quick Actions */}
+        {/* Toolbar */}
         <div className="toolbar">
-          {/* Global Search */}
           <div className="toolbar-search">
             <EnhancedSearch
               size="compact"
@@ -239,15 +262,9 @@ export default function Applications() {
               quickFilters={quickFilters}
               columnFilters={columnFilters}
               onSearch={(q, payload) => {
-                if (payload?.quickFilters) {
-                  setQuickFilters(payload.quickFilters);
-                }
-                if (payload?.columnFilters) {
-                  setColumnFilters(payload.columnFilters);
-                }
-                if (typeof q === 'string') {
-                  setSearchTerm(q);
-                }
+                if (payload?.quickFilters) setQuickFilters(payload.quickFilters);
+                if (payload?.columnFilters) setColumnFilters(payload.columnFilters);
+                if (typeof q === 'string') setSearchTerm(q);
               }}
               placeholder="Search companies, positions, stages…"
             />
@@ -280,9 +297,8 @@ export default function Applications() {
           />
         </div>
 
-        {/* Data Table */}
+        {/* Table container */}
         <div className="table-container">
-          {/* Instant skeleton overlay during view transitions */}
           {shouldShowOverlaySkeleton && (
             <TableSkeleton
               rows={10}
@@ -299,6 +315,7 @@ export default function Applications() {
               }
             />
           )}
+
           {shouldUseVirtualization && performanceConfig.enableVirtualization ? (
             <VirtualizedApplicationsTable
               applications={filteredApplications}
@@ -325,11 +342,8 @@ export default function Applications() {
                 setSortConfig({ column, direction: newDirection });
               }}
               onRowSelect={(appId, selected) => {
-                if (selected) {
-                  setSelectedRows([...selectedRows, appId]);
-                } else {
-                  setSelectedRows(selectedRows.filter(id => id !== appId));
-                }
+                if (selected) setSelectedRows([...selectedRows, appId]);
+                else setSelectedRows(selectedRows.filter(id => id !== appId));
               }}
               onRowClick={handleRowClick}
               onContextMenu={handleContextMenu}
@@ -360,63 +374,13 @@ export default function Applications() {
                 setSortConfig({ column, direction: newDirection });
               }}
               onRowSelect={(appId, selected) => {
-                if (selected) {
-                  setSelectedRows([...selectedRows, appId]);
-                } else {
-                  setSelectedRows(selectedRows.filter(id => id !== appId));
-                }
+                if (selected) setSelectedRows([...selectedRows, appId]);
+                else setSelectedRows(selectedRows.filter(id => id !== appId));
               }}
-              onBulkSelect={(appIds, selected) => {
-                if (selected) {
-                  setSelectedRows(appIds);
-                } else {
-                  setSelectedRows([]);
-                }
-              }}
+              onBulkSelect={(appIds, selected) => { setSelectedRows(selected ? appIds : []); }}
               activeFilters={{}}
               onResetFilters={undefined}
-              onQuickFilter={(filterType, value) => {
-                // Handle quick filter actions
-                const newFilters: Record<string, string> = {};
-
-                switch (filterType) {
-                  case 'stage':
-                    newFilters.stage = value || '';
-                    break;
-                  case 'timeframe':
-                    if (value === 'thisWeek') {
-                      const weekAgo = new Date();
-                      weekAgo.setDate(weekAgo.getDate() - 7);
-                      newFilters.dateApplied = weekAgo.toISOString().split('T')[0];
-                    } else if (value === 'thisMonth') {
-                      const monthStart = new Date();
-                      monthStart.setDate(1);
-                      newFilters.dateApplied = monthStart.toISOString().split('T')[0];
-                    } else {
-                      // Clear timeframe filter
-                      newFilters.dateApplied = '';
-                    }
-                    break;
-                  case 'remote':
-                    newFilters.remote = value === 'true' ? 'true' : '';
-                    break;
-                  case 'shortlisted':
-                    newFilters.isShortlisted = value === 'true' ? 'true' : '';
-                    break;
-                  case 'salary':
-                    newFilters.salary = value === 'hasValue' ? 'has-value' : '';
-                    break;
-                  case 'tasks':
-                  case 'interviews':
-                    // These would need special handling in the filtering logic
-                    break;
-                  default:
-                    break;
-                }
-
-                // If quick filters should remain, wire them to state.quickFilters instead
-                // For now we do nothing here since column filters were removed
-              }}
+              onQuickFilter={() => { }}
               onRowClick={handleRowClick}
               onContextMenu={handleContextMenu}
               onStageClick={handleStageClick}
@@ -439,7 +403,7 @@ export default function Applications() {
         onClose={() => setContextMenu(null)}
       />
 
-      {/* Application Detail Drawer */}
+      {/* Detail Drawer */}
       {selectedAppData && (
         <ApplicationDetailDrawer
           id={selectedAppData.id}
@@ -462,18 +426,15 @@ export default function Applications() {
           isVisible={isDetailModalVisible}
           onClose={handleCloseDetailModal}
           onEdit={() => handleEditApplication(selectedAppData.id)}
-          onStageChange={(newStage) => handleStageChange(selectedAppData.id, newStage)}
+          onStageChange={(s) => handleStageChange(selectedAppData.id, s)}
         />
       )}
 
-      {/* Advanced Filter Builder */}
+      {/* Filter Builder */}
       <FilterBuilder
         isVisible={isFilterBuilderOpen}
         onClose={() => setIsFilterBuilderOpen(false)}
-        onApplyFilters={(filters) => {
-          setColumnFilters(filters);
-          setIsFilterBuilderOpen(false);
-        }}
+        onApplyFilters={(filters) => { setColumnFilters(filters); setIsFilterBuilderOpen(false); }}
         currentFilters={columnFilters}
         availableFields={[
           { key: 'stage', label: 'Application Stage', type: 'select', options: ['applied', 'screening', 'interview', 'offer', 'rejected'] },
@@ -488,66 +449,207 @@ export default function Applications() {
       />
 
       <style jsx>{`
-        /* Applications Page - Using Theme System */
+        /* Page container */
         .applications-page {
           position: relative;
-          height: 100%; /* was 100vh; avoid double-viewport stacking that caused extra scroll */
+          height: 100%;
           max-width: 100%;
           margin: 0 auto;
-          padding: 0; /* remove outer padding */
+          padding: 0;
           font-family: var(--font-body);
           display: flex;
           flex-direction: column;
-          overflow: hidden; /* prevent page scroll */
+          overflow: hidden;
           opacity: 0;
           transition: opacity var(--duration-300) var(--ease-smooth);
         }
-
         .applications-page.mounted { opacity: 1; }
 
-        /* Main Content fills remaining height */
+        .skip-link {
+          position: absolute;
+          left: 8px; top: -40px;
+          background: var(--surface);
+          color: var(--text-primary);
+          border: 1px solid var(--border);
+          padding: var(--space-2) var(--space-3);
+          border-radius: var(--radius-md);
+          transition: top var(--duration-150) var(--ease-out);
+          z-index: 10;
+        }
+        .skip-link:focus { top: 8px; }
+
+        /* ===== Header ===== */
+        .page-header {
+          position: sticky;
+          top: 0;
+          z-index: 5;
+          padding: var(--space-6) var(--space-6) var(--space-4);
+          border-bottom: 1px solid var(--border);
+          background: var(--surface);
+          backdrop-filter: var(--glass-backdrop);
+        }
+        .header-grid {
+          max-width: var(--max-content-width);
+          margin: 0 auto;
+          display: grid;
+          grid-template-columns: 1fr auto;
+          gap: var(--space-6);
+          align-items: start;
+        }
+        @media (max-width: 900px) {
+          .header-grid { grid-template-columns: 1fr; gap: var(--space-4); }
+        }
+
+        .left { display: grid; gap: var(--space-2); min-width: 0; }
+        .title-row { display: inline-flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+        .title { margin: 0; font-size: var(--text-3xl); font-weight: var(--font-semibold); }
+        .subtitle { margin: 0; color: var(--text-secondary); font-size: var(--text-sm); }
+
+        /* live capsule — only present on updates */
+        .live-cap {
+          display: inline-flex; align-items: center; gap: var(--space-1-5);
+          padding: var(--space-1) var(--space-2);
+          border: 1px solid var(--border);
+          background: var(--surface);
+          border-radius: var(--radius-full);
+          font-size: var(--text-xs);
+          line-height: 1;
+          color: var(--text-secondary);
+          user-select: none;
+        }
+        .live-cap .dot {
+          width: 6px; height: 6px; border-radius: var(--radius-full); background: var(--success);
+          box-shadow: 0 0 0 0 rgba(16, 185, 129, .6);
+          animation: ping 1.6s infinite;
+        }
+        .live-cap.no-anim .dot { animation: none; }
+        @keyframes ping {
+          0% { box-shadow: 0 0 0 0 rgba(16,185,129,.6) }
+          70% { box-shadow: 0 0 0 10px rgba(16,185,129,0) }
+          100% { box-shadow: 0 0 0 0 rgba(16,185,129,0) }
+        }
+
+        /* status line (visual only) */
+        .status-line {
+          display: inline-flex; align-items: center; gap: var(--space-2);
+          padding: var(--space-1) var(--space-2);
+          background: var(--success);
+          color: var(--text-inverse);
+          border-radius: var(--radius-md);
+          font-size: var(--text-xs);
+          max-width: 100%;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          transition: opacity var(--duration-300) var(--ease-out);
+        }
+
+        /* right stats */
+        .right {
+          display: inline-flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; justify-content: flex-end;
+        }
+        .pill {
+          display: inline-flex; align-items: center; gap: var(--space-2);
+          padding: var(--space-1-5) var(--space-2-5);
+          border: 1px solid var(--border);
+          background: var(--card);
+          border-radius: var(--radius-full);
+          font-size: var(--text-sm);
+        }
+        .pill .val { font-variant-numeric: tabular-nums; font-weight: var(--font-semibold); }
+        .pill .lab { color: var(--text-secondary); }
+        .pill.accent { border-color: var(--border-strong); }
+
+        .sel-pill {
+          padding: var(--space-1-5) var(--space-2-5);
+          background: var(--primary);
+          color: var(--text-inverse);
+          border-radius: var(--radius-full);
+          font-size: var(--text-xs);
+        }
+
+        /* Main */
         .main-content {
           flex: 1 1 auto;
-          display: flex;
-          flex-direction: column;
-          min-height: 0; /* allows children to shrink for overflow */
+          display: flex; flex-direction: column; min-height: 0;
           background: var(--surface);
-          border-radius: 0;
-          box-shadow: none;
-          border: none;
         }
 
-        /* Toolbar pinned at top */
         .toolbar {
           flex: 0 0 auto;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 8px 12px; /* tighter */
-          border-bottom: 1px solid var(--border, rgba(0,0,0,0.08));
-          background: var(--surface, #fff);
+          display: flex; align-items: center;
+          gap: var(--space-3);
+          padding: var(--space-3) var(--space-5);
+          border-bottom: 1px solid var(--border);
+          background: var(--surface);
         }
-        .toolbar-search { flex: 1; display: flex; align-items: center; min-width: 240px; }
+        .toolbar-search { flex: 1; min-width: 240px; }
 
-        /* Table container consumes all remaining space and scrolls internally */
         .table-container {
           flex: 1 1 auto;
-          min-height: 0; /* important for overflow */
-          overflow: auto; /* scroll only table, not page */
+          min-height: 0;
+          overflow: auto;
           background: var(--background);
+          transition: opacity var(--duration-200) ease;
+        }
+        .table-container:has(.loading) { opacity: .85; }
+
+        /* reduce motion */
+        @media (prefers-reduced-motion: reduce) {
+          .status-line { transition: none; }
         }
 
-        /* Keep skeleton overlay behavior */
-        .table-container { transition: opacity var(--duration-200) ease; }
-        .table-container:has(.loading) { opacity: 0.8; }
-
-        /* Remove old card wrappers */
-        .main-content:hover { box-shadow: none; }
-
-        @media (max-width: 768px) {
-          .toolbar { padding: 8px; }
+        /* sr-only util */
+        .sr-only {
+          position: absolute !important;
+          width: 1px; height: 1px; padding: 0; margin: -1px;
+          overflow: hidden; clip: rect(0, 0, 0, 0);
+          white-space: nowrap; border: 0;
         }
       `}</style>
     </div>
   );
+}
+
+/* === Header helpers === */
+
+function StatPill({ label, value, tone = 'default', reduced }: { label: string; value: number; tone?: 'default' | 'accent'; reduced: boolean; }) {
+  return (
+    <span className={`pill ${tone === 'accent' ? 'accent' : ''}`}>
+      <span className="val"><CountUp n={value} reduced={reduced} /></span>
+      <span className="lab">{label}</span>
+    </span>
+  );
+}
+
+function CountUp({ n, duration = 700, reduced }: { n: number; duration?: number; reduced: boolean; }) {
+  const [v, setV] = useState(0);
+  const target = Math.max(0, n);
+  useEffect(() => {
+    if (reduced) { setV(target); return; }
+    const start = performance.now();
+    const from = 0;
+    let raf: number;
+    const tick = (t: number) => {
+      const e = Math.min(1, (t - start) / duration);
+      const eased = 1 - Math.pow(1 - e, 3);
+      setV(Math.round(from + (target - from) * eased));
+      if (e < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration, reduced]);
+  return <>{v.toLocaleString()}</>;
+}
+
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setReduced(mq.matches);
+    update();
+    mq.addEventListener?.('change', update);
+    return () => mq.removeEventListener?.('change', update);
+  }, []);
+  return reduced;
 }
