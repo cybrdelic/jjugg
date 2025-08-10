@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
 import { SectionKey, NavItemType } from '@/types';
 import {
   Menu, X, Bell, Plus, User, LogOut, Settings, Server as ServerIcon, Mail
 } from 'lucide-react';
 import { useRouter } from 'next/router';
 import { ThemeSwitcher } from './ThemeSwitcher';
+import { useEffect, useRef, useState } from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface ModernNavbarProps {
   items: NavItemType[];
@@ -31,6 +32,7 @@ export default function ModernNavbar({
   const profileRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
   const { push } = useRouter();
+  const { mode } = useTheme();
 
   useEffect(() => {
     setMounted(true);
@@ -90,9 +92,8 @@ export default function ModernNavbar({
                   key={item.key}
                   className={`nav-link ${isActive ? 'active' : ''}`}
                   onClick={() => setCurrentSection(item.key)}
-                  data-text={item.label}
                 >
-                  {item.label}
+                  <span className="nav-label" data-text={item.label}>{item.label}</span>
                   {item.badge && 'count' in item.badge && item.badge.count > 0 && (
                     <span className="nav-badge">{item.badge.count}</span>
                   )}
@@ -237,7 +238,7 @@ export default function ModernNavbar({
           --elastic: cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
 
-        .dark {
+        [data-theme="dark"] {
           --white: #000000;
           --black: #ffffff;
           --gray: #a1a1aa;
@@ -269,7 +270,7 @@ export default function ModernNavbar({
           z-index: 1000;
         }
 
-        .dark .pure-nav {
+        [data-theme="dark"] .pure-nav {
           background: rgba(0, 0, 0, 0.7);
         }
 
@@ -332,13 +333,24 @@ export default function ModernNavbar({
           background: none;
           border: none;
           font-family: inherit;
+          display: inline-flex;
+          align-items: center;
         }
 
-        .nav-link::before {
+        .nav-label {
+          position: relative;
+          z-index: 1;
+          vertical-align: middle;
+          display: inline-block;
+          line-height: 1.2;
+        }
+
+        .nav-label::before {
           content: attr(data-text);
           position: absolute;
-          top: 0;
           left: 0;
+          top: 50%;
+          transform: translateY(-50%);
           padding: 4px 0;
           width: 0;
           overflow: hidden;
@@ -346,9 +358,10 @@ export default function ModernNavbar({
           font-weight: 500;
           transition: width 200ms ease;
           white-space: nowrap;
+          line-height: inherit;
         }
 
-        .nav-link:hover::before {
+        .nav-link:hover .nav-label::before {
           width: 100%;
         }
 
@@ -357,7 +370,7 @@ export default function ModernNavbar({
           font-weight: 500;
         }
 
-        .nav-link.active::after {
+        .nav-link.active .nav-label::after {
           content: '';
           position: absolute;
           bottom: -18px;
@@ -382,7 +395,9 @@ export default function ModernNavbar({
         }
 
         .nav-badge {
-          display: inline-block;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
           min-width: 16px;
           height: 16px;
           padding: 0 4px;
@@ -395,6 +410,8 @@ export default function ModernNavbar({
           line-height: 16px;
           text-align: center;
           animation: badgeFloat 3s ease-in-out infinite;
+          position: relative;
+          top: 0;
         }
 
         @keyframes badgeFloat {
@@ -601,7 +618,7 @@ export default function ModernNavbar({
           z-index: 1001;
         }
 
-        .dark .dropdown {
+        [data-theme="dark"] .dropdown {
           background: #0a0a0a;
           box-shadow:
             0 2px 8px rgba(0, 0, 0, 0.2),
@@ -728,7 +745,7 @@ export default function ModernNavbar({
           z-index: 999;
         }
 
-        .dark .mobile-menu {
+        [data-theme="dark"] .mobile-menu {
           background: rgba(0, 0, 0, 0.95);
         }
 
