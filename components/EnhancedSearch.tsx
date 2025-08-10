@@ -495,12 +495,11 @@ export default function EnhancedSearch({ applications, onSearch, placeholder = "
                   const last = filterChips[filterChips.length - 1];
                   handleRemoveChip(last.key);
                 } else if (e.key === 'Escape') {
-                  if (query) {
-                    setQuery('');
-                  } else {
-                    setShowSuggestions(false);
-                    setSelectedIndex(-1);
+                  if (inputRef.current) {
+                    inputRef.current.blur();
                   }
+                  setShowSuggestions(false);
+                  setSelectedIndex(-1);
                 }
               }}
               className="search-input"
