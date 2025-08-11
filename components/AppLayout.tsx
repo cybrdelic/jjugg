@@ -1,4 +1,6 @@
-import { useState, useEffect, ReactNode } from 'react';
+'use client';
+
+import React, { useState, useEffect, useCallback, ReactNode } from 'react';
 import ModernNavbar from '../components/ModernNavbar';
 import { useAppData } from '@/contexts/AppDataContext';
 import { useNavigation } from '@/hooks/useNavigation';
@@ -13,114 +15,168 @@ export default function AppLayout({ children, currentSection }: AppLayoutProps) 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Use shared app data from context
   const {
     userProfile,
     loading: dbLoading,
-    error: dbError
+    error: dbError,
   } = useAppData();
 
-  // Use the new navigation hook that handles all the complexity
   const { navigationItems, handleNavigation } = useNavigation();
 
+  // Use rAF to schedule the "loaded" class after first paint (avoids timeout + reduces hydration flicker)
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoaded(true), 100);
-    return () => clearTimeout(timer);
+    const raf = requestAnimationFrame(() => setIsLoaded(true));
+    return () => cancelAnimationFrame(raf);
   }, []);
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
+  const toggleMobileMenu = useCallback(() => {
+    setIsMobileMenuOpen((v) => !v);
+  }, []);
+
+  // Null-safe user props (prevents crashes while user data is loading)
+  const userName = userProfile?.name ?? 'Guest';
+  const userAvatar = userProfile?.avatar ?? undefined;
 
   return (
     <div className={`app-container reveal-loaded ${isLoaded ? 'loaded' : ''}`}>
-      {/* Modern Navbar */}
       <ModernNavbar
         items={navigationItems}
         currentSection={currentSection}
         setCurrentSection={handleNavigation}
-        userName={userProfile.name}
-        userAvatar={userProfile.avatar}
+        userName={userName}
+        userAvatar={userAvatar}
         onMobileMenuToggle={toggleMobileMenu}
         isMobileMenuOpen={isMobileMenuOpen}
       />
 
-      <main className="glass-main">
+      <main
+        className="glass-main"
+        role="main"
+        aria-busy={dbLoading ? 'true' : 'false'}
+      >
         <div className="main-content typography-root">
           <div className="reveal-element">
-            {/* Show loading state */}
             {dbLoading && (
-              <div className="loading-state">
-                <div className="loading-spinner"></div>
-                <p>Loading data from database...</p>
+              <div className="loading-state" aria-live="polite">
+                <div className="loading-spinner" aria-hidden="true" />
+                <p>Loading data from database…</p>
               </div>
             )}
 
-            {/* Show error state */}
             {dbError && (
-              <div className="error-state">
+              <div className="error-state" role="alert">
                 <h2>Database Error</h2>
                 <p>{dbError}</p>
-                <p>Please make sure the database is seeded by running: <code>npm run db:reset</code></p>
+                <p>
+                  Ensure the DB is seeded:&nbsp;
+                  <code>npm run db:reset</code>
+                </p>
               </div>
             )}
 
-            {/* Show content when data is loaded */}
             {!dbLoading && !dbError && children}
           </div>
         </div>
       </main>
 
       <style jsx>{`
+        :root {
+          /* spacing + rhythm (tokens) */
+          --space-0: 0px;
+          --space-1: 4px;
+          --space-2: 8px;
+          --space-3: 12px;
+          --space-4: 16px;
+          --space-5: 20px;
+          --space-6: 24px;
+          --space-8: 32px;
+
+          /* navbar fallback */
+          --navbar-height: 68px;
+        }
+
         .app-container {
           position: relative;
-          height: 100vh; /* use height so padding doesn't extend page */
+          min-height: 100dvh; /* dynamic viewport to dodge iOS 100vh bug */
           background: var(--actual-background, var(--background));
           color: var(--text-primary);
-          padding-top: var(--navbar-height, 68px);
+          padding-top: max(var(--navbar-height, 68px), env(safe-area-inset-top));
           overflow-x: hidden;
-          box-sizing: border-box; /* include padding within viewport height */
+          box-sizing: border-box;
           transition: background 0.3s ease;
+          /* subtle enter state; gated by .loaded below */
         }
 
         .glass-main {
           position: relative;
-          height: calc(100vh - var(--navbar-height, 68px));
-          z-index: var(--z-content);
-          overflow: hidden; /* prevent outer scroll; inner regions manage their own */
+          min-height: calc(100dvh - var(--navbar-height, 68px));
+          z-index: var(--z-content, 0);
+          /* main is the scroller; keeps header/UI layers crisp */
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+          overscroll-behavior: contain;
+          scroll-behavior: smooth;
+          padding-bottom: env(safe-area-inset-bottom);
         }
 
         .main-content {
-          padding: 24px 24px 0; /* remove bottom padding to avoid extra page scroll */
+          padding: var(--space-6) var(--space-6) 0;
           max-width: 2000px;
           margin: 0 auto;
-          height: 100%; /* fill .glass-main */
-          box-sizing: border-box; /* include padding in height to avoid overflow */
+          min-height: 100%;
+          box-sizing: border-box;
+          container-type: inline-size; /* enables container queries if you want later */
+          content-visibility: auto; /* skip rendering offscreen content */
+          contain-intrinsic-size: 1px 1200px; /* reserve space without jank */
         }
 
-        .loading-state, .error-state {
+        /* reveal */
+        .reveal-loaded .reveal-element {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        .reveal-loaded.loaded .reveal-element {
+          opacity: 1;
+          transform: none;
+          transition: opacity 220ms ease, transform 360ms cubic-bezier(.2,.8,.2,1);
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .reveal-loaded .reveal-element,
+          .reveal-loaded.loaded .reveal-element {
+            opacity: 1;
+            transform: none;
+            transition: none;
+          }
+        }
+
+        .loading-state,
+        .error-state {
           text-align: center;
-          padding: 2rem;
+          padding: var(--space-8);
+          margin-top: var(--space-8);
+          color: var(--text-secondary, #9aa0a6);
         }
 
         .loading-spinner {
           width: 40px;
           height: 40px;
-          border: 4px solid var(--border-thin);
-          border-top-color: var(--primary);
+          border: 3px solid var(--border-thin, rgba(255, 255, 255, 0.15));
+          border-top-color: var(--primary, #7c3aed);
           border-radius: 50%;
-          animation: spin 1s linear infinite;
-          margin: 0 auto 1rem;
+          animation: spin 0.9s linear infinite;
+          margin: 0 auto var(--space-4);
         }
-
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
+        @media (prefers-reduced-motion: reduce) {
+          .loading-spinner { animation: none; }
+        }
 
-        /* Responsive Design */
+        /* Responsive */
         @media (max-width: 768px) {
           .main-content {
-            padding: 16px 16px 0; /* remove bottom padding on mobile as well */
+            padding: var(--space-4) var(--space-4) 0;
           }
         }
       `}</style>
