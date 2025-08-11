@@ -9,471 +9,473 @@ type ImapMeta = { lastTestOk?: boolean; lastCheckedAt?: number; lastError?: stri
 const IMAP_META_KEY = 'imapStatusMeta';
 
 type ImapSettings = {
-    host: string;
-    port: number | '';
-    secure: boolean; // SSL/TLS
-    username: string;
-    password: string;
-    mailbox: string; // INBOX, etc.
+  host: string;
+  port: number | '';
+  secure: boolean; // SSL/TLS
+  username: string;
+  password: string;
+  mailbox: string; // INBOX, etc.
 };
 
 const DEFAULT_IMAP: ImapSettings = {
-    host: '',
-    port: 993,
-    secure: true,
-    username: '',
-    password: '',
-    mailbox: 'INBOX',
+  host: '',
+  port: 993,
+  secure: true,
+  username: '',
+  password: '',
+  mailbox: 'INBOX',
 };
 
 const STORAGE_KEY = 'imapSettings';
 
 const ProfileSettings: React.FC = () => {
-    const router = useRouter();
-    const [activeTab, setActiveTab] = useState<'general' | 'imap' | 'security' | 'daemon' | 'features'>('imap');
-    const flags = useFeatureFlags();
-    const { setFlag, resetOverrides } = useFeatureFlagControls();
-    const [imap, setImap] = useState<ImapSettings>(DEFAULT_IMAP);
-    const [showPassword, setShowPassword] = useState(false);
-    const [testing, setTesting] = useState(false);
-    const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
-    const [imapView, setImapView] = useState<'status' | 'configure'>('status');
-    const [meta, setMeta] = useState<ImapMeta>({});
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<'general' | 'imap' | 'security' | 'daemon' | 'features'>('imap');
+  const flags = useFeatureFlags();
+  const { setFlag, resetOverrides } = useFeatureFlagControls();
+  const [imap, setImap] = useState<ImapSettings>(DEFAULT_IMAP);
+  const [showPassword, setShowPassword] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [imapView, setImapView] = useState<'status' | 'configure'>('status');
+  const [meta, setMeta] = useState<ImapMeta>({});
 
-    // Daemon monitor state
-    const [daemonHealth, setDaemonHealth] = useState<{ ok: boolean; lastCheckedAt?: number; error?: string } | null>(null);
-    const [wsConnected, setWsConnected] = useState(false);
-    const [events, setEvents] = useState<Array<{ type: string; data: any; ts: number }>>([]);
-    const [pinging, setPinging] = useState(false);
-    const [pipelineBusy, setPipelineBusy] = useState(false);
-    const DAEMON_ORIGIN = 'http://127.0.0.1:7766';
+  // Daemon monitor state
+  const [daemonHealth, setDaemonHealth] = useState<{ ok: boolean; lastCheckedAt?: number; error?: string } | null>(null);
+  const [wsConnected, setWsConnected] = useState(false);
+  const [events, setEvents] = useState<Array<{ type: string; data: any; ts: number }>>([]);
+  const [pinging, setPinging] = useState(false);
+  const [pipelineBusy, setPipelineBusy] = useState(false);
+  const DAEMON_ORIGIN = 'http://127.0.0.1:7766';
 
-    const isValid = useMemo(() => {
-        return (
-            imap.host.trim().length > 0 &&
-            !!imap.port &&
-            imap.username.trim().length > 0 &&
-            imap.password.trim().length > 0 &&
-            imap.mailbox.trim().length > 0
-        );
-    }, [imap]);
-
-    // Derive status from settings + meta
-    const connectionState = useMemo<'not_configured' | 'configured' | 'connected'>(() => {
-        const hasBasics = imap.host && imap.username && imap.password && imap.mailbox && imap.port;
-        if (!hasBasics) return 'not_configured';
-        if (meta.lastTestOk) return 'connected';
-        return 'configured';
-    }, [imap, meta.lastTestOk]);
-
-    useEffect(() => {
-        try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (raw) setImap({ ...DEFAULT_IMAP, ...JSON.parse(raw) });
-            const metaRaw = localStorage.getItem(IMAP_META_KEY);
-            if (metaRaw) setMeta(JSON.parse(metaRaw));
-        } catch { }
-    }, []);
-
-    const saveMeta = (next: ImapMeta) => {
-        setMeta(next);
-        try { localStorage.setItem(IMAP_META_KEY, JSON.stringify(next)); } catch { }
-    };
-
-    const save = () => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(imap));
-    };
-
-    const clearImap = () => {
-        setImap(DEFAULT_IMAP);
-        setTestResult(null);
-        saveMeta({});
-        try {
-            localStorage.removeItem(STORAGE_KEY);
-            localStorage.removeItem(IMAP_META_KEY);
-        } catch { }
-    };
-
-    const testConnection = async () => {
-        setTesting(true);
-        setTestResult(null);
-        // Placeholder: simulate a connection test (wire real API later)
-        await new Promise(r => setTimeout(r, 900));
-        const ok = isValid && /\./.test(imap.host) && (imap.port === 993 || imap.port === 143);
-        const message = ok ? 'Connection looks good (simulated).' : 'Unable to connect with these settings (simulated).';
-        setTestResult({ ok, message });
-        saveMeta({ lastTestOk: ok, lastCheckedAt: Date.now(), lastError: ok ? undefined : message });
-        setTesting(false);
-    };
-
-    const update = (patch: Partial<ImapSettings>) => setImap(prev => ({ ...prev, ...patch }));
-
-    // WebSocket connection for daemon events
-    const connectWebSocket = () => {
-        try {
-            const ws = new WebSocket('ws://127.0.0.1:7766/ws');
-            ws.onopen = () => setWsConnected(true);
-            ws.onclose = () => setWsConnected(false);
-            ws.onerror = () => setWsConnected(false);
-            ws.onmessage = (ev) => {
-                try {
-                    const msg = JSON.parse(ev.data);
-                    setEvents(prev => {
-                        const next = [{ type: msg.type, data: msg.data, ts: Date.now() }, ...prev];
-                        return next.slice(0, 100);
-                    });
-                } catch { }
-            };
-            return () => ws.close();
-        } catch {
-            setWsConnected(false);
-            return () => { };
-        }
-    };
-
-    const pingDaemon = async () => {
-        setPinging(true);
-        try {
-            const res = await fetch(`${DAEMON_ORIGIN}/health`);
-            const json = await res.json();
-            setDaemonHealth({ ok: Boolean(json?.ok), lastCheckedAt: Date.now() });
-        } catch (e: any) {
-            setDaemonHealth({ ok: false, lastCheckedAt: Date.now(), error: String(e?.message || e) });
-        } finally {
-            setPinging(false);
-        }
-    };
-
-    const quickRerun = async () => {
-        setPipelineBusy(true);
-        try {
-            await fetch(`${DAEMON_ORIGIN}/pipeline/rerun`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entity: 'application', id: 'debug-ui', steps: ['normalize'] }) });
-        } catch { }
-        setPipelineBusy(false);
-    };
-
-    const loadAppsSummary = async () => {
-        try {
-            const res = await fetch(`${DAEMON_ORIGIN}/apps?limit=1`);
-            const json = await res.json();
-            setEvents(prev => [{ type: 'debug.apps.summary', data: { total: json?.total, sample: json?.rows?.[0] }, ts: Date.now() }, ...prev].slice(0, 100));
-        } catch (e: any) {
-            setEvents(prev => [{ type: 'debug.error', data: { message: String(e?.message || e) }, ts: Date.now() }, ...prev].slice(0, 100));
-        }
-    };
-
-    useEffect(() => {
-        if (activeTab !== 'daemon') return;
-        const cleanup = connectWebSocket();
-        // auto-ping when opening the tab
-        pingDaemon();
-        return cleanup;
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTab]);
-
+  const isValid = useMemo(() => {
     return (
-        <div className="settings-shell">
-            {/* Colorful hero header */}
-            <div className="settings-hero">
-                <div className="hero-bar" />
-                <div className="hero-content">
-                    <h1 className="hero-title text-h2">Settings</h1>
-                    <p className="hero-subtitle lead">Configure email, security, features, and developer daemon. Changes apply instantly.</p>
+      imap.host.trim().length > 0 &&
+      !!imap.port &&
+      imap.username.trim().length > 0 &&
+      imap.password.trim().length > 0 &&
+      imap.mailbox.trim().length > 0
+    );
+  }, [imap]);
+
+  // Derive status from settings + meta
+  const connectionState = useMemo<'not_configured' | 'configured' | 'connected'>(() => {
+    const hasBasics = imap.host && imap.username && imap.password && imap.mailbox && imap.port;
+    if (!hasBasics) return 'not_configured';
+    if (meta.lastTestOk) return 'connected';
+    return 'configured';
+  }, [imap, meta.lastTestOk]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) setImap({ ...DEFAULT_IMAP, ...JSON.parse(raw) });
+      const metaRaw = localStorage.getItem(IMAP_META_KEY);
+      if (metaRaw) setMeta(JSON.parse(metaRaw));
+    } catch { }
+  }, []);
+
+  const saveMeta = (next: ImapMeta) => {
+    setMeta(next);
+    try { localStorage.setItem(IMAP_META_KEY, JSON.stringify(next)); } catch { }
+  };
+
+  const save = () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(imap));
+  };
+
+  const clearImap = () => {
+    setImap(DEFAULT_IMAP);
+    setTestResult(null);
+    saveMeta({});
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(IMAP_META_KEY);
+    } catch { }
+  };
+
+  const testConnection = async () => {
+    setTesting(true);
+    setTestResult(null);
+    // Placeholder: simulate a connection test (wire real API later)
+    await new Promise(r => setTimeout(r, 900));
+    const ok = isValid && /\./.test(imap.host) && (imap.port === 993 || imap.port === 143);
+    const message = ok ? 'Connection looks good (simulated).' : 'Unable to connect with these settings (simulated).';
+    setTestResult({ ok, message });
+    saveMeta({ lastTestOk: ok, lastCheckedAt: Date.now(), lastError: ok ? undefined : message });
+    setTesting(false);
+  };
+
+  const update = (patch: Partial<ImapSettings>) => setImap(prev => ({ ...prev, ...patch }));
+
+  // WebSocket connection for daemon events
+  const connectWebSocket = () => {
+    try {
+      const ws = new WebSocket('ws://127.0.0.1:7766/ws');
+      ws.onopen = () => setWsConnected(true);
+      ws.onclose = () => setWsConnected(false);
+      ws.onerror = () => setWsConnected(false);
+      ws.onmessage = (ev) => {
+        try {
+          const msg = JSON.parse(ev.data);
+          setEvents(prev => {
+            const next = [{ type: msg.type, data: msg.data, ts: Date.now() }, ...prev];
+            return next.slice(0, 100);
+          });
+        } catch { }
+      };
+      return () => ws.close();
+    } catch {
+      setWsConnected(false);
+      return () => { };
+    }
+  };
+
+  const pingDaemon = async () => {
+    setPinging(true);
+    try {
+      const res = await fetch(`${DAEMON_ORIGIN}/health`);
+      const json = await res.json();
+      setDaemonHealth({ ok: Boolean(json?.ok), lastCheckedAt: Date.now() });
+    } catch (e: any) {
+      setDaemonHealth({ ok: false, lastCheckedAt: Date.now(), error: String(e?.message || e) });
+    } finally {
+      setPinging(false);
+    }
+  };
+
+  const quickRerun = async () => {
+    setPipelineBusy(true);
+    try {
+      await fetch(`${DAEMON_ORIGIN}/pipeline/rerun`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entity: 'application', id: 'debug-ui', steps: ['normalize'] }) });
+    } catch { }
+    setPipelineBusy(false);
+  };
+
+  const loadAppsSummary = async () => {
+    try {
+      const res = await fetch(`${DAEMON_ORIGIN}/apps?limit=1`);
+      const json = await res.json();
+      setEvents(prev => [{ type: 'debug.apps.summary', data: { total: json?.total, sample: json?.rows?.[0] }, ts: Date.now() }, ...prev].slice(0, 100));
+    } catch (e: any) {
+      setEvents(prev => [{ type: 'debug.error', data: { message: String(e?.message || e) }, ts: Date.now() }, ...prev].slice(0, 100));
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab !== 'daemon') return;
+    const cleanup = connectWebSocket();
+    // auto-ping when opening the tab
+    pingDaemon();
+    return cleanup;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
+  return (
+    <div className="settings-shell">
+      {/* Colorful hero header */}
+      <div className="settings-hero">
+        <div className="hero-bar" />
+        <div className="hero-content">
+          <h1 className="hero-title text-h2">Settings</h1>
+          <p className="hero-subtitle lead">Configure email, security, features, and developer daemon. Changes apply instantly.</p>
+        </div>
+      </div>
+
+      <div className="settings-layout">
+        {/* Sidebar navigation */}
+        <aside className="settings-nav" aria-label="Settings navigation">
+          <button className={`nav-item ${activeTab === 'general' ? 'active' : ''}`} onClick={() => setActiveTab('general')}>
+            <Shield size={16} /> <span>General</span>
+          </button>
+          <button className={`nav-item ${activeTab === 'imap' ? 'active' : ''}`} onClick={() => setActiveTab('imap')}>
+            <Mail size={16} /> <span>Email (IMAP)</span>
+          </button>
+          <button className={`nav-item ${activeTab === 'security' ? 'active' : ''}`} onClick={() => setActiveTab('security')}>
+            <Server size={16} /> <span>Security</span>
+          </button>
+          <button className={`nav-item ${activeTab === 'daemon' ? 'active' : ''}`} onClick={() => setActiveTab('daemon')}>
+            <Activity size={16} /> <span>Daemon</span>
+          </button>
+          <button className={`nav-item ${activeTab === 'features' ? 'active' : ''}`} onClick={() => setActiveTab('features')}>
+            <SettingsIcon size={16} /> <span>Features</span>
+          </button>
+        </aside>
+
+        {/* Main content */}
+        <main className="settings-panel">
+          {activeTab === 'imap' && (
+            <section className="card">
+              <div className="card-header">
+                <div className="card-title-wrap">
+                  <h2 className="card-title">IMAP Configuration</h2>
+                  <p className="card-subtitle">Add your email settings to enable parsing of interview dates, contacts, and threads.</p>
                 </div>
-            </div>
+                <div className="card-actions">
+                  <button className="btn ghost" onClick={save} title="Save settings" disabled={!isValid}>Save</button>
+                  <button className="btn primary" onClick={testConnection} disabled={!isValid || testing}>
+                    {testing ? 'Testing…' : 'Test Connection'}
+                  </button>
+                </div>
+              </div>
 
-            <div className="settings-layout">
-                {/* Sidebar navigation */}
-                <aside className="settings-nav" aria-label="Settings navigation">
-                    <button className={`nav-item ${activeTab === 'general' ? 'active' : ''}`} onClick={() => setActiveTab('general')}>
-                        <Shield size={16} /> <span>General</span>
-                    </button>
-                    <button className={`nav-item ${activeTab === 'imap' ? 'active' : ''}`} onClick={() => setActiveTab('imap')}>
-                        <Mail size={16} /> <span>Email (IMAP)</span>
-                    </button>
-                    <button className={`nav-item ${activeTab === 'security' ? 'active' : ''}`} onClick={() => setActiveTab('security')}>
-                        <Server size={16} /> <span>Security</span>
-                    </button>
-                    <button className={`nav-item ${activeTab === 'daemon' ? 'active' : ''}`} onClick={() => setActiveTab('daemon')}>
-                        <Activity size={16} /> <span>Daemon</span>
-                    </button>
-                    <button className={`nav-item ${activeTab === 'features' ? 'active' : ''}`} onClick={() => setActiveTab('features')}>
-                        <SettingsIcon size={16} /> <span>Features</span>
-                    </button>
-                </aside>
+              {/* Sub-tabs: Status / Configure */}
+              <div className="subtabs">
+                <button className={`subtab ${imapView === 'status' ? 'active' : ''}`} onClick={() => setImapView('status')}>Status</button>
+                <button className={`subtab ${imapView === 'configure' ? 'active' : ''}`} onClick={() => setImapView('configure')}>Configure</button>
+              </div>
 
-                {/* Main content */}
-                <main className="settings-panel">
-                    {activeTab === 'imap' && (
-                        <section className="card">
-                            <div className="card-header">
-                                <div className="card-title-wrap">
-                                    <h2 className="card-title">IMAP Configuration</h2>
-                                    <p className="card-subtitle">Add your email settings to enable parsing of interview dates, contacts, and threads.</p>
-                                </div>
-                                <div className="card-actions">
-                                    <button className="btn ghost" onClick={save} title="Save settings" disabled={!isValid}>Save</button>
-                                    <button className="btn primary" onClick={testConnection} disabled={!isValid || testing}>
-                                        {testing ? 'Testing…' : 'Test Connection'}
-                                    </button>
-                                </div>
-                            </div>
+              {/* STATUS VIEW */}
+              {imapView === 'status' && (
+                <div className="status-view">
+                  <div className={`status-card ${connectionState}`}>
+                    {connectionState === 'connected' && <CheckCircle size={18} />}
+                    {connectionState === 'configured' && <Server size={18} />}
+                    {connectionState === 'not_configured' && <XCircle size={18} />}
+                    <div className="status-text">
+                      {connectionState === 'connected' && (
+                        <>
+                          <h3>Connected</h3>
+                          <p>IMAP connection tested successfully{meta.lastCheckedAt ? ` · ${new Date(meta.lastCheckedAt).toLocaleString()}` : ''}.</p>
+                        </>
+                      )}
+                      {connectionState === 'configured' && (
+                        <>
+                          <h3>Configured (not tested)</h3>
+                          <p>Settings are saved. Run a test to verify connectivity.</p>
+                        </>
+                      )}
+                      {connectionState === 'not_configured' && (
+                        <>
+                          <h3>Not configured</h3>
+                          <p>IMAP isn’t set up yet. Configure it to enable email parsing.</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
 
-                            {/* Sub-tabs: Status / Configure */}
-                            <div className="subtabs">
-                                <button className={`subtab ${imapView === 'status' ? 'active' : ''}`} onClick={() => setImapView('status')}>Status</button>
-                                <button className={`subtab ${imapView === 'configure' ? 'active' : ''}`} onClick={() => setImapView('configure')}>Configure</button>
-                            </div>
+                  <div className="summary-grid">
+                    <div className="summary-item"><span>Host</span><strong>{imap.host || '—'}</strong></div>
+                    <div className="summary-item"><span>Port</span><strong>{imap.port || '—'}</strong></div>
+                    <div className="summary-item"><span>Security</span><strong>{imap.secure ? 'SSL/TLS' : 'STARTTLS/None'}</strong></div>
+                    <div className="summary-item"><span>Username</span><strong>{imap.username ? imap.username : '—'}</strong></div>
+                    <div className="summary-item"><span>Mailbox</span><strong>{imap.mailbox || '—'}</strong></div>
+                  </div>
 
-                            {/* STATUS VIEW */}
-                            {imapView === 'status' && (
-                                <div className="status-view">
-                                    <div className={`status-card ${connectionState}`}>
-                                        {connectionState === 'connected' && <CheckCircle size={18} />}
-                                        {connectionState === 'configured' && <Server size={18} />}
-                                        {connectionState === 'not_configured' && <XCircle size={18} />}
-                                        <div className="status-text">
-                                            {connectionState === 'connected' && (
-                                                <>
-                                                    <h3>Connected</h3>
-                                                    <p>IMAP connection tested successfully{meta.lastCheckedAt ? ` · ${new Date(meta.lastCheckedAt).toLocaleString()}` : ''}.</p>
-                                                </>
-                                            )}
-                                            {connectionState === 'configured' && (
-                                                <>
-                                                    <h3>Configured (not tested)</h3>
-                                                    <p>Settings are saved. Run a test to verify connectivity.</p>
-                                                </>
-                                            )}
-                                            {connectionState === 'not_configured' && (
-                                                <>
-                                                    <h3>Not configured</h3>
-                                                    <p>IMAP isn’t set up yet. Configure it to enable email parsing.</p>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
+                  <div className="status-actions">
+                    <button className="btn primary" onClick={() => setImapView('configure')}>Configure</button>
+                    <button className="btn" onClick={testConnection} disabled={!isValid || testing}>{testing ? 'Testing…' : 'Test now'}</button>
+                    <button className="btn ghost" onClick={() => router.push('/profile/imap')}>Learn more</button>
+                    <button className="btn danger" onClick={clearImap}>Clear settings</button>
+                  </div>
+                </div>
+              )}
 
-                                    <div className="summary-grid">
-                                        <div className="summary-item"><span>Host</span><strong>{imap.host || '—'}</strong></div>
-                                        <div className="summary-item"><span>Port</span><strong>{imap.port || '—'}</strong></div>
-                                        <div className="summary-item"><span>Security</span><strong>{imap.secure ? 'SSL/TLS' : 'STARTTLS/None'}</strong></div>
-                                        <div className="summary-item"><span>Username</span><strong>{imap.username ? imap.username : '—'}</strong></div>
-                                        <div className="summary-item"><span>Mailbox</span><strong>{imap.mailbox || '—'}</strong></div>
-                                    </div>
+              {/* CONFIGURE VIEW */}
+              {imapView === 'configure' && (
+                <>
+                  <div className="grid">
+                    {/* IMAP Host */}
+                    <div className="field">
+                      <label>IMAP Host</label>
+                      <input type="text" placeholder="imap.yourmail.com" value={imap.host} onChange={(e) => update({ host: e.target.value })} />
+                      <div className="hint">Usually imap.gmail.com, imap.outlook.com, etc.</div>
+                    </div>
+                    {/* Port */}
+                    <div className="field">
+                      <label>Port</label>
+                      <input type="number" placeholder="993" value={imap.port} onChange={(e) => update({ port: e.target.value ? Number(e.target.value) : '' })} />
+                      <div className="hint">993 (SSL/TLS) or 143 (STARTTLS/plain).</div>
+                    </div>
+                    {/* Security */}
+                    <div className="field">
+                      <label>Security</label>
+                      <div className="segmented">
+                        <button className={`seg ${imap.secure ? 'active' : ''}`} onClick={() => update({ secure: true })}>SSL/TLS</button>
+                        <button className={`seg ${!imap.secure ? 'active' : ''}`} onClick={() => update({ secure: false })}>STARTTLS/None</button>
+                      </div>
+                    </div>
+                    {/* Username */}
+                    <div className="field full">
+                      <label>Username</label>
+                      <input type="text" placeholder="you@domain.com" value={imap.username} onChange={(e) => update({ username: e.target.value })} />
+                    </div>
+                    {/* Password */}
+                    <div className="field full">
+                      <label>Password / App Password</label>
+                      <div className="password-wrap">
+                        <input type={showPassword ? 'text' : 'password'} placeholder="App password recommended (e.g., Gmail App Password)" value={imap.password} onChange={(e) => update({ password: e.target.value })} />
+                        <button className="icon-btn" onClick={() => setShowPassword(!showPassword)} aria-label="Toggle password visibility">{showPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button>
+                      </div>
+                      <div className="hint">For Gmail, create an App Password if 2FA is enabled.</div>
+                    </div>
+                    {/* Mailbox */}
+                    <div className="field full">
+                      <label>Mailbox</label>
+                      <input type="text" placeholder="INBOX" value={imap.mailbox} onChange={(e) => update({ mailbox: e.target.value })} />
+                    </div>
+                  </div>
 
-                                    <div className="status-actions">
-                                        <button className="btn primary" onClick={() => setImapView('configure')}>Configure</button>
-                                        <button className="btn" onClick={testConnection} disabled={!isValid || testing}>{testing ? 'Testing…' : 'Test now'}</button>
-                                        <button className="btn ghost" onClick={() => router.push('/profile/imap')}>Learn more</button>
-                                        <button className="btn danger" onClick={clearImap}>Clear settings</button>
-                                    </div>
-                                </div>
-                            )}
+                  {testResult && (
+                    <div className={`test-banner ${testResult.ok ? 'ok' : 'err'}`} role="status">
+                      {testResult.ok ? <CheckCircle size={16} /> : <XCircle size={16} />}
+                      <span>{testResult.message}</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </section>
+          )}
 
-                            {/* CONFIGURE VIEW */}
-                            {imapView === 'configure' && (
-                                <>
-                                    <div className="grid">
-                                        {/* IMAP Host */}
-                                        <div className="field">
-                                            <label>IMAP Host</label>
-                                            <input type="text" placeholder="imap.yourmail.com" value={imap.host} onChange={(e) => update({ host: e.target.value })} />
-                                            <div className="hint">Usually imap.gmail.com, imap.outlook.com, etc.</div>
-                                        </div>
-                                        {/* Port */}
-                                        <div className="field">
-                                            <label>Port</label>
-                                            <input type="number" placeholder="993" value={imap.port} onChange={(e) => update({ port: e.target.value ? Number(e.target.value) : '' })} />
-                                            <div className="hint">993 (SSL/TLS) or 143 (STARTTLS/plain).</div>
-                                        </div>
-                                        {/* Security */}
-                                        <div className="field">
-                                            <label>Security</label>
-                                            <div className="segmented">
-                                                <button className={`seg ${imap.secure ? 'active' : ''}`} onClick={() => update({ secure: true })}>SSL/TLS</button>
-                                                <button className={`seg ${!imap.secure ? 'active' : ''}`} onClick={() => update({ secure: false })}>STARTTLS/None</button>
-                                            </div>
-                                        </div>
-                                        {/* Username */}
-                                        <div className="field full">
-                                            <label>Username</label>
-                                            <input type="text" placeholder="you@domain.com" value={imap.username} onChange={(e) => update({ username: e.target.value })} />
-                                        </div>
-                                        {/* Password */}
-                                        <div className="field full">
-                                            <label>Password / App Password</label>
-                                            <div className="password-wrap">
-                                                <input type={showPassword ? 'text' : 'password'} placeholder="App password recommended (e.g., Gmail App Password)" value={imap.password} onChange={(e) => update({ password: e.target.value })} />
-                                                <button className="icon-btn" onClick={() => setShowPassword(!showPassword)} aria-label="Toggle password visibility">{showPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button>
-                                            </div>
-                                            <div className="hint">For Gmail, create an App Password if 2FA is enabled.</div>
-                                        </div>
-                                        {/* Mailbox */}
-                                        <div className="field full">
-                                            <label>Mailbox</label>
-                                            <input type="text" placeholder="INBOX" value={imap.mailbox} onChange={(e) => update({ mailbox: e.target.value })} />
-                                        </div>
-                                    </div>
+          {activeTab === 'general' && (
+            <section className="card">
+              <div className="card-header">
+                <div className="card-title-wrap">
+                  <h2 className="card-title">General</h2>
+                  <p className="card-subtitle">Account preferences coming soon.</p>
+                </div>
+              </div>
+            </section>
+          )}
 
-                                    {testResult && (
-                                        <div className={`test-banner ${testResult.ok ? 'ok' : 'err'}`} role="status">
-                                            {testResult.ok ? <CheckCircle size={16} /> : <XCircle size={16} />}
-                                            <span>{testResult.message}</span>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                        </section>
-                    )}
+          {activeTab === 'security' && (
+            <section className="card">
+              <div className="card-header">
+                <div className="card-title-wrap">
+                  <h2 className="card-title">Security</h2>
+                  <p className="card-subtitle">Security options coming soon.</p>
+                </div>
+              </div>
+            </section>
+          )}
 
-                    {activeTab === 'general' && (
-                        <section className="card">
-                            <div className="card-header">
-                                <div className="card-title-wrap">
-                                    <h2 className="card-title">General</h2>
-                                    <p className="card-subtitle">Account preferences coming soon.</p>
-                                </div>
-                            </div>
-                        </section>
-                    )}
+          {activeTab === 'daemon' && (
+            <section className="card">
+              <div className="card-header">
+                <div className="card-title-wrap">
+                  <h2 className="card-title">Daemon Monitor</h2>
+                  <p className="card-subtitle">Monitor health, subscribe to live events, and trigger debug actions.</p>
+                </div>
+                <div className="card-actions">
+                  <button className="btn" onClick={pingDaemon} disabled={pinging}>{pinging ? 'Pinging…' : 'Ping /health'}</button>
+                  <button className="btn" onClick={loadAppsSummary}>Load apps summary</button>
+                  <button className="btn primary" onClick={quickRerun} disabled={pipelineBusy}>{pipelineBusy ? 'Re-running…' : 'Re-run pipeline'}</button>
+                  <button className="btn ghost" onClick={() => setEvents([])}>Clear events</button>
+                </div>
+              </div>
 
-                    {activeTab === 'security' && (
-                        <section className="card">
-                            <div className="card-header">
-                                <div className="card-title-wrap">
-                                    <h2 className="card-title">Security</h2>
-                                    <p className="card-subtitle">Security options coming soon.</p>
-                                </div>
-                            </div>
-                        </section>
-                    )}
+              <div className="summary-grid">
+                <div className="summary-item">
+                  <span>HTTP Health</span>
+                  <strong className={daemonHealth?.ok ? 'ok' : 'err'}>
+                    {daemonHealth == null ? '—' : daemonHealth.ok ? 'OK' : 'Down'}
+                  </strong>
+                </div>
+                <div className="summary-item">
+                  <span>WebSocket</span>
+                  <strong>{wsConnected ? <span className="ok inline"><Wifi size={14} /> Connected</span> : <span className="err inline"><WifiOff size={14} /> Disconnected</span>}</strong>
+                </div>
+                <div className="summary-item">
+                  <span>Last check</span>
+                  <strong>{daemonHealth?.lastCheckedAt ? new Date(daemonHealth.lastCheckedAt).toLocaleString() : '—'}</strong>
+                </div>
+                <div className="summary-item">
+                  <span>Event buffer</span>
+                  <strong>{events.length} events</strong>
+                </div>
+              </div>
 
-                    {activeTab === 'daemon' && (
-                        <section className="card">
-                            <div className="card-header">
-                                <div className="card-title-wrap">
-                                    <h2 className="card-title">Daemon Monitor</h2>
-                                    <p className="card-subtitle">Monitor health, subscribe to live events, and trigger debug actions.</p>
-                                </div>
-                                <div className="card-actions">
-                                    <button className="btn" onClick={pingDaemon} disabled={pinging}>{pinging ? 'Pinging…' : 'Ping /health'}</button>
-                                    <button className="btn" onClick={loadAppsSummary}>Load apps summary</button>
-                                    <button className="btn primary" onClick={quickRerun} disabled={pipelineBusy}>{pipelineBusy ? 'Re-running…' : 'Re-run pipeline'}</button>
-                                    <button className="btn ghost" onClick={() => setEvents([])}>Clear events</button>
-                                </div>
-                            </div>
+              {daemonHealth?.error && (
+                <div className="test-banner err" role="status">
+                  <Bug size={16} />
+                  <span>{daemonHealth.error}</span>
+                </div>
+              )}
 
-                            <div className="summary-grid">
-                                <div className="summary-item">
-                                    <span>HTTP Health</span>
-                                    <strong className={daemonHealth?.ok ? 'ok' : 'err'}>
-                                        {daemonHealth == null ? '—' : daemonHealth.ok ? 'OK' : 'Down'}
-                                    </strong>
-                                </div>
-                                <div className="summary-item">
-                                    <span>WebSocket</span>
-                                    <strong>{wsConnected ? <span className="ok inline"><Wifi size={14} /> Connected</span> : <span className="err inline"><WifiOff size={14} /> Disconnected</span>}</strong>
-                                </div>
-                                <div className="summary-item">
-                                    <span>Last check</span>
-                                    <strong>{daemonHealth?.lastCheckedAt ? new Date(daemonHealth.lastCheckedAt).toLocaleString() : '—'}</strong>
-                                </div>
-                                <div className="summary-item">
-                                    <span>Event buffer</span>
-                                    <strong>{events.length} events</strong>
-                                </div>
-                            </div>
+              <div className="daemon-grid">
+                <div className="pane">
+                  <div className="pane-header"><Terminal size={14} /> Live Events</div>
+                  <div className="events-list" role="log" aria-live="polite">
+                    {events.length === 0 && <div className="empty">No events yet. Actions will appear here.</div>}
+                    {events.map((e, idx) => (
+                      <div key={idx} className="event-row">
+                        <div className="event-type">{e.type}</div>
+                        <div className="event-time">{new Date(e.ts).toLocaleTimeString()}</div>
+                        <pre className="event-json">{JSON.stringify(e.data ?? null, null, 2)}</pre>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="pane">
+                  <div className="pane-header"><Server size={14} /> Quick Info</div>
+                  <ul className="quick-info">
+                    <li><strong>Daemon URL:</strong> {DAEMON_ORIGIN}</li>
+                    <li><strong>WS Path:</strong> /ws</li>
+                    <li><strong>DB Path (repo):</strong> database/jjugg.db</li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+          )}
 
-                            {daemonHealth?.error && (
-                                <div className="test-banner err" role="status">
-                                    <Bug size={16} />
-                                    <span>{daemonHealth.error}</span>
-                                </div>
-                            )}
+          {activeTab === 'features' && (
+            <section className="feature-list-section">
+              <div className="feature-list-header">
+                <h2 className="feature-list-title">Feature Flags</h2>
+                <p className="feature-list-subtitle">Toggle sections on or off. Changes are saved locally and apply immediately.</p>
+                <button className="btn ghost" onClick={resetOverrides}>Reset to defaults</button>
+              </div>
+              <ul className="feature-list">
+                {[
+                  { flag: 'ENABLE_DASHBOARD', label: 'Dashboard' },
+                  { flag: 'ENABLE_REMINDERS_SECTION', label: 'Reminders' },
+                  { flag: 'ENABLE_INTERVIEWS_SECTION', label: 'Interviews' },
+                  { flag: 'ENABLE_ANALYTICS', label: 'Analytics' },
+                  { flag: 'ENABLE_GOALS_SECTION', label: 'Goals' },
+                  { flag: 'ENABLE_TIMELINE_SECTION', label: 'Timeline' },
+                  { flag: 'ENABLE_CALENDAR_VIEW', label: 'Calendar' },
+                  { flag: 'ENABLE_PROFILE_IN_NAV', label: 'Show Profile' },
+                  { flag: 'ENABLE_EMAILS_PAGE', label: 'Emails Page' },
+                ].map(({ flag, label }) => {
+                  const isOn = flags[flag as keyof FeatureFlags];
+                  return (
+                    <li key={flag} className="feature-list-item">
+                      <span className="feature-label">{label}</span>
+                      <button
+                        className={`toggle-switch ${isOn ? 'on' : 'off'}`}
+                        onClick={() => setFlag(flag as keyof FeatureFlags, !isOn)}
+                        aria-label={`${isOn ? 'Disable' : 'Enable'} ${label}`}
+                      >
+                        <span className="toggle-track">
+                          <span className="toggle-thumb" />
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="note">
+                <p className="text-caption">Flags persist in this browser only. Use for local experimentation.</p>
+              </div>
+            </section>
+          )}
+        </main>
+      </div>
 
-                            <div className="daemon-grid">
-                                <div className="pane">
-                                    <div className="pane-header"><Terminal size={14} /> Live Events</div>
-                                    <div className="events-list" role="log" aria-live="polite">
-                                        {events.length === 0 && <div className="empty">No events yet. Actions will appear here.</div>}
-                                        {events.map((e, idx) => (
-                                            <div key={idx} className="event-row">
-                                                <div className="event-type">{e.type}</div>
-                                                <div className="event-time">{new Date(e.ts).toLocaleTimeString()}</div>
-                                                <pre className="event-json">{JSON.stringify(e.data ?? null, null, 2)}</pre>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                                <div className="pane">
-                                    <div className="pane-header"><Server size={14} /> Quick Info</div>
-                                    <ul className="quick-info">
-                                        <li><strong>Daemon URL:</strong> {DAEMON_ORIGIN}</li>
-                                        <li><strong>WS Path:</strong> /ws</li>
-                                        <li><strong>DB Path (repo):</strong> database/jjugg.db</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </section>
-                    )}
-
-                    {activeTab === 'features' && (
-                        <section className="card">
-                            <div className="card-header">
-                                <div className="card-title-wrap">
-                                    <h2 className="card-title text-h3">Feature Flags</h2>
-                                    <p className="card-subtitle lead">Toggle sections on or off. Changes are saved locally and apply immediately.</p>
-                                </div>
-                                <div className="card-actions">
-                                    <button className="btn ghost" onClick={resetOverrides}>Reset to defaults</button>
-                                </div>
-                            </div>
-
-                            <div className="features-grid">
-                                {(
-                                    [
-                                        { flag: 'ENABLE_DASHBOARD', label: 'Dashboard', icon: '📊', color: '#0ea5e9' },
-                                        { flag: 'ENABLE_REMINDERS_SECTION', label: 'Reminders', icon: '⏰', color: '#f59e0b' },
-                                        { flag: 'ENABLE_INTERVIEWS_SECTION', label: 'Interviews', icon: '🎯', color: '#8b5cf6' },
-                                        { flag: 'ENABLE_ANALYTICS', label: 'Analytics', icon: '📈', color: '#10b981' },
-                                        { flag: 'ENABLE_GOALS_SECTION', label: 'Goals', icon: '🎯', color: '#ef4444' },
-                                        { flag: 'ENABLE_TIMELINE_SECTION', label: 'Timeline', icon: '⏳', color: '#06b6d4' },
-                                        { flag: 'ENABLE_CALENDAR_VIEW', label: 'Calendar', icon: '📅', color: '#84cc16' },
-                                        { flag: 'ENABLE_PROFILE_IN_NAV', label: 'Show Profile', icon: '👤', color: '#6366f1' },
-                                    ] as Array<{ flag: keyof FeatureFlags; label: string; icon: string; color: string }>
-                                ).map(({ flag, label, icon, color }) => {
-                                    const isOn = flags[flag];
-                                    return (
-                                        <div key={flag} className={`feature-card ${isOn ? 'enabled' : 'disabled'}`} style={{ '--feature-color': color } as any}>
-                                            <div className="feature-icon">{icon}</div>
-                                            <div className="feature-content">
-                                                <h3 className="feature-title">{label}</h3>
-                                                <p className="feature-status">{isOn ? 'Enabled' : 'Disabled'}</p>
-                                            </div>
-                                            <button
-                                                className={`power-toggle ${isOn ? 'on' : 'off'}`}
-                                                onClick={() => setFlag(flag, !isOn)}
-                                                aria-label={`${isOn ? 'Disable' : 'Enable'} ${label}`}
-                                            >
-                                                <div className="power-ring">
-                                                    <div className="power-dot"></div>
-                                                </div>
-                                            </button>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-
-                            <div className="note">
-                                <p className="text-caption">Flags persist in this browser only. Use for local experimentation.</p>
-                            </div>
-                        </section>
-                    )}
-                </main>
-            </div>
-
-            <style jsx>{`
+      <style jsx>{`
+        /* Feature Flags List Styles */
+        .feature-list-section { background: var(--surface); border-radius: 12px; padding: 2rem; margin-bottom: 2rem; }
+        .feature-list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+        .feature-list-title { font-size: 1.5rem; font-weight: 600; margin: 0; }
+        .feature-list-subtitle { font-size: 1rem; color: var(--muted); margin: 0 1rem 0 0; }
+        .feature-list { list-style: none; padding: 0; margin: 0; }
+        .feature-list-item { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
+        .feature-label { font-size: 1rem; font-weight: 500; }
+        .toggle-switch { background: none; border: none; cursor: pointer; outline: none; padding: 0; margin-left: 1rem; }
+        .toggle-track { display: inline-block; width: 40px; height: 22px; background: var(--border); border-radius: 11px; position: relative; transition: background 0.2s; }
+        .toggle-switch.on .toggle-track { background: #10b981; }
+        .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; background: #fff; border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,0.08); transition: left 0.2s; }
+        .toggle-switch.on .toggle-thumb { left: 21px; }
         /* Shell */
         .settings-shell { display: flex; flex-direction: column; gap: 16px; }
         .settings-hero { position: relative; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--surface); }
@@ -593,8 +595,8 @@ const ProfileSettings: React.FC = () => {
           .settings-nav { position: static; flex-direction: row; flex-wrap: wrap; }
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 }
 
 export default ProfileSettings;
