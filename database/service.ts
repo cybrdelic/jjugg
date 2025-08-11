@@ -1,3 +1,13 @@
+export interface EmailConfig {
+    id?: number;
+    host: string;
+    port: number;
+    secure: boolean;
+    user: string;
+    password: string;
+    mailbox: string;
+    updated_at?: string;
+}
 import { db } from './connection';
 
 // Types for database entities
@@ -119,6 +129,26 @@ export interface Contact {
 
 // Database service class
 export class DatabaseService {
+    // Email config operations
+    static getEmailConfig(): EmailConfig | undefined {
+        const row = db.prepare('SELECT * FROM email_config ORDER BY updated_at DESC LIMIT 1').get();
+        return row as EmailConfig | undefined;
+    }
+
+    static setEmailConfig(config: EmailConfig): void {
+        // Upsert config (only one row expected)
+        db.prepare(`
+            INSERT INTO email_config (host, port, secure, user, password, mailbox, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        `).run(
+            config.host,
+            config.port,
+            config.secure ? 1 : 0,
+            config.user,
+            config.password,
+            config.mailbox
+        );
+    }
     // User operations
     static getUser(id: number): User | undefined {
         const stmt = db.prepare('SELECT * FROM users WHERE id = ?');

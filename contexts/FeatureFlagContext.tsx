@@ -17,6 +17,7 @@ export interface FeatureFlags {
     ENABLE_REMINDERS_SECTION: boolean;
     ENABLE_INTERVIEWS_SECTION: boolean;
     ENABLE_ANALYTICS: boolean;
+    ENABLE_EMAILS_PAGE: boolean;
 }
 
 const LOCAL_STORAGE_KEY = 'jjugg_feature_flags_overrides';
@@ -36,6 +37,7 @@ const defaultFeatureFlags: FeatureFlags = {
     ENABLE_REMINDERS_SECTION: false,
     ENABLE_INTERVIEWS_SECTION: false,
     ENABLE_ANALYTICS: false,
+    ENABLE_EMAILS_PAGE: false,
 };
 
 // Create the flags-only context (back-compat)

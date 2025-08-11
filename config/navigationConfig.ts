@@ -105,6 +105,15 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
         route: '/analytics',
         featureFlag: 'ENABLE_ANALYTICS',
     },
+    {
+        id: 'emails-section',
+        key: 'emails-section',
+        label: 'Emails',
+        icon: FileText, // You may want to use a mail icon from Lucide
+        color: 'var(--accent-cyan)',
+        route: '/emails',
+        featureFlag: 'ENABLE_EMAILS_PAGE',
+    },
 ];
 
 // Utility function to get route by section key
