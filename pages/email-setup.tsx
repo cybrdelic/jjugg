@@ -36,6 +36,8 @@ interface EmailConfig {
     };
 }
 
+type EmailPreview = { subject: string; from: string; date: string; snippet: string; uid?: number | null } | null;
+
 interface StepperProps {
     currentStep: number;
     totalSteps: number;
@@ -149,6 +151,7 @@ const EmailSetupPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [statusBanner, setStatusBanner] = useState<null | { state: 'ok' | 'error' | 'testing'; message: string }>(null);
     const [showEditor, setShowEditor] = useState(false);
+    const [latestPreview, setLatestPreview] = useState<EmailPreview>(null);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -264,7 +267,7 @@ const EmailSetupPage: React.FC = () => {
         return base;
     };
 
-    const testConnection = async (configOverride?: EmailConfig): Promise<{ ok: boolean; message?: string }> => {
+    const testConnection = async (configOverride?: EmailConfig): Promise<{ ok: boolean; message?: string; preview?: EmailPreview }> => {
         setIsLoading(true);
         setTestResult(null);
         setStatusBanner({ state: 'testing', message: 'Testing IMAP connection…' });
@@ -281,19 +284,27 @@ const EmailSetupPage: React.FC = () => {
             clearTimeout(timer);
             const result = await response.json();
             if (result.success) {
-                setTestResult('Connection test successful ✅');
+                if (result.preview) {
+                    setLatestPreview(result.preview);
+                    setTestResult('Connection test successful — latest email fetched ✅');
+                } else {
+                    setLatestPreview(null);
+                    setTestResult('Connected — mailbox is empty ✅');
+                }
                 setStatusBanner({ state: 'ok', message: 'Email connected' });
                 setIsLoading(false);
-                return { ok: true };
+                return { ok: true, preview: result.preview || null };
             } else {
                 setTestResult('Test failed: ' + (result.message || 'Check credentials') + ' ❌');
                 setStatusBanner({ state: 'error', message: result.message || 'IMAP connection failed' });
+                setLatestPreview(null);
                 setIsLoading(false);
                 return { ok: false, message: result.message };
             }
         } catch (error: any) {
             setTestResult('Test failed: ' + (error.name === 'AbortError' ? 'Timed out' : (error.message || 'Unknown error')) + ' ❌');
             setStatusBanner({ state: 'error', message: error.name === 'AbortError' ? 'IMAP test timed out' : (error.message || 'IMAP test error') });
+            setLatestPreview(null);
             setIsLoading(false);
             return { ok: false, message: error?.message };
         }
@@ -677,11 +688,19 @@ const EmailSetupPage: React.FC = () => {
                             </div>
                         )}
 
-                        {testResult && (
-                            <div className={`test-result ${testResult.includes('✅') ? 'success' : 'error'}`}>
-                                {testResult}
-                            </div>
-                        )}
+                            {testResult && (
+                                <div className={`test-result ${testResult.includes('✅') ? 'success' : 'error'}`}>
+                                    {testResult}
+                                </div>
+                            )}
+                            {latestPreview && (
+                                <div className="email-preview">
+                                    <div className="preview-title">Latest email</div>
+                                    <div className="preview-subject">{latestPreview.subject || '(no subject)'}</div>
+                                    <div className="preview-meta">{latestPreview.from || ''}{latestPreview.date ? ` · ${latestPreview.date}` : ''}</div>
+                                    <div className="preview-body">{latestPreview.snippet || '(no text preview)'}</div>
+                                </div>
+                            )}
                     </div>
                 );
 
@@ -731,6 +750,14 @@ const EmailSetupPage: React.FC = () => {
                                     {testResult}
                                 </div>
                             )}
+                            {latestPreview && (
+                                <div className="email-preview">
+                                    <div className="preview-title">Latest email</div>
+                                    <div className="preview-subject">{latestPreview.subject || '(no subject)'}</div>
+                                    <div className="preview-meta">{latestPreview.from || ''}{latestPreview.date ? ` · ${latestPreview.date}` : ''}</div>
+                                    <div className="preview-body">{latestPreview.snippet || '(no text preview)'}</div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 );
@@ -769,7 +796,7 @@ const EmailSetupPage: React.FC = () => {
                         <div className="action-group">
                             <button
                                 className="btn btn-outline"
-                                onClick={testConnection}
+                                onClick={() => testConnection()}
                                 disabled={isLoading}
                             >
                                 {isLoading ? 'Testing...' : 'Test'}
@@ -848,6 +875,14 @@ const EmailSetupPage: React.FC = () => {
                         {statusBanner?.state === 'ok' && !showEditor ? (
                             <div className="connected-summary">
                                 <p>Your email is connected ✅</p>
+                                {latestPreview && (
+                                    <div className="email-preview compact">
+                                        <div className="preview-title">Latest email</div>
+                                        <div className="preview-subject">{latestPreview.subject || '(no subject)'}</div>
+                                        <div className="preview-meta">{latestPreview.from || ''}{latestPreview.date ? ` · ${latestPreview.date}` : ''}</div>
+                                        <div className="preview-body">{latestPreview.snippet || '(no text preview)'}</div>
+                                    </div>
+                                )}
                                 <div className="action-group">
                                     <button className="btn btn-outline" onClick={() => testConnection()} disabled={isLoading}>
                                         {isLoading ? 'Re-testing…' : 'Re-test'}
