@@ -26,42 +26,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         config.imap.password = undefined;
     }
 
-    const debugSteps = [];
+    const debugSteps: any[] = [];
+    let connection: any;
+    const overallTimeoutMs = 12000;
+    const withTimeout = <T,>(p: Promise<T>, label: string): Promise<T> => {
+        return new Promise<T>((resolve, reject) => {
+            const timer = setTimeout(() => {
+                debugSteps.push({ step: 'Timeout', where: label });
+                try { connection?.end?.(); } catch {}
+                reject(new Error('Operation timed out'));
+            }, overallTimeoutMs);
+            p.then(v => { clearTimeout(timer); resolve(v); })
+             .catch(e => { clearTimeout(timer); reject(e); });
+        });
+    };
+
     try {
-        debugSteps.push({ step: 'Connecting to IMAP', config });
-        const connection = await Imap.connect(config);
+        debugSteps.push({ step: 'Connecting to IMAP', host: imap.host, port: imap.port, user: imap.user });
+        connection = await withTimeout(Imap.connect(config), 'connect');
         debugSteps.push({ step: 'Connected', status: 'success' });
-        await connection.openBox(imap.mailbox || 'INBOX');
+        await withTimeout(connection.openBox(imap.mailbox || 'INBOX'), 'openBox');
         debugSteps.push({ step: 'Opened mailbox', mailbox: imap.mailbox || 'INBOX' });
-        // Search for all messages, get the latest one
-        const fetchOptions = {
-            bodies: ['HEADER.FIELDS (FROM TO SUBJECT DATE)', 'TEXT'],
-            struct: true
-        };
-        debugSteps.push({ step: 'Searching for messages', fetchOptions });
-        const searchResults = await connection.search(['ALL'], fetchOptions);
-        debugSteps.push({ step: 'Search complete', messageCount: searchResults.length });
-        let latestEmail = null;
-        if (searchResults && searchResults.length > 0) {
-            // Get the last message
-            const msg = searchResults[searchResults.length - 1];
-            const headerPart = msg.parts.find((p: any) => p.which === 'HEADER.FIELDS (FROM TO SUBJECT DATE)');
-            const textPart = msg.parts.find((p: any) => p.which === 'TEXT');
-            latestEmail = {
-                subject: headerPart && headerPart.body.subject ? headerPart.body.subject[0] : '',
-                from: headerPart && headerPart.body.from ? headerPart.body.from[0] : '',
-                to: headerPart && headerPart.body.to ? headerPart.body.to[0] : '',
-                date: headerPart && headerPart.body.date ? headerPart.body.date[0] : '',
-                body: textPart ? textPart.body : ''
-            };
-            debugSteps.push({ step: 'Fetched latest email', latestEmail });
-        } else {
-            debugSteps.push({ step: 'No messages found' });
-        }
-        await connection.end();
+        try { await connection.end(); } catch {}
         debugSteps.push({ step: 'Connection closed' });
-        return res.status(200).json({ success: true, message: 'IMAP connection successful.', latestEmail, debugSteps });
+        return res.status(200).json({ success: true, message: 'IMAP connection successful.', debugSteps });
     } catch (error: any) {
+        try { await connection?.end?.(); } catch {}
         debugSteps.push({ step: 'Error', error: error.message || String(error) });
         return res.status(200).json({ success: false, message: error.message || 'IMAP connection failed.', debugSteps });
     }
