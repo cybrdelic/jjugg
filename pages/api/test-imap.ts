@@ -1,5 +1,5 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
 import Imap from 'imap-simple';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method !== 'POST') {
@@ -15,6 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             host: imap.host,
             port: imap.port,
             tls: true,
+            connTimeout: 8000,
             authTimeout: 5000,
             tlsOptions: { rejectUnauthorized: false } // Quick local fix for Windows
         }

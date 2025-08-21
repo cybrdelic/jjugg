@@ -147,6 +147,7 @@ const EmailSetupPage: React.FC = () => {
     const [showAppPasswordHelp, setShowAppPasswordHelp] = useState(false);
     const [testResult, setTestResult] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [statusBanner, setStatusBanner] = useState<null | { state: 'ok' | 'error' | 'testing'; message: string }>(null);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -262,24 +263,32 @@ const EmailSetupPage: React.FC = () => {
         return base;
     };
 
-    const testConnection = async () => {
+    const testConnection = async (configOverride?: EmailConfig) => {
         setIsLoading(true);
         setTestResult(null);
+        setStatusBanner({ state: 'testing', message: 'Testing IMAP connection…' });
+        const cfg = configOverride || buildConfig();
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 12000);
         try {
-            const config = buildConfig();
             const response = await fetch('/api/test-imap', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(config)
+                body: JSON.stringify(cfg),
+                signal: controller.signal
             });
+            clearTimeout(timer);
             const result = await response.json();
             if (result.success) {
                 setTestResult('Connection test successful ✅');
+                setStatusBanner({ state: 'ok', message: 'Email connected' });
             } else {
                 setTestResult('Test failed: ' + (result.message || 'Check credentials') + ' ❌');
+                setStatusBanner({ state: 'error', message: result.message || 'IMAP connection failed' });
             }
         } catch (error: any) {
-            setTestResult('Test failed: ' + (error.message || 'Unknown error') + ' ❌');
+            setTestResult('Test failed: ' + (error.name === 'AbortError' ? 'Timed out' : (error.message || 'Unknown error')) + ' ❌');
+            setStatusBanner({ state: 'error', message: error.name === 'AbortError' ? 'IMAP test timed out' : (error.message || 'IMAP test error') });
         }
         setIsLoading(false);
     };
@@ -428,7 +437,21 @@ const EmailSetupPage: React.FC = () => {
                         updateFormData('genericPassword', cfg.password || '');
                         updateFormData('genericMailbox', cfg.mailbox || 'INBOX');
                     }
-                    setCurrentStep(2);
+                    // Build EmailConfig to auto-test silently
+                    const loaded: EmailConfig = {
+                        type: isGmail ? 'gmail-imap' : 'generic-imap',
+                        imap: { host: cfg.host, port: cfg.port, user: cfg.user, mailbox: cfg.mailbox || 'INBOX', windowDays: 90, secure: true },
+                        auth: { method: 'app-password', user: cfg.user, pass: cfg.password || '' }
+                    };
+                    // Auto-test and show banner; keep wizard visible only on failure
+                    await testConnection(loaded);
+                    if (statusBanner?.state === 'ok') {
+                        setCurrentStep(1); // wizard not needed; banner will show status
+                    } else {
+                        setCurrentStep(2); // show credentials step if failing
+                    }
+                } else {
+                    setStatusBanner({ state: 'error', message: 'No email configuration found' });
                 }
             } catch { /* ignore */ }
         })();
@@ -801,14 +824,33 @@ const EmailSetupPage: React.FC = () => {
                             <div>
                                 <h1 className="page-title">JJUGG Email Setup</h1>
                                 <p className="page-subtitle">in‑app configuration</p>
+                                {statusBanner && (
+                                    <div className={`status-banner ${statusBanner.state}`}>
+                                        {statusBanner.state === 'testing' && 'Testing connection…'}
+                                        {statusBanner.state === 'ok' && 'Connected ✅'}
+                                        {statusBanner.state === 'error' && `Not connected: ${statusBanner.message}`}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
 
                     <div className="email-setup-card">
-                        <Stepper currentStep={currentStep} totalSteps={3} />
-                        {renderStepContent()}
-                        {renderStepActions()}
+                        {statusBanner?.state === 'ok' ? (
+                            <div className="connected-summary">
+                                <p>Your email is connected. You can update settings below if needed.</p>
+                                <div style={{ height: '12px' }} />
+                                <Stepper currentStep={currentStep} totalSteps={3} />
+                                {renderStepContent()}
+                                {renderStepActions()}
+                            </div>
+                        ) : (
+                            <>
+                                <Stepper currentStep={currentStep} totalSteps={3} />
+                                {renderStepContent()}
+                                {renderStepActions()}
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
