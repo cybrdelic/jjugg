@@ -61,10 +61,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const seq = (connection as any).imap.seq.fetch(`${total}:${total}`, {
                 bodies: [
                     'HEADER.FIELDS (FROM TO SUBJECT DATE)',
-                    // Fetch text body without marking as seen; we'll trim client-side
-                    'BODY.PEEK[TEXT]'
+                    // Use TEXT with markSeen:false instead of PEEK to avoid server parse issues
+                    'TEXT'
                 ],
-                struct: false
+                struct: false,
+                markSeen: false
             });
             let headerRaw = '';
             let textRaw = '';
