@@ -148,6 +148,7 @@ const EmailSetupPage: React.FC = () => {
     const [testResult, setTestResult] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [statusBanner, setStatusBanner] = useState<null | { state: 'ok' | 'error' | 'testing'; message: string }>(null);
+    const [showEditor, setShowEditor] = useState(false);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -263,7 +264,7 @@ const EmailSetupPage: React.FC = () => {
         return base;
     };
 
-    const testConnection = async (configOverride?: EmailConfig) => {
+    const testConnection = async (configOverride?: EmailConfig): Promise<{ ok: boolean; message?: string }> => {
         setIsLoading(true);
         setTestResult(null);
         setStatusBanner({ state: 'testing', message: 'Testing IMAP connection…' });
@@ -282,15 +283,20 @@ const EmailSetupPage: React.FC = () => {
             if (result.success) {
                 setTestResult('Connection test successful ✅');
                 setStatusBanner({ state: 'ok', message: 'Email connected' });
+                setIsLoading(false);
+                return { ok: true };
             } else {
                 setTestResult('Test failed: ' + (result.message || 'Check credentials') + ' ❌');
                 setStatusBanner({ state: 'error', message: result.message || 'IMAP connection failed' });
+                setIsLoading(false);
+                return { ok: false, message: result.message };
             }
         } catch (error: any) {
             setTestResult('Test failed: ' + (error.name === 'AbortError' ? 'Timed out' : (error.message || 'Unknown error')) + ' ❌');
             setStatusBanner({ state: 'error', message: error.name === 'AbortError' ? 'IMAP test timed out' : (error.message || 'IMAP test error') });
+            setIsLoading(false);
+            return { ok: false, message: error?.message };
         }
-        setIsLoading(false);
     };
 
     const saveToLocalStorage = async () => {
@@ -444,14 +450,17 @@ const EmailSetupPage: React.FC = () => {
                         auth: { method: 'app-password', user: cfg.user, pass: cfg.password || '' }
                     };
                     // Auto-test and show banner; keep wizard visible only on failure
-                    await testConnection(loaded);
-                    if (statusBanner?.state === 'ok') {
-                        setCurrentStep(1); // wizard not needed; banner will show status
+                    const resTest = await testConnection(loaded);
+                    if (resTest.ok) {
+                        setShowEditor(false); // hide wizard
+                        setCurrentStep(1);
                     } else {
-                        setCurrentStep(2); // show credentials step if failing
+                        setShowEditor(true);
+                        setCurrentStep(2);
                     }
                 } else {
                     setStatusBanner({ state: 'error', message: 'No email configuration found' });
+                    setShowEditor(true);
                 }
             } catch { /* ignore */ }
         })();
@@ -836,13 +845,21 @@ const EmailSetupPage: React.FC = () => {
                     </div>
 
                     <div className="email-setup-card">
-                        {statusBanner?.state === 'ok' ? (
+                        {statusBanner?.state === 'ok' && !showEditor ? (
                             <div className="connected-summary">
-                                <p>Your email is connected. You can update settings below if needed.</p>
-                                <div style={{ height: '12px' }} />
-                                <Stepper currentStep={currentStep} totalSteps={3} />
-                                {renderStepContent()}
-                                {renderStepActions()}
+                                <p>Your email is connected ✅</p>
+                                <div className="action-group">
+                                    <button className="btn btn-outline" onClick={() => testConnection()} disabled={isLoading}>
+                                        {isLoading ? 'Re-testing…' : 'Re-test'}
+                                    </button>
+                                    <button className="btn btn-primary" onClick={() => setShowEditor(true)}>
+                                        Edit settings
+                                    </button>
+                                    <button className="btn btn-danger" onClick={clearStorage}>
+                                        <Trash2 size={16} />
+                                        Clear
+                                    </button>
+                                </div>
                             </div>
                         ) : (
                             <>
