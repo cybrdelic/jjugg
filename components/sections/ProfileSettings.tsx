@@ -6,6 +6,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 
 // Add lightweight connection meta persistence
 type ImapMeta = { lastTestOk?: boolean; lastCheckedAt?: number; lastError?: string };
+type EmailPreview = { subject: string; from: string; date: string; snippet: string } | null;
 const IMAP_META_KEY = 'imapStatusMeta';
 
 type ImapSettings = {
@@ -37,8 +38,11 @@ const ProfileSettings: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [latestPreview, setLatestPreview] = useState<EmailPreview>(null);
   const [imapView, setImapView] = useState<'status' | 'configure'>('status');
   const [meta, setMeta] = useState<ImapMeta>({});
+  const [bootChecking, setBootChecking] = useState(true);
+  const [hasStoredConfig, setHasStoredConfig] = useState<boolean | null>(null);
 
   // Daemon monitor state
   const [daemonHealth, setDaemonHealth] = useState<{ ok: boolean; lastCheckedAt?: number; error?: string } | null>(null);
@@ -66,13 +70,36 @@ const ProfileSettings: React.FC = () => {
     return 'configured';
   }, [imap, meta.lastTestOk]);
 
+  // Boot: load saved config from app DB and auto-test quietly
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setImap({ ...DEFAULT_IMAP, ...JSON.parse(raw) });
-      const metaRaw = localStorage.getItem(IMAP_META_KEY);
-      if (metaRaw) setMeta(JSON.parse(metaRaw));
-    } catch { }
+    (async () => {
+      try {
+        const resp = await fetch('/api/email-config');
+        const res = await resp.json();
+        if (res.success && res.config) {
+          setHasStoredConfig(true);
+          const cfg = res.config as { host: string; port: number; secure: boolean; user: string; password: string; mailbox: string };
+          setImap({
+            host: cfg.host,
+            port: cfg.port || 993,
+            secure: Boolean(cfg.secure),
+            username: cfg.user,
+            password: cfg.password || '',
+            mailbox: cfg.mailbox || 'INBOX',
+          });
+          setImapView('status');
+          await testConnection(true);
+        } else {
+          setHasStoredConfig(false);
+        }
+        const metaRaw = localStorage.getItem(IMAP_META_KEY);
+        if (metaRaw) setMeta(JSON.parse(metaRaw));
+      } catch {
+        setHasStoredConfig(false);
+      } finally {
+        setBootChecking(false);
+      }
+    })();
   }, []);
 
   const saveMeta = (next: ImapMeta) => {
@@ -80,30 +107,84 @@ const ProfileSettings: React.FC = () => {
     try { localStorage.setItem(IMAP_META_KEY, JSON.stringify(next)); } catch { }
   };
 
-  const save = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(imap));
-  };
-
-  const clearImap = () => {
-    setImap(DEFAULT_IMAP);
-    setTestResult(null);
-    saveMeta({});
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(IMAP_META_KEY);
-    } catch { }
-  };
-
-  const testConnection = async () => {
+  const save = async () => {
     setTesting(true);
     setTestResult(null);
-    // Placeholder: simulate a connection test (wire real API later)
-    await new Promise(r => setTimeout(r, 900));
-    const ok = isValid && /\./.test(imap.host) && (imap.port === 993 || imap.port === 143);
-    const message = ok ? 'Connection looks good (simulated).' : 'Unable to connect with these settings (simulated).';
-    setTestResult({ ok, message });
-    saveMeta({ lastTestOk: ok, lastCheckedAt: Date.now(), lastError: ok ? undefined : message });
-    setTesting(false);
+    try {
+      const payload = {
+        host: imap.host,
+        port: Number(imap.port || 993),
+        secure: Boolean(imap.secure),
+        user: imap.username,
+        password: imap.password,
+        mailbox: imap.mailbox || 'INBOX'
+      };
+      const resp = await fetch('/api/email-config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const json = await resp.json();
+      if (json.success) {
+        setTestResult({ ok: true, message: 'Saved settings.' });
+        setHasStoredConfig(true);
+      } else {
+        setTestResult({ ok: false, message: 'Save failed.' });
+      }
+    } catch (e: any) {
+      setTestResult({ ok: false, message: String(e?.message || e) });
+    } finally { setTesting(false); }
+  };
+
+  const clearImap = async () => {
+    setTesting(true);
+    try {
+      const resp = await fetch('/api/email-config', { method: 'DELETE' });
+      const json = await resp.json();
+      if (json.success) {
+        setImap(DEFAULT_IMAP);
+        setLatestPreview(null);
+        setTestResult({ ok: true, message: 'Cleared settings.' });
+        saveMeta({});
+        setHasStoredConfig(false);
+      } else {
+        setTestResult({ ok: false, message: 'Failed to clear settings.' });
+      }
+    } catch (e: any) {
+      setTestResult({ ok: false, message: String(e?.message || e) });
+    } finally { setTesting(false); }
+  };
+
+  const testConnection = async (silent?: boolean) => {
+    setTesting(!silent);
+    if (!silent) setTestResult(null);
+    setLatestPreview(null);
+    try {
+      const cfg = {
+        type: 'generic-imap',
+        imap: {
+          host: imap.host,
+          port: Number(imap.port || 993),
+          user: imap.username,
+          mailbox: imap.mailbox || 'INBOX',
+          windowDays: 90,
+          secure: Boolean(imap.secure)
+        },
+        auth: { method: 'app-password', user: imap.username, pass: imap.password }
+      };
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 12000);
+      const resp = await fetch('/api/test-imap', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cfg), signal: controller.signal });
+      clearTimeout(timer);
+      const json = await resp.json();
+      if (json.success) {
+        setLatestPreview(json.preview || null);
+        if (!silent) setTestResult({ ok: true, message: 'Connected.' });
+        saveMeta({ lastTestOk: true, lastCheckedAt: Date.now(), lastError: undefined });
+      } else {
+        if (!silent) setTestResult({ ok: false, message: json.message || 'IMAP test failed.' });
+        saveMeta({ lastTestOk: false, lastCheckedAt: Date.now(), lastError: json.message || 'IMAP test failed.' });
+      }
+    } catch (e: any) {
+      if (!silent) setTestResult({ ok: false, message: e?.name === 'AbortError' ? 'IMAP test timed out.' : String(e?.message || e) });
+      saveMeta({ lastTestOk: false, lastCheckedAt: Date.now(), lastError: e?.message || String(e) });
+    } finally { setTesting(false); }
   };
 
   const update = (patch: Partial<ImapSettings>) => setImap(prev => ({ ...prev, ...patch }));
@@ -213,7 +294,7 @@ const ProfileSettings: React.FC = () => {
                 </div>
                 <div className="card-actions">
                   <button className="btn ghost" onClick={save} title="Save settings" disabled={!isValid}>Save</button>
-                  <button className="btn primary" onClick={testConnection} disabled={!isValid || testing}>
+                  <button className="btn primary" onClick={() => testConnection()} disabled={!isValid || testing}>
                     {testing ? 'Testing…' : 'Test Connection'}
                   </button>
                 </div>
@@ -228,6 +309,12 @@ const ProfileSettings: React.FC = () => {
               {/* STATUS VIEW */}
               {imapView === 'status' && (
                 <div className="status-view">
+                  {bootChecking && (
+                    <div className="test-banner" role="status">
+                      <Server size={16} />
+                      <span>{hasStoredConfig ? 'Found saved email settings — testing connection…' : 'Checking for saved email settings…'}</span>
+                    </div>
+                  )}
                   <div className={`status-card ${connectionState}`}>
                     {connectionState === 'connected' && <CheckCircle size={18} />}
                     {connectionState === 'configured' && <Server size={18} />}
@@ -253,7 +340,6 @@ const ProfileSettings: React.FC = () => {
                       )}
                     </div>
                   </div>
-
                   <div className="summary-grid">
                     <div className="summary-item"><span>Host</span><strong>{imap.host || '—'}</strong></div>
                     <div className="summary-item"><span>Port</span><strong>{imap.port || '—'}</strong></div>
@@ -262,10 +348,27 @@ const ProfileSettings: React.FC = () => {
                     <div className="summary-item"><span>Mailbox</span><strong>{imap.mailbox || '—'}</strong></div>
                   </div>
 
+                  {latestPreview && (
+                    <div className="card mt-12">
+                      <div className="card-header compact">
+                        <div className="card-title-wrap">
+                          <h3 className="card-title">Latest email</h3>
+                          <p className="card-subtitle">Preview fetched during the last test.</p>
+                        </div>
+                      </div>
+                      <div className="card-body">
+                        <div className="email-preview">
+                          <div className="preview-subject">{latestPreview.subject || '(no subject)'}</div>
+                          <div className="preview-meta">{latestPreview.from || ''}{latestPreview.date ? ` · ${latestPreview.date}` : ''}</div>
+                          <div className="preview-body">{latestPreview.snippet || '(no text preview)'}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="status-actions">
-                    <button className="btn primary" onClick={() => setImapView('configure')}>Configure</button>
-                    <button className="btn" onClick={testConnection} disabled={!isValid || testing}>{testing ? 'Testing…' : 'Test now'}</button>
-                    <button className="btn ghost" onClick={() => router.push('/profile/imap')}>Learn more</button>
+                    <button className="btn primary" onClick={() => setImapView('configure')}>Edit settings</button>
+                    <button className="btn" onClick={() => testConnection()} disabled={!isValid || testing}>{testing ? 'Testing…' : 'Re-test'}</button>
                     <button className="btn danger" onClick={clearImap}>Clear settings</button>
                   </div>
                 </div>
@@ -456,7 +559,7 @@ const ProfileSettings: React.FC = () => {
                 })}
               </ul>
               {flags.ENABLE_DEV_DB_ADMIN && (
-                <div className="note" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <div className="note note-row">
                   <button className="btn" onClick={() => window.location.href = '/db-admin'}>Open Dev DB Admin</button>
                   <span className="text-caption">Explores your local SQLite database. Dev-only.</span>
                 </div>
@@ -532,6 +635,14 @@ const ProfileSettings: React.FC = () => {
         .power-toggle.on .power-dot { background: white; transform: scale(1.5); box-shadow: 0 0 12px rgba(255,255,255,0.6); }
 
         .note { margin-top: 16px; color: var(--text-tertiary); }
+  .note-row { display: flex; gap: 8px; align-items: center; }
+  .mt-12 { margin-top: 12px; }
+
+  /* Email preview styles */
+  .email-preview { display: flex; flex-direction: column; gap: 6px; }
+  .email-preview .preview-subject { font-weight: 700; color: var(--text-primary); }
+  .email-preview .preview-meta { font-size: 12px; color: var(--text-tertiary); }
+  .email-preview .preview-body { font-size: 13px; color: var(--text-secondary); white-space: pre-wrap; }
 
         /* Forms */
         .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }

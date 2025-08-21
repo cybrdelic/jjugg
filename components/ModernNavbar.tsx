@@ -107,7 +107,7 @@ export default function ModernNavbar({
           {/* Right Actions */}
           <div className="nav-right">
             {/* Notifications */}
-            <div ref={notificationRef} style={{ position: 'relative' }}>
+            <div ref={notificationRef} className="relative">
               <button
                 className="nav-icon-btn notification-btn"
                 onClick={() => setIsNotificationMenuOpen(!isNotificationMenuOpen)}
@@ -140,7 +140,7 @@ export default function ModernNavbar({
             </div>
 
             {/* Add Button */}
-            <button className="nav-icon-btn">
+              <button className="nav-icon-btn" title="Notifications" aria-label="Notifications">
               <Plus size={18} strokeWidth={1.5} />
             </button>
 
@@ -148,7 +148,7 @@ export default function ModernNavbar({
             <ThemeSwitcher />
 
             {/* Profile */}
-            <div ref={profileRef} style={{ position: 'relative' }}>
+            <div ref={profileRef} className="relative">
               <button
                 className="user-btn"
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
@@ -170,9 +170,7 @@ export default function ModernNavbar({
                   <button className="dropdown-item" onClick={() => { push('/profile'); setIsProfileMenuOpen(false); }}>
                     Settings
                   </button>
-                  <button className="dropdown-item" onClick={() => { push('/email-setup'); setIsProfileMenuOpen(false); }}>
-                    Email Setup
-                  </button>
+                  {/* Email setup consolidated under Profile → IMAP tab */}
                   <button className="dropdown-item" onClick={() => { push('/daemon'); setIsProfileMenuOpen(false); }}>
                     Daemon
                   </button>
@@ -193,6 +191,7 @@ export default function ModernNavbar({
             <button
               className={`mobile-toggle ${isMobileMenuOpen ? 'active' : ''}`}
               onClick={onMobileMenuToggle}
+              aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
             >
               <span className="line"></span>
               <span className="line"></span>
@@ -218,9 +217,7 @@ export default function ModernNavbar({
               >
                 {item.label}
                 {item.badge && 'count' in item.badge && item.badge.count > 0 && (
-                  <span style={{ marginLeft: '8px', color: 'var(--red)' }}>
-                    ({item.badge.count})
-                  </span>
+                  <span className="menu-badge">({item.badge.count})</span>
                 )}
               </button>
             );
@@ -229,6 +226,8 @@ export default function ModernNavbar({
       </div>
 
       <style jsx global>{`
+  .relative { position: relative; }
+  .menu-badge { margin-left: 8px; color: var(--red); }
         :root {
           --white: #ffffff;
           --black: #000000;
