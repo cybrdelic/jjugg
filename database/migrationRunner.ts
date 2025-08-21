@@ -1,6 +1,7 @@
-import { db } from './connection';
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import { db } from './connection';
 
 interface Migration {
     id: string;
@@ -24,10 +25,29 @@ export class MigrationRunner {
       CREATE TABLE IF NOT EXISTS migrations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         migration_id TEXT UNIQUE NOT NULL,
-        name TEXT NOT NULL,
+        name TEXT,
         executed_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    }
+
+    private hasColumn(table: string, column: string): boolean {
+        try {
+            const stmt = db.prepare(`PRAGMA table_info(${table})`);
+            const rows = stmt.all() as { name: string }[];
+            return rows.some(r => r.name === column);
+        } catch {
+            return false;
+        }
+    }
+
+    private getColumnInfo(table: string): Array<{ name: string; notnull: number; dflt_value: string | null }> {
+        try {
+            const stmt = db.prepare(`PRAGMA table_info(${table})`);
+            return stmt.all() as Array<{ name: string; notnull: number; dflt_value: string | null }>;
+        } catch {
+            return [];
+        }
     }
 
     async createMigration(name: string): Promise<string> {
@@ -96,22 +116,39 @@ COMMIT;
             console.log(`🔄 Running migration: ${migrationId}`);
 
             try {
+                const migrationFullPath = path.join(this.migrationsPath, file);
                 const migrationContent = fs.readFileSync(
-                    path.join(this.migrationsPath, file),
+                    migrationFullPath,
                     'utf-8'
                 );
 
                 const upSection = this.extractUpMigration(migrationContent);
+                const checksum = crypto.createHash('sha256').update(migrationContent).digest('hex');
 
                 if (upSection.trim()) {
                     db.exec(upSection);
 
-                    // Record successful migration
-                    const stmt = db.prepare(`
-            INSERT INTO migrations (migration_id, name)
-            VALUES (?, ?)
-          `);
-                    stmt.run(migrationId, file);
+                    // Record successful migration (compat with older/newer schemas)
+                    const hasName = this.hasColumn('migrations', 'name');
+                    const hasChecksum = this.hasColumn('migrations', 'checksum');
+                    const cols: string[] = ['migration_id'];
+                    const vals: string[] = ['?'];
+                    const params: any[] = [migrationId];
+
+                    if (hasName) { cols.push('name'); vals.push('?'); params.push(file); }
+                    if (hasChecksum) { cols.push('checksum'); vals.push('?'); params.push(checksum); }
+
+                    // Handle executed_at NOT NULL without default
+                    const info = this.getColumnInfo('migrations');
+                    const executedAt = info.find(c => c.name === 'executed_at');
+                    if (executedAt && executedAt.notnull && executedAt.dflt_value == null) {
+                        cols.push('executed_at');
+                        vals.push('CURRENT_TIMESTAMP');
+                    }
+
+                    const sql = `INSERT INTO migrations (${cols.join(', ')}) VALUES (${vals.join(', ')})`;
+                    const stmt = db.prepare(sql);
+                    stmt.run(...params);
 
                     console.log(`✅ Migration completed: ${migrationId}`);
                 } else {
@@ -173,7 +210,8 @@ COMMIT;
     }
 
     private getExecutedMigrations(): string[] {
-        const stmt = db.prepare('SELECT migration_id FROM migrations ORDER BY executed_at');
+    const orderBy = this.hasColumn('migrations', 'executed_at') ? 'executed_at' : 'id';
+    const stmt = db.prepare(`SELECT migration_id FROM migrations ORDER BY ${orderBy}`);
         const results = stmt.all() as { migration_id: string }[];
         return results.map(r => r.migration_id);
     }

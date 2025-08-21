@@ -1,5 +1,6 @@
--- Migration: 20250811T120000_cleanup_legacy_tables.sql
--- Description: Drop legacy MVP and FTS tables
+
+-- migration_id: 20250811T120000_cleanup_legacy_tables
+-- checksum: [auto-generated]
 
 -- UP Migration
 BEGIN TRANSACTION;
