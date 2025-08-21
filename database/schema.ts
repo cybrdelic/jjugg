@@ -146,6 +146,20 @@ export const createTables = () => {
     )
   `);
 
+  // Email configuration (IMAP settings)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS email_config (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      host TEXT NOT NULL,
+      port INTEGER NOT NULL DEFAULT 993,
+      secure INTEGER NOT NULL DEFAULT 1,
+      user TEXT NOT NULL,
+      password TEXT NOT NULL,
+      mailbox TEXT NOT NULL DEFAULT 'INBOX',
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   console.log('✅ Database tables created successfully');
 };
 

@@ -136,7 +136,7 @@ export class DatabaseService {
     }
 
     static setEmailConfig(config: EmailConfig): void {
-        // Upsert config (only one row expected)
+        // Insert new config (keep history by time). Optionally, clear existing to keep single row.
         db.prepare(`
             INSERT INTO email_config (host, port, secure, user, password, mailbox, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
@@ -148,6 +148,10 @@ export class DatabaseService {
             config.password,
             config.mailbox
         );
+    }
+
+    static clearEmailConfig(): void {
+        db.prepare('DELETE FROM email_config').run();
     }
     // User operations
     static getUser(id: number): User | undefined {

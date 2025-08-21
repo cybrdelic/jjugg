@@ -17,6 +17,13 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         } catch (error) {
             res.status(500).json({ success: false, error: error instanceof Error ? error.message : String(error) });
         }
+    } else if (req.method === 'DELETE') {
+        try {
+            DatabaseService.clearEmailConfig();
+            res.status(200).json({ success: true });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error instanceof Error ? error.message : String(error) });
+        }
     } else {
         res.status(405).json({ success: false, error: 'Method not allowed' });
     }
