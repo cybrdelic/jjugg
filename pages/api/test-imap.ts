@@ -45,7 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         debugSteps.push({ step: 'Connecting to IMAP', host: imap.host, port: imap.port, user: imap.user });
         connection = await withTimeout(Imap.connect(config), 'connect');
         debugSteps.push({ step: 'Connected', status: 'success' });
-        const boxInfo = await withTimeout(connection.openBox(imap.mailbox || 'INBOX'), 'openBox');
+    const boxInfo = await withTimeout(connection.openBox(imap.mailbox || 'INBOX', true), 'openBox');
         debugSteps.push({ step: 'Opened mailbox', mailbox: imap.mailbox || 'INBOX' });
 
         // If mailbox empty, report success with no preview
@@ -61,8 +61,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const seq = (connection as any).imap.seq.fetch(`${total}:${total}`, {
                 bodies: [
                     'HEADER.FIELDS (FROM TO SUBJECT DATE)',
-                    // Fetch first ~4KB of text body only to avoid heavy downloads
-                    'BODY[TEXT]<0.4096>'
+                    // Fetch text body without marking as seen; we'll trim client-side
+                    'BODY.PEEK[TEXT]'
                 ],
                 struct: false
             });
@@ -93,7 +93,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 const subject = pick(headerRaw, 'Subject');
                 const from = pick(headerRaw, 'From');
                 const date = pick(headerRaw, 'Date');
-                // Basic snippet cleanup
+                // Basic snippet cleanup and trim to ~300 chars
                 const snippet = (textRaw || '')
                     .replace(/\r?\n/g, ' ')
                     .replace(/\s+/g, ' ')
