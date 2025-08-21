@@ -11,7 +11,8 @@ export type SectionKey =
   | 'profile-artifacts-section'
   | 'goals-section'
   | 'timeline-section'
-  | 'calendar-section';
+  | 'calendar-section'
+  | 'emails-section';
 
 export interface NavItem {
   key: SectionKey;

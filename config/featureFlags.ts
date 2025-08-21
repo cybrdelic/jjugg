@@ -19,6 +19,7 @@ export const devFlags: Partial<FeatureFlags> = {
     ENABLE_INTERVIEWS_SECTION: false,
     ENABLE_ANALYTICS: false,
     ENABLE_EMAILS_PAGE: true,
+    ENABLE_DEV_DB_ADMIN: true,
 };
 
 // Production environment flags - disable incomplete features
@@ -37,6 +38,7 @@ export const prodFlags: Partial<FeatureFlags> = {
     ENABLE_INTERVIEWS_SECTION: false,
     ENABLE_ANALYTICS: false,
     ENABLE_EMAILS_PAGE: false,
+    ENABLE_DEV_DB_ADMIN: false,
 };
 
 // Staging environment flags - enable some features for testing
@@ -55,6 +57,7 @@ export const stagingFlags: Partial<FeatureFlags> = {
     ENABLE_INTERVIEWS_SECTION: false,
     ENABLE_ANALYTICS: false,
     ENABLE_EMAILS_PAGE: false,
+    ENABLE_DEV_DB_ADMIN: false,
 };
 
 // Determine which environment we're in and return the appropriate flags

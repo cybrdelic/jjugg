@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Mail, Server, Shield, CheckCircle, XCircle, Eye, EyeOff, Activity, Wifi, WifiOff, Terminal, Bug, Settings as SettingsIcon, ToggleLeft, ToggleRight } from 'lucide-react';
-import { useRouter } from 'next/router';
-import { useFeatureFlags, useFeatureFlagControls } from '@/contexts/FeatureFlagContext';
 import type { FeatureFlags } from '@/contexts/FeatureFlagContext';
+import { useFeatureFlagControls, useFeatureFlags } from '@/contexts/FeatureFlagContext';
+import { Activity, Bug, CheckCircle, Eye, EyeOff, Mail, Server, Settings as SettingsIcon, Shield, Terminal, Wifi, WifiOff, XCircle } from 'lucide-react';
+import { useRouter } from 'next/router';
+import React, { useEffect, useMemo, useState } from 'react';
 
 // Add lightweight connection meta persistence
 type ImapMeta = { lastTestOk?: boolean; lastCheckedAt?: number; lastError?: string };
@@ -436,6 +436,7 @@ const ProfileSettings: React.FC = () => {
                   { flag: 'ENABLE_CALENDAR_VIEW', label: 'Calendar' },
                   { flag: 'ENABLE_PROFILE_IN_NAV', label: 'Show Profile' },
                   { flag: 'ENABLE_EMAILS_PAGE', label: 'Emails Page' },
+                  { flag: 'ENABLE_DEV_DB_ADMIN', label: 'Dev DB Admin (internal)' },
                 ].map(({ flag, label }) => {
                   const isOn = flags[flag as keyof FeatureFlags];
                   return (
@@ -454,6 +455,12 @@ const ProfileSettings: React.FC = () => {
                   );
                 })}
               </ul>
+              {flags.ENABLE_DEV_DB_ADMIN && (
+                <div className="note" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <button className="btn" onClick={() => window.location.href = '/db-admin'}>Open Dev DB Admin</button>
+                  <span className="text-caption">Explores your local SQLite database. Dev-only.</span>
+                </div>
+              )}
               <div className="note">
                 <p className="text-caption">Flags persist in this browser only. Use for local experimentation.</p>
               </div>

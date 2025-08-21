@@ -1,11 +1,12 @@
-import { SectionKey, NavItemType } from '@/types';
+import { useFeatureFlags } from '@/contexts/FeatureFlagContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { NavItemType, SectionKey } from '@/types';
 import {
-  Menu, X, Bell, Plus, User, LogOut, Settings, Server as ServerIcon, Mail
+    Bell, Plus
 } from 'lucide-react';
 import { useRouter } from 'next/router';
-import { ThemeSwitcher } from './ThemeSwitcher';
 import { useEffect, useRef, useState } from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
+import { ThemeSwitcher } from './ThemeSwitcher';
 
 interface ModernNavbarProps {
   items: NavItemType[];
@@ -33,6 +34,7 @@ export default function ModernNavbar({
   const notificationRef = useRef<HTMLDivElement>(null);
   const { push } = useRouter();
   const { mode } = useTheme();
+  const flags = useFeatureFlags();
 
   useEffect(() => {
     setMounted(true);
@@ -174,6 +176,11 @@ export default function ModernNavbar({
                   <button className="dropdown-item" onClick={() => { push('/daemon'); setIsProfileMenuOpen(false); }}>
                     Daemon
                   </button>
+                  {flags.ENABLE_DEV_DB_ADMIN && (
+                    <button className="dropdown-item" onClick={() => { push('/db-admin'); setIsProfileMenuOpen(false); }}>
+                      Dev DB Admin
+                    </button>
+                  )}
                   <div className="dropdown-separator"></div>
                   <button className="dropdown-item" onClick={() => console.log('Sign out')}>
                     Sign out

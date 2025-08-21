@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 // Define feature flag types here
 export interface FeatureFlags {
@@ -18,6 +18,7 @@ export interface FeatureFlags {
     ENABLE_INTERVIEWS_SECTION: boolean;
     ENABLE_ANALYTICS: boolean;
     ENABLE_EMAILS_PAGE: boolean;
+    ENABLE_DEV_DB_ADMIN: boolean;
 }
 
 const LOCAL_STORAGE_KEY = 'jjugg_feature_flags_overrides';
@@ -38,6 +39,7 @@ const defaultFeatureFlags: FeatureFlags = {
     ENABLE_INTERVIEWS_SECTION: false,
     ENABLE_ANALYTICS: false,
     ENABLE_EMAILS_PAGE: false,
+    ENABLE_DEV_DB_ADMIN: false,
 };
 
 // Create the flags-only context (back-compat)
