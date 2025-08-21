@@ -6,6 +6,17 @@
     "packages/*"
   ],
   "scripts": {
+    "db:doctor": "tsx database/scripts/db-doctor.ts",
+    "db:doctor:fix": "tsx database/scripts/db-doctor.ts --fix --optimize",
+    "shell:install-npm-completion": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/ps/install-npm-run-completion.ps1",
+    "shell:export-profile": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/ps/export-profile.ps1",
+    "db:precheck": "npx tsx database/scripts/precheck-migrations.ts",
+    "db:debug": "for %f in (database/*.db) do echo ==== %f ==== && sqlite3 %f \".tables\"",
+    "db:migrate:bulletproof": "npx tsx database/scripts/bulletproof-migrate.ts",
+    "db:backup": "copy database/jjugg.db database/jjugg.db.bak",
+    "db:restore": "copy /Y database/jjugg.db.bak database/jjugg.db",
+    "db:schema": "sqlite3 database/jjugg.db \".schema\"",
+    "infra:copilot": "npm run db:precheck && npm run db:backup && npm run db:migrate:bulletproof && npm run db:schema && npm run db:debug",
     "dev:web": "npx next dev",
     "dev": "concurrently -k -n web,daemon -c green,cyan \"npm run dev:web\" \"npm run daemon:dev\"",
     "build": "npx next build",
@@ -22,6 +33,9 @@
     "db:migrate:down": "tsx database/scripts/migrate-runner.ts down",
     "db:migrate:status": "tsx database/scripts/migrate-runner.ts status",
     "db:migrate:create": "tsx database/scripts/migrate-runner.ts create",
+  "db:migrate:create:drop-mvp": "tsx database/scripts/create-drop-mvp-migration.ts",
+  "db:migrate:drop-mvp": "npm run db:migrate:create:drop-mvp && npm run db:migrate",
+    "test:ssl": "node scripts/test-ssl-trust.js",
     "db:seed:10k": "tsx database/scripts/seed.ts",
     "db:reset:10k": "npm run db:unseed && npm run db:seed:10k",
     "analyze-components": "node scripts/analyze-components.js",
@@ -41,6 +55,8 @@
     "apps:export:csv": "curl -s http://localhost:3001/api/admin/export?format=csv > applications-export.csv && echo 'Exported to applications-export.csv'",
     "find-dead-paths": "node scripts/find-dead-paths.js",
     "find-dead-paths:json": "node scripts/find-dead-paths.js --json",
+  "db:explore": "sqlite3 -cmd \".read scripts/sql/explore.sql\" database/jjugg.db",
+  "db:admin": "dbgate-serve",
     "daemon:dev": "npm --workspace @jjugg/dev-api run dev",
     "daemon:build": "npm --workspace @jjugg/dev-api run build",
     "daemon:start": "npm --workspace @jjugg/dev-api run start"
@@ -50,8 +66,12 @@
     "@types/better-sqlite3": "^7.6.13",
     "better-sqlite3": "^12.2.0",
     "commander": "^12.1.0",
+    "dotenv": "^17.2.1",
     "formidable": "^3.5.4",
+    "imap-simple": "^5.1.0",
+    "imapflow": "^1.0.193",
     "lucide-react": "^0.482.0",
+    "mailparser": "^3.7.4",
     "next": "15.2.2",
     "openai": "^4.88.0",
     "pdfjs-dist": "^5.0.375",
@@ -68,6 +88,7 @@
     "@tailwindcss/typography": "^0.5.16",
     "@types/canvas-confetti": "^1.9.0",
     "@types/formidable": "^3.4.5",
+    "@types/imap-simple": "^4.2.10",
     "@types/jsdom": "^21.1.7",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -82,6 +103,7 @@
     "tailwindcss": "^3.2.7",
     "tsx": "^4.20.3",
     "typescript": "^5",
-    "vitest": "^2.0.0"
+  "vitest": "^2.0.0",
+  "dbgate-serve": "^6.6.1"
   }
 }

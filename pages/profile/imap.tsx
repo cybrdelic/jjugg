@@ -7,6 +7,52 @@ export default function ImapGuidePage() {
         try { await navigator.clipboard.writeText(text); } catch { }
     }, []);
 
+    // --- IMAP Test UI ---
+    const [isLoading, setIsLoading] = React.useState(false);
+    const [status, setStatus] = React.useState<string | null>(null);
+    const [debugSteps, setDebugSteps] = React.useState<any[]>([]);
+    const [latestEmail, setLatestEmail] = React.useState<any | null>(null);
+    const [form, setForm] = React.useState({
+        host: 'imap.gmail.com',
+        port: 993,
+        secure: true,
+        user: '',
+        password: '',
+        mailbox: 'INBOX'
+    });
+    React.useEffect(() => {
+        // Load config from DB on mount
+        fetch('/api/email-config')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.config) setForm(data.config);
+            });
+    }, []);
+    const testConnection = async () => {
+        setIsLoading(true);
+        setStatus(null);
+        setDebugSteps([]);
+        try {
+            const response = await fetch('/api/test-imap', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(form)
+            });
+            const result = await response.json();
+            if (result.success) {
+                setStatus('Connection test successful ✅');
+                setLatestEmail(result.latestEmail || null);
+            } else {
+                setStatus('Test failed: ' + (result.message || 'Check credentials') + ' ❌');
+                setLatestEmail(null);
+            }
+            setDebugSteps(result.debugSteps || []);
+        } catch (error: any) {
+            setStatus('Test failed: ' + (error.message || 'Unknown error') + ' ❌');
+            setLatestEmail(null);
+        }
+        setIsLoading(false);
+    };
     return (
         <AppLayout currentSection="profile-artifacts-section">
             <div className="imap-guide">
@@ -18,6 +64,43 @@ export default function ImapGuidePage() {
                         <a className="btn" href="/profile">Go to Configure</a>
                     </div>
                 </header>
+
+                <div className="imap-test-section card" style={{ margin: '2rem 0', padding: '2rem' }}>
+                    <h2>IMAP Connection Test</h2>
+                    <p>Test your IMAP connection and see debug details below. This uses your saved config.</p>
+                    <button className="btn btn-primary" onClick={testConnection} disabled={isLoading} style={{ marginBottom: '1rem' }}>
+                        {isLoading ? 'Testing...' : 'Test IMAP Connection'}
+                    </button>
+                    {status && (
+                        <div className={`test-result ${status.includes('✅') ? 'success' : 'error'}`}>{status}</div>
+                    )}
+                    {debugSteps.length > 0 && (
+                        <div className="debug-steps">
+                            <h3>Debug Steps</h3>
+                            <ul>
+                                {debugSteps.map((step, idx) => (
+                                    <li key={idx}>
+                                        <strong>{step.step}:</strong> {step.error ? <span style={{ color: 'red' }}>{step.error}</span> : null}
+                                        {step.status ? ` ${step.status}` : ''}
+                                        {step.messageCount !== undefined ? ` Messages: ${step.messageCount}` : ''}
+                                        {step.mailbox ? ` Mailbox: ${step.mailbox}` : ''}
+                                        {step.latestEmail ? <pre style={{ whiteSpace: 'pre-wrap', background: '#f8f8f8', padding: '8px' }}>{JSON.stringify(step.latestEmail, null, 2)}</pre> : null}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                    {latestEmail && (
+                        <div className="latest-email-preview">
+                            <h3>Latest Email</h3>
+                            <div><strong>Subject:</strong> {latestEmail.subject}</div>
+                            <div><strong>From:</strong> {latestEmail.from}</div>
+                            <div><strong>To:</strong> {latestEmail.to}</div>
+                            <div><strong>Date:</strong> {latestEmail.date}</div>
+                            <div><strong>Body:</strong><pre style={{ whiteSpace: 'pre-wrap' }}>{latestEmail.body}</pre></div>
+                        </div>
+                    )}
+                </div>
 
                 <div className="content-grid">
                     <aside className="toc" aria-label="On this page">

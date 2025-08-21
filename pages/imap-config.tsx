@@ -67,12 +67,62 @@ const ImapConfigPage: React.FC = () => {
     });
     const [status, setStatus] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [latestEmail, setLatestEmail] = useState<any | null>(null);
+    const [debugSteps, setDebugSteps] = useState<any[]>([]);
+    React.useEffect(() => {
+        fetch('/api/email-config')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.config) setForm(data.config);
+            });
+    }, []);
     const updateField = (field: keyof EmailConfig, value: string | number | boolean) => {
         setForm(prev => ({ ...prev, [field]: value }));
+    };
+    const saveConfig = async () => {
+        setIsLoading(true);
+        setStatus(null);
+        try {
+            const response = await fetch('/api/email-config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(form)
+            });
+            const result = await response.json();
+            if (result.success) {
+                setStatus('Saved to database ✅');
+            } else {
+                setStatus('Save failed ❌');
+            }
+        } catch {
+            setStatus('Save failed ❌');
+        }
+        setIsLoading(false);
+    };
+    const clearConfig = async () => {
+        setIsLoading(true);
+        setStatus(null);
+        try {
+            const response = await fetch('/api/email-config', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const result = await response.json();
+            if (result.success) {
+                setStatus('Cleared settings ✅');
+                setForm({ host: '', port: 993, secure: true, user: '', password: '', mailbox: 'INBOX' });
+            } else {
+                setStatus('Clear failed ❌');
+            }
+        } catch {
+            setStatus('Clear failed ❌');
+        }
+        setIsLoading(false);
     };
     const testConnection = async () => {
         setIsLoading(true);
         setStatus(null);
+        setDebugSteps([]);
         try {
             const response = await fetch('/api/test-imap', {
                 method: 'POST',
@@ -81,22 +131,18 @@ const ImapConfigPage: React.FC = () => {
             });
             const result = await response.json();
             if (result.success) {
-                setStatus('Connection test successful ✅');
+                setStatus('IMAP connection tested successfully · ' + new Date().toLocaleString());
+                setLatestEmail(result.latestEmail || null);
             } else {
                 setStatus('Test failed: ' + (result.message || 'Check credentials') + ' ❌');
+                setLatestEmail(null);
             }
+            setDebugSteps(result.debugSteps || []);
         } catch (error: any) {
             setStatus('Test failed: ' + (error.message || 'Unknown error') + ' ❌');
+            setLatestEmail(null);
         }
         setIsLoading(false);
-    };
-    const saveConfig = () => {
-        try {
-            localStorage.setItem('jjugg:email', JSON.stringify(form));
-            setStatus('Saved to localStorage ✅');
-        } catch {
-            setStatus('Save failed ❌');
-        }
     };
     return (
         <AppLayout currentSection="dashboard-home">
@@ -114,25 +160,22 @@ const ImapConfigPage: React.FC = () => {
                     <div className="email-setup-card">
                         <form className="form-section" onSubmit={e => { e.preventDefault(); testConnection(); }}>
                             <FormField
-                                label="IMAP Host"
+                                label="Host"
                                 value={form.host}
                                 onChange={v => updateField('host', v)}
                                 placeholder="imap.gmail.com"
-                                hint="Usually imap.gmail.com, imap.outlook.com, etc."
                             />
                             <FormField
                                 label="Port"
                                 value={form.port.toString()}
                                 onChange={v => updateField('port', Number(v))}
                                 placeholder="993"
-                                hint="993 (SSL/TLS) or 143 (STARTTLS/plain)."
                             />
                             <FormField
                                 label="Security"
                                 value={form.secure ? 'SSL/TLS' : 'STARTTLS/None'}
                                 onChange={v => updateField('secure', v === 'SSL/TLS')}
                                 placeholder="SSL/TLS"
-                                hint="SSL/TLS or STARTTLS/None"
                             />
                             <FormField
                                 label="Username"
@@ -140,49 +183,65 @@ const ImapConfigPage: React.FC = () => {
                                 onChange={v => updateField('user', v)}
                                 placeholder="alexfigueroa.cybr@gmail.com"
                             />
-                            <div className="form-group">
-                                <div className="form-label-with-help">
-                                    <label className="form-label">Password / App Password</label>
-                                    <button
-                                        type="button"
-                                        className="help-link"
-                                        onClick={e => {
-                                            e.preventDefault();
-                                            alert('Gmail App Password: Enable IMAP in Gmail settings, turn on 2-Step Verification, then create an App Password for Mail. Paste the 16-character password here.');
-                                        }}
-                                    >
-                                        Learn more
-                                    </button>
-                                </div>
-                                <FormField
-                                    label=""
-                                    value={form.password}
-                                    onChange={v => updateField('password', v)}
-                                    placeholder="•••••••••••••••••••"
-                                    isPassword={true}
-                                    hint="For Gmail, create an App Password if 2FA is enabled."
-                                />
-                            </div>
+                            <FormField
+                                label="Password / App Password"
+                                value={form.password}
+                                onChange={v => updateField('password', v)}
+                                placeholder="•••••••••••••••••••"
+                                isPassword={true}
+                                hint="For Gmail, create an App Password if 2FA is enabled."
+                            />
                             <FormField
                                 label="Mailbox"
                                 value={form.mailbox}
                                 onChange={v => updateField('mailbox', v)}
                                 placeholder="INBOX"
                             />
-                            <div className="form-hint">
-                                Remove spaces in the app password. If you keep them, quote the value in <code>.env</code>.
-                            </div>
                             <div className="step-actions">
-                                <button className="btn btn-primary" type="submit" disabled={isLoading}>
-                                    {isLoading ? 'Testing...' : 'Test Connection'}
-                                </button>
-                                <button className="btn btn-outline" type="button" onClick={saveConfig}>
+                                <button className="btn btn-primary" type="button" onClick={saveConfig} disabled={isLoading}>
                                     Save
+                                </button>
+                                <button className="btn btn-outline" type="button" onClick={testConnection} disabled={isLoading}>
+                                    Test Connection
+                                </button>
+                                <button className="btn btn-outline" type="button" onClick={clearConfig} disabled={isLoading}>
+                                    Clear settings
                                 </button>
                             </div>
                             {status && (
                                 <div className={`test-result ${status.includes('✅') ? 'success' : 'error'}`}>{status}</div>
                             )}
+                            {debugSteps.length > 0 && (
+                                <div className="debug-steps">
+                                    <h3>Debug Steps</h3>
+                                    <ul>
+                                        {debugSteps.map((step, idx) => (
+                                            <li key={idx}>
+                                                <strong>{step.step}:</strong> {step.error ? <span style={{ color: 'red' }}>{step.error}</span> : null}
+                                                {step.status ? ` ${step.status}` : ''}
+                                                {step.messageCount !== undefined ? ` Messages: ${step.messageCount}` : ''}
+                                                {step.mailbox ? ` Mailbox: ${step.mailbox}` : ''}
+                                                {step.latestEmail ? <pre style={{ whiteSpace: 'pre-wrap', background: '#f8f8f8', padding: '8px' }}>{JSON.stringify(step.latestEmail, null, 2)}</pre> : null}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                            {latestEmail && (
+                                <div className="latest-email-preview">
+                                    <h3>Latest Email</h3>
+                                    <div><strong>Subject:</strong> {latestEmail.subject}</div>
+                                    <div><strong>From:</strong> {latestEmail.from}</div>
+                                    <div><strong>To:</strong> {latestEmail.to}</div>
+                                    <div><strong>Date:</strong> {latestEmail.date}</div>
+                                    <div><strong>Body:</strong><pre style={{ whiteSpace: 'pre-wrap' }}>{latestEmail.body}</pre></div>
+                                </div>
+                            )}
+                            <div style={{ marginTop: '1rem' }}>
+                                <button className="btn btn-link" type="button" onClick={() => window.open('https://support.google.com/mail/answer/185833?hl=en', '_blank')}>
+                                    Learn more
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
