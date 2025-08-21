@@ -13,6 +13,7 @@
     "db:precheck": "npx tsx database/scripts/precheck-migrations.ts",
     "db:debug": "for %f in (database/*.db) do echo ==== %f ==== && sqlite3 %f \".tables\"",
     "db:migrate:bulletproof": "npx tsx database/scripts/bulletproof-migrate.ts",
+  "db:migrate:one": "npx tsx database/scripts/apply-single-migration.ts --file",
     "db:backup": "copy database/jjugg.db database/jjugg.db.bak",
     "db:restore": "copy /Y database/jjugg.db.bak database/jjugg.db",
     "db:schema": "sqlite3 database/jjugg.db \".schema\"",
