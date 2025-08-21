@@ -1,12 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/router';
-import {
-    Mail, Eye, EyeOff, ExternalLink, CheckCircle, XCircle,
-    AlertCircle, Copy, Save, Trash2, ArrowLeft, ArrowRight,
-    Settings, Server, Key, Shield, Globe
-} from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import '@/styles/email-setup.css';
+import {
+    ArrowLeft, ArrowRight,
+    Copy,
+    ExternalLink,
+    Eye, EyeOff,
+    Mail,
+    Save,
+    Server,
+    Settings,
+    Trash2
+} from 'lucide-react';
+import { useRouter } from 'next/router';
+import React, { useEffect, useState } from 'react';
 
 type ConnectionPath = 'gmail-imap' | 'gmail-oauth' | 'generic-imap';
 
@@ -278,14 +284,41 @@ const EmailSetupPage: React.FC = () => {
         setIsLoading(false);
     };
 
-    const saveToLocalStorage = () => {
+    const saveToLocalStorage = async () => {
+        // Repurposed: Save to app DB via API
+        setIsLoading(true);
+        setTestResult(null);
         try {
-            const config = buildConfig();
-            localStorage.setItem(formData.storageKey, JSON.stringify(config));
-            setTestResult('Saved to localStorage ✅');
-        } catch (error) {
+            const cfg = buildConfig();
+            // Only app-password flows are stored server-side
+            if (cfg.auth.method !== 'app-password') {
+                setTestResult('Only app-password configs are stored in app DB for now ❌');
+                setIsLoading(false);
+                return;
+            }
+            const payload = {
+                host: cfg.imap.host,
+                port: cfg.imap.port,
+                secure: cfg.imap.secure,
+                user: cfg.auth.user,
+                password: cfg.auth.pass || '',
+                mailbox: cfg.imap.mailbox || 'INBOX'
+            };
+            const resp = await fetch('/api/email-config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const res = await resp.json();
+            if (res.success) {
+                setTestResult('Saved to app storage ✅');
+            } else {
+                setTestResult('Save failed ❌');
+            }
+        } catch {
             setTestResult('Save failed ❌');
         }
+        setIsLoading(false);
     };
 
     const sendToApp = () => {
@@ -315,42 +348,92 @@ const EmailSetupPage: React.FC = () => {
         }
     };
 
-    const clearStorage = () => {
+    const clearStorage = async () => {
+        // Repurposed: Clear from app DB via API
+        setIsLoading(true);
+        setTestResult(null);
         try {
-            localStorage.removeItem(formData.storageKey);
-            setTestResult('Storage cleared ✅');
-        } catch (error) {
+            const resp = await fetch('/api/email-config', { method: 'DELETE' });
+            const res = await resp.json();
+            if (res.success) {
+                setTestResult('Cleared settings ✅');
+            } else {
+                setTestResult('Clear failed ❌');
+            }
+        } catch {
             setTestResult('Clear failed ❌');
         }
+        setIsLoading(false);
     };
 
-    const restoreFromStorage = () => {
+    const restoreFromStorage = async () => {
+        // Repurposed: Load from app DB via API and hydrate form
+        setIsLoading(true);
+        setTestResult(null);
         try {
-            const stored = localStorage.getItem(formData.storageKey);
-            if (!stored) {
-                setTestResult('Nothing to restore ❌');
+            const resp = await fetch('/api/email-config');
+            const res = await resp.json();
+            const cfg = res?.config as (undefined | { host: string; port: number; secure: boolean; user: string; password: string; mailbox: string });
+            if (!res.success || !cfg) {
+                setTestResult('Nothing to load ❌');
+                setIsLoading(false);
                 return;
             }
-
-            const config: EmailConfig = JSON.parse(stored);
-            setConnectionPath(config.type);
-
-            // Restore form data based on type
-            if (config.type === 'gmail-imap') {
-                updateFormData('imapUser', config.auth.user);
-                updateFormData('imapPassword', config.auth.pass || '');
-                updateFormData('imapHost', config.imap.host);
-                updateFormData('imapPort', String(config.imap.port));
-                updateFormData('imapMailbox', config.imap.mailbox);
-                updateFormData('imapWindowDays', String(config.imap.windowDays));
+            // Choose path based on host/user
+            const isGmail = /gmail\.com$/i.test(cfg.host) || /@gmail\.com$/i.test(cfg.user);
+            if (isGmail) {
+                setConnectionPath('gmail-imap');
+                updateFormData('imapUser', cfg.user);
+                updateFormData('imapPassword', cfg.password || '');
+                updateFormData('imapHost', cfg.host);
+                updateFormData('imapPort', String(cfg.port));
+                updateFormData('imapMailbox', cfg.mailbox || 'INBOX');
+            } else {
+                setConnectionPath('generic-imap');
+                updateFormData('genericHost', cfg.host);
+                updateFormData('genericPort', String(cfg.port));
+                updateFormData('genericUser', cfg.user);
+                updateFormData('genericPassword', cfg.password || '');
+                updateFormData('genericMailbox', cfg.mailbox || 'INBOX');
             }
-
             setCurrentStep(2);
-            setTestResult('Configuration restored ✅');
+            setTestResult('Loaded from app storage ✅');
         } catch (error) {
-            setTestResult('Restore failed ❌');
+            setTestResult('Load failed ❌');
         }
+        setIsLoading(false);
     };
+
+    // On mount, try loading any existing config from app DB
+    useEffect(() => {
+        (async () => {
+            try {
+                const resp = await fetch('/api/email-config');
+                const res = await resp.json();
+                if (res.success && res.config) {
+                    const cfg = res.config as { host: string; port: number; secure: boolean; user: string; password: string; mailbox: string };
+                    const isGmail = /gmail\.com$/i.test(cfg.host) || /@gmail\.com$/i.test(cfg.user);
+                    if (isGmail) {
+                        setConnectionPath('gmail-imap');
+                        updateFormData('imapUser', cfg.user);
+                        updateFormData('imapPassword', cfg.password || '');
+                        updateFormData('imapHost', cfg.host);
+                        updateFormData('imapPort', String(cfg.port));
+                        updateFormData('imapMailbox', cfg.mailbox || 'INBOX');
+                    } else {
+                        setConnectionPath('generic-imap');
+                        updateFormData('genericHost', cfg.host);
+                        updateFormData('genericPort', String(cfg.port));
+                        updateFormData('genericUser', cfg.user);
+                        updateFormData('genericPassword', cfg.password || '');
+                        updateFormData('genericMailbox', cfg.mailbox || 'INBOX');
+                    }
+                    setCurrentStep(2);
+                }
+            } catch { /* ignore */ }
+        })();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const renderStepContent = () => {
         switch (currentStep) {
@@ -684,14 +767,14 @@ const EmailSetupPage: React.FC = () => {
                         <div className="action-group">
                             <button className="btn btn-outline" onClick={saveToLocalStorage}>
                                 <Save size={16} />
-                                Save locally
+                                Save
                             </button>
                             <button className="btn btn-outline" onClick={sendToApp}>
                                 <Server size={16} />
                                 Send to app
                             </button>
                             <button className="btn btn-outline" onClick={restoreFromStorage}>
-                                Restore
+                                Load
                             </button>
                             <button className="btn btn-danger" onClick={clearStorage}>
                                 <Trash2 size={16} />
