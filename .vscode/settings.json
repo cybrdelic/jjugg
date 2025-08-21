@@ -1,0 +1,31 @@
+{
+    "editor.fontFamily": "JetBrains Mono, SFMono-Regular, Menlo, Consolas, 'Courier New', monospace",
+    "editor.fontLigatures": true,
+    "editor.fontSize": 15,
+    "editor.lineHeight": 24,
+    "editor.letterSpacing": 0.2,
+    "editor.minimap.enabled": false,
+    "editor.renderWhitespace": "selection",
+    "editor.cursorStyle": "line",
+    "editor.cursorWidth": 3,
+    "editor.lineNumbers": "on",
+    "editor.glyphMargin": false,
+    "editor.rulers": [
+        100
+    ],
+    "workbench.tree.indent": 14,
+    "workbench.sideBar.location": "left",
+    "workbench.editor.tabSizing": "shrink",
+    "breadcrumbs.enabled": false,
+    "terminal.integrated.fontFamily": "JetBrainsMonoNL Nerd Font, JetBrainsMonoNL NF, JetBrains Mono NL, Consolas",
+    "terminal.integrated.cursorStyle": "line",
+    "editor.guides.bracketPairsHorizontal": "active",
+    "editor.guides.highlightActiveBracketPair": true,
+    "editor.stickyScroll.enabled": false,
+    "axiome.features.punctuationDim": true,
+    "axiome.features.scopeShading": true,
+    "axiome.features.importFader": true,
+    "axiome.features.todoBadges": true,
+    "axiome.features.gitHeatmap": false,
+    "axiome.columnGuides.enabled": false
+}
