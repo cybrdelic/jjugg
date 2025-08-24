@@ -8,19 +8,18 @@
  */
 
 'use client';
-import React, { useEffect, useMemo, useRef, useState, useTransition } from 'react';
-import { useApplicationsLogic } from './hooks/useApplicationsLogic';
-import { ApplicationsControls } from './components/ApplicationsControls';
-import { ApplicationsTable } from './components/ApplicationsTable';
-import { VirtualizedApplicationsTable } from './components/VirtualizedApplicationsTable';
-import { ApplicationsContextMenu } from './components/ApplicationsContextMenu';
-import { FilterBuilder } from './components/FilterBuilder';
-import ApplicationDetailDrawer from './ApplicationDetailDrawer';
-import { getAdaptivePerformanceConfig, detectDeviceCapabilities } from './utils/performanceConfig';
-import { usePerformanceMonitor } from './utils/performanceMonitor';
-import { TableSkeleton } from './components/ApplicationsSkeleton';
 import EnhancedSearch from '@/components/EnhancedSearch';
-import { CheckCircle2, Activity } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import ApplicationDetailDrawer from './ApplicationDetailDrawer';
+import { ApplicationsContextMenu } from './components/ApplicationsContextMenu';
+import { ApplicationsControls } from './components/ApplicationsControls';
+import { TableSkeleton } from './components/ApplicationsSkeleton';
+import { ApplicationsTable } from './components/ApplicationsTable';
+import { FilterBuilder } from './components/FilterBuilder';
+import { VirtualizedApplicationsTable } from './components/VirtualizedApplicationsTable';
+import { useApplicationsLogic } from './hooks/useApplicationsLogic';
+import { detectDeviceCapabilities, getAdaptivePerformanceConfig } from './utils/performanceConfig';
+import { usePerformanceMonitor } from './utils/performanceMonitor';
 
 export default function Applications() {
   const [isFilterBuilderOpen, setIsFilterBuilderOpen] = useState(false);
@@ -30,7 +29,8 @@ export default function Applications() {
   const SKELETON_ITEM_THRESHOLD = 80;
 
   const {
-    filteredApplications,
+  filteredApplications,
+  visibleApplications,
     applicationStats,
     selectedAppData,
     selectedApplications,
@@ -101,11 +101,46 @@ export default function Applications() {
     handleRowClick,
     handleContextMenu,
     handleStageClick,
-    handleExport,
+  handleExport,
+  loadMoreApplications,
+  applicationsTotal,
+  applicationsHasMore,
+  applicationsLoadingMore,
   } = useApplicationsLogic();
 
   const isInitialLoading = loading && !mounted;
-  const shouldUseVirtualization = useMemo(() => filteredApplications.length > 50, [filteredApplications.length]);
+  const shouldUseVirtualization = useMemo(() => visibleApplications.length > 50, [visibleApplications.length]);
+  // Basic table removed; always use styled / virtualized tables
+  const useBasicTable = false;
+
+  // IntersectionObserver for non-virtualized original table infinite scroll
+  useEffect(() => {
+    if (useBasicTable) return; // handled internally there
+    const more = (applicationsHasMore ?? hasMore);
+    if (!more || !loadMoreApplications) return;
+    const sentinelEl = lastRowRef.current;
+    if (!sentinelEl) return;
+    let loading = false;
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !loading) {
+          loading = true;
+          Promise.resolve(loadMoreApplications()).finally(() => { loading = false; });
+        }
+      });
+    }, { root: tableRef.current?.closest('.table-container') || undefined, rootMargin: '400px 0px', threshold: 0 });
+    obs.observe(sentinelEl);
+    return () => obs.disconnect();
+  }, [useBasicTable, lastRowRef, visibleApplications.length, applicationsHasMore, hasMore, loadMoreApplications, tableRef]);
+
+  // Debug pagination state
+  console.log('[Applications] Pagination state:', {
+    applicationsHasMore,
+    hasMore,
+    applicationsTotal,
+    visibleApplicationsLength: visibleApplications.length,
+    filteredApplicationsLength: filteredApplications.length
+  });
 
   useEffect(() => {
     let t: number | undefined;
@@ -217,14 +252,14 @@ export default function Applications() {
         {/* Toolbar */}
         <div className="toolbar">
           {/* place in a column */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+          <div className="toolbar-title-col">
             <h1 className="title text-h2">Applications</h1>
             <p className="subtitle text-body-sm bottom">Manage your job applications and track progress</p>
           </div>
           <div className="toolbar-search">
             <EnhancedSearch
               size="compact"
-              applications={filteredApplications}
+              applications={visibleApplications}
               value={searchTerm}
               quickFilters={quickFilters}
               columnFilters={columnFilters}
@@ -285,7 +320,7 @@ export default function Applications() {
 
           {shouldUseVirtualization && performanceConfig.enableVirtualization ? (
             <VirtualizedApplicationsTable
-              applications={filteredApplications}
+              applications={visibleApplications}
               visibleColumns={visibleColumns}
               sortConfig={sortConfig}
               selectedRows={selectedRows}
@@ -296,14 +331,15 @@ export default function Applications() {
               inlineEditingId={inlineEditingId}
               activeStageDropdown={activeStageDropdown}
               isLoading={isLoading || isInitialLoading}
-              hasMore={hasMore}
+              loadingMore={applicationsLoadingMore}
+              hasMore={applicationsHasMore ?? hasMore}
+              onLoadMore={loadMoreApplications}
+              totalCount={applicationsTotal ?? filteredApplications.length}
+              onBulkRowSelect={(ids, selected) => setSelectedRows(selected ? Array.from(new Set([...selectedRows, ...ids])) : selectedRows.filter(id => !ids.includes(id)))}
               stagesOrder={stagesOrder}
               tableRef={tableRef}
-              lastRowRef={lastRowRef}
-              enableVirtualization={true}
               itemHeight={performanceConfig.itemHeight}
               overscan={performanceConfig.overscan}
-              showPlaceholders={true}
               onSort={(column) => {
                 const newDirection = sortConfig.column === column && sortConfig.direction === 'asc' ? 'desc' : 'asc';
                 setSortConfig({ column, direction: newDirection });
@@ -319,7 +355,7 @@ export default function Applications() {
             />
           ) : (
             <ApplicationsTable
-              applications={filteredApplications}
+              applications={visibleApplications}
               visibleColumns={visibleColumns}
               sortConfig={sortConfig}
               selectedRows={selectedRows}
@@ -353,6 +389,18 @@ export default function Applications() {
               onStageClick={handleStageClick}
               onStageChange={handleStageChange}
             />
+          )}
+          {/* Manual Load More (non-virtual original table) */}
+          {!(shouldUseVirtualization && performanceConfig.enableVirtualization) && (applicationsHasMore ?? hasMore) && (
+            <div className="load-more-bar">
+              <button
+                className="load-more-btn"
+                disabled={applicationsLoadingMore}
+                onClick={() => loadMoreApplications?.()}
+              >
+                {applicationsLoadingMore ? 'Loading…' : 'Load More'}
+              </button>
+            </div>
           )}
         </div>
       </main>
@@ -542,6 +590,13 @@ export default function Applications() {
           background: var(--surface);
         }
 
+  .toolbar-title-col { display: flex; flex-direction: column; gap: var(--space-2); }
+
+  .load-more-bar { display:flex; justify-content:center; padding: var(--space-3); background: var(--surface); border-top:1px solid var(--border); }
+  .load-more-btn { font: inherit; background: var(--primary); color: var(--text-inverse); border: none; padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); cursor: pointer; box-shadow: var(--shadow-sm,0 2px 4px rgba(0,0,0,.1)); }
+  .load-more-btn:hover { opacity:.9; }
+  .load-more-btn:disabled { opacity:.55; cursor: default; }
+
         .toolbar {
           flex: 0 0 auto;
           display: flex; align-items: center;
@@ -580,34 +635,7 @@ export default function Applications() {
 
 /* === Header helpers === */
 
-function StatPill({ label, value, tone = 'default', reduced }: { label: string; value: number; tone?: 'default' | 'accent'; reduced: boolean; }) {
-  return (
-    <span className={`pill ${tone === 'accent' ? 'accent' : ''}`}>
-      <span className="val"><CountUp n={value} reduced={reduced} /></span>
-      <span className="lab">{label}</span>
-    </span>
-  );
-}
-
-function CountUp({ n, duration = 700, reduced }: { n: number; duration?: number; reduced: boolean; }) {
-  const [v, setV] = useState(0);
-  const target = Math.max(0, n);
-  useEffect(() => {
-    if (reduced) { setV(target); return; }
-    const start = performance.now();
-    const from = 0;
-    let raf: number;
-    const tick = (t: number) => {
-      const e = Math.min(1, (t - start) / duration);
-      const eased = 1 - Math.pow(1 - e, 3);
-      setV(Math.round(from + (target - from) * eased));
-      if (e < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, duration, reduced]);
-  return <>{v.toLocaleString()}</>;
-}
+  // Removed unused StatPill & CountUp components (duplicate of ApplicationsHeader stats)
 
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);

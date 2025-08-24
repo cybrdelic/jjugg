@@ -3,11 +3,10 @@
  * Manages all application state, operations, and side effects with performance optimizations
  */
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import React from 'react';
-import { Application, ApplicationStage, StatusUpdate } from '@/types';
 import { useAppData } from '@/contexts/AppDataContext';
-import { createErrorHandler, ApplicationsErrorHandler } from '../utils/errorHandler';
+import { Application, ApplicationStage, StatusUpdate } from '@/types';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ApplicationsErrorHandler, createErrorHandler } from '../utils/errorHandler';
 
 // Custom hook for debouncing values to improve performance
 function useDebounce<T>(value: T, delay: number): T {
@@ -125,6 +124,9 @@ export interface ApplicationsActions {
 export interface ApplicationsHookReturn extends ApplicationsState, ApplicationsActions {
     // Computed Values
     filteredApplications: Application[];
+    applicationsTotal?: number | null;
+    applicationsHasMore?: boolean;
+    applicationsLoadingMore?: boolean;
     applicationStats: {
         applications: number;
         stageStats: {
@@ -159,20 +161,23 @@ export interface ApplicationsHookReturn extends ApplicationsState, ApplicationsA
     // Refs
     tableRef: React.RefObject<HTMLDivElement | null>;
     lastRowRef: React.RefObject<HTMLDivElement | null>;
+    // Pagination / infinite scroll
+    loadMoreApplications: () => Promise<void> | void;
 }
 
-const ITEMS_PER_PAGE = 100; // increase page size for fewer incremental fetches
 const stagesOrder: ApplicationStage[] = ['applied', 'screening', 'interview', 'offer', 'rejected'];
 
 export function useApplicationsLogic(): ApplicationsHookReturn {
-    const {
-        applications: applicationsData,
-        loading,
-        error,
-        createApplication,
-        updateApplication,
-        deleteApplication
-    } = useAppData();
+    const appDataCtx = useAppData();
+    const applicationsData = appDataCtx.applications; // accumulated paginated list (or full if fallback)
+    const loading = appDataCtx.loading;
+    const error = appDataCtx.error;
+    const { createApplication, updateApplication, deleteApplication } = appDataCtx;
+    const contextLoadMore = appDataCtx.loadMoreApplications;
+    const applicationsTotal = appDataCtx.applicationsTotal;
+    const applicationsHasMore = appDataCtx.applicationsHasMore;
+    const applicationsLoadingMore = (appDataCtx as any).applicationsLoadingMore as boolean | undefined;
+    // Client slice pagination removed; server pagination now supplies growing applicationsData
 
     // Initialize error handler
     const [errorHandler] = useState<ApplicationsErrorHandler>(() =>
@@ -196,9 +201,9 @@ export function useApplicationsLogic(): ApplicationsHookReturn {
         visibleColumns: ['company', 'position', 'dateApplied', 'stage', 'tasks', 'location', 'salary', 'bonus'],
         isColumnMenuOpen: false,
         statusUpdates: [],
-        visibleApplications: [],
-        isLoading: false,
-        hasMore: true,
+    visibleApplications: [], // now equals filtered (already paginated) after filtering pipeline
+    isLoading: false,
+    hasMore: true,
         columnFilters: {},
         contextMenu: null,
         isMobileView: false,
@@ -253,16 +258,13 @@ export function useApplicationsLogic(): ApplicationsHookReturn {
     const loadInitialApplications = useCallback(async () => {
         try {
             updateState('isLoading', true);
-            // Applications are loaded via the context
-            const initialApps = applicationsData?.slice(0, ITEMS_PER_PAGE) || [];
-            updateState('visibleApplications', initialApps);
-            updateState('hasMore', (applicationsData?.length || 0) > ITEMS_PER_PAGE);
+            // initial slice will be set once filteredApplications is computed; here just mark loading
         } catch (error) {
             errorHandler.handleError(error, 'load_applications');
         } finally {
             updateState('isLoading', false);
         }
-    }, [applicationsData, errorHandler, updateState]);
+    }, [errorHandler, updateState]);
 
     // Initialize component
     useEffect(() => {
@@ -386,6 +388,9 @@ export function useApplicationsLogic(): ApplicationsHookReturn {
         return filtered;
     }, [applicationsData, debouncedSearchTerm, debouncedColumnFilters, state.quickFilters, state.sortConfig]);
 
+    // Track filter signature to know when to reset pagination
+    const filterSigRef = useRef<string>('');
+
     // Debug logging for filtered applications
     useEffect(() => {
         if (process.env.NODE_ENV === 'development') {
@@ -396,6 +401,19 @@ export function useApplicationsLogic(): ApplicationsHookReturn {
             console.log('useApplicationsLogic - quickFilters:', state.quickFilters);
         }
     }, [applicationsData, filteredApplications, debouncedSearchTerm, debouncedColumnFilters, state.quickFilters]);
+
+    // Synchronize visibleApplications with filteredApplications (mirror; server paging provides growth)
+    useEffect(() => {
+        updateState('visibleApplications', filteredApplications);
+        if (typeof appDataCtx.applicationsHasMore === 'boolean') {
+            updateState('hasMore', appDataCtx.applicationsHasMore);
+        }
+    }, [filteredApplications, updateState, appDataCtx.applicationsHasMore]);
+
+    // Load more (server pagination trigger)
+    const loadMoreApplications = useCallback(async (): Promise<void> => {
+        if (contextLoadMore) await contextLoadMore();
+    }, [contextLoadMore]);
 
     // Computed values
     const applicationStats = useMemo(() => {
@@ -731,9 +749,11 @@ export function useApplicationsLogic(): ApplicationsHookReturn {
     const setIsMobileView = useCallback((mobile: boolean) => updateState('isMobileView', mobile), [updateState]);
     const setIsAutosizeEnabled = useCallback((enabled: boolean) => updateState('isAutosizeEnabled', enabled), [updateState]);
 
-    return {
+    return ({
         // State
         ...state,
+    // Distinct incremental loading flag
+    applicationsLoadingMore,
 
         // Computed Values
         filteredApplications,
@@ -741,7 +761,9 @@ export function useApplicationsLogic(): ApplicationsHookReturn {
         selectedAppData,
         selectedApplications,
         applicationsByStage,
-        stagesOrder,
+    stagesOrder,
+    applicationsTotal,
+    applicationsHasMore,
 
         // Loading States
         loading,
@@ -789,5 +811,6 @@ export function useApplicationsLogic(): ApplicationsHookReturn {
         handleStageClick,
         handleExport,
         loadInitialApplications,
-    };
+        loadMoreApplications,
+    });
 }

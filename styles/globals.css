@@ -1,3 +1,8 @@
+/* Tailwind layers */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Reverted global overrides to original look but enhanced for UI polish and theming tokens */
 
 :root {

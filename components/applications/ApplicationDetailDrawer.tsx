@@ -1,17 +1,33 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useFeatureFlags } from '@/contexts/FeatureFlagContext';
+import { ApplicationStage, Company, Contact, Document, InterviewEvent, Note, Task } from '@/types';
 import {
-  X, Clock, Building, MapPin, DollarSign, Briefcase,
-  CalendarDays, Phone, Mail, Link, ChevronLeft, ChevronRight,
-  Calendar, CheckCircle, XCircle, MessageSquare, Globe, Edit,
-  FileText, Paperclip, Share2, Star, MoreHorizontal, User,
-  ExternalLink, Download
+    Briefcase,
+    Building,
+    Calendar,
+    CalendarDays,
+    CheckCircle,
+    Clock,
+    DollarSign,
+    Download,
+    Edit,
+    ExternalLink,
+    FileText,
+    Globe,
+    Link,
+    Mail,
+    MapPin,
+    MessageSquare,
+    MoreHorizontal,
+    Paperclip,
+    Phone,
+    Share2,
+    User
 } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ActionButton from '../dashboard/ActionButton';
 import SideDrawer from '../SideDrawer';
-import { ApplicationStage, Company, Contact, InterviewEvent, Note, Task, Document } from '@/types';
-import { useFeatureFlags } from '@/contexts/FeatureFlagContext';
 
 const STAGE_COLORS: Record<ApplicationStage, string> = {
   applied: '#3b82f6',
@@ -61,11 +77,11 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
   location,
   remote,
   notes,
-  contacts,
-  interviews = [],
-  tasks = [],
-  documents = [],
-  allNotes = [],
+  contacts: contactsProp = [],
+  interviews: interviewsProp = [],
+  tasks: tasksProp = [],
+  documents: documentsProp = [],
+  allNotes: allNotesProp = [],
   techStackJson,
   benefitsJson,
   isVisible,
@@ -179,11 +195,24 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
     return stage.charAt(0).toUpperCase() + stage.slice(1);
   };
 
-  // Calculate days since application
-  const daysSinceApplied = Math.floor((new Date().getTime() - dateApplied.getTime()) / (1000 * 3600 * 24));
+  // Normalize dateApplied (may arrive as string)
+  const safeDateApplied: Date | null = dateApplied instanceof Date ? dateApplied : (dateApplied ? new Date(dateApplied as any) : null);
+  const daysSinceApplied = safeDateApplied ? Math.floor((Date.now() - safeDateApplied.getTime()) / 86400000) : 0;
 
   // Sort interviews by date
-  const sortedInterviews = [...interviews].sort((a, b) => a.date.getTime() - b.date.getTime());
+  // Defensive normalization (ensure arrays)
+  const contacts = Array.isArray(contactsProp) ? contactsProp : [];
+  const interviews = Array.isArray(interviewsProp) ? interviewsProp : [];
+  const tasks = Array.isArray(tasksProp) ? tasksProp : [];
+  const documents = Array.isArray(documentsProp) ? documentsProp : [];
+  const allNotes = Array.isArray(allNotesProp) ? allNotesProp : [];
+
+  // Normalize interview dates defensively
+  const normalizedInterviews = interviews.map(iv => ({
+    ...iv,
+    date: iv.date instanceof Date ? iv.date : new Date(iv.date as any)
+  }));
+  const sortedInterviews = [...normalizedInterviews].sort((a, b) => a.date.getTime() - b.date.getTime());
 
   // Filter upcoming and past interviews
   const upcomingInterviews = sortedInterviews.filter(interview =>
@@ -195,7 +224,11 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
   );
 
   // Sort tasks by due date and priority
-  const sortedTasks = [...tasks].sort((a, b) => {
+  const normalizedTasks = tasks.map(t => ({
+    ...t,
+    dueDate: t.dueDate instanceof Date ? t.dueDate : (t.dueDate ? new Date(t.dueDate as any) : undefined)
+  }));
+  const sortedTasks = [...normalizedTasks].sort((a, b) => {
     // First by completion status
     if (a.completed && !b.completed) return 1;
     if (!a.completed && b.completed) return -1;
@@ -211,7 +244,11 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
   });
 
   // Sort notes by date
-  const sortedNotes = [...allNotes].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  const normalizedNotes = allNotes.map(n => ({
+    ...n,
+    createdAt: n.createdAt instanceof Date ? n.createdAt : new Date(n.createdAt as any)
+  }));
+  const sortedNotes = [...normalizedNotes].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
   return (
     <SideDrawer
@@ -578,8 +615,14 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
                   <div className="event-content">
                     <div className="event-title">Applied for {position}</div>
                     <div className="event-meta">
-                      <span className="event-date">{formatDate(dateApplied)}</span>
-                      <span className="event-time">{formatTime(dateApplied)}</span>
+                      {safeDateApplied ? (
+                        <>
+                          <span className="event-date">{formatDate(safeDateApplied)}</span>
+                          <span className="event-time">{formatTime(safeDateApplied)}</span>
+                        </>
+                      ) : (
+                        <span className="event-date">Date unknown</span>
+                      )}
                     </div>
                     <div className="event-description">
                       <p>Application submitted for {position} at {company.name}</p>
@@ -637,7 +680,7 @@ const ApplicationDetailDrawer: React.FC<ApplicationDetailDrawerProps> = ({
                   <div className="event-content">
                     <div className="event-title">Moved to {getStageLabel(stage)}</div>
                     <div className="event-meta">
-                      <span className="event-date">{formatDate(new Date(dateApplied.getTime() + 86400000 * 5))}</span>
+                      <span className="event-date">{formatDate(new Date((safeDateApplied ? safeDateApplied.getTime() : Date.now()) + 86400000 * 5))}</span>
                     </div>
                     <div className="event-description">
                       <p>Application advanced to {getStageLabel(stage)} stage</p>

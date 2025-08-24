@@ -1,24 +1,30 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import {
-  FileText, Bell, Calendar, Search, CheckCircle, Activity,
-  BarChart2, MoreHorizontal, ChevronRight, ChevronDown, Clock, Target, Plus,
-  X, Zap, Award, MessagesSquare, Share2, BookOpen, CheckSquare, User, Timer, X as XIcon
-} from 'lucide-react';
-import StatCard from '../dashboard/StatCard';
-import ActivityItem from '../dashboard/ActivityItem';
-import UpcomingEvent from '../dashboard/UpcomingEvent';
-import ActionButton from '../dashboard/ActionButton';
-import TabButton, { TabGroup } from '../TabButton';
-import ApplicationFunnel from '../ApplicationFunnel';
-import WeeklyActivity from '../WeeklyActivity';
-import ActionsTab from '../ActionsTab';
 import { useFeatureFlags } from '@/contexts/FeatureFlagContext';
-import SkillsTab from '../SkillsTab';
-import EnhancedDropdown from '../EnhancedDropdown';
+import {
+    Activity,
+    Award,
+    BarChart2,
+    Bell, Calendar,
+    ChevronRight,
+    Clock,
+    FileText,
+    MoreHorizontal,
+    Plus,
+    Search,
+    X, Zap
+} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { useAppData } from '../../contexts/AppDataContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import ApplicationFunnel from '../ApplicationFunnel';
+import ActionButton from '../dashboard/ActionButton';
+import ActivityItem from '../dashboard/ActivityItem';
+import StatCard from '../dashboard/StatCard';
+import UpcomingEvent from '../dashboard/UpcomingEvent';
+import EnhancedDropdown from '../EnhancedDropdown';
+import TabButton, { TabGroup } from '../TabButton';
+import WeeklyActivity from '../WeeklyActivity';
 
 // Types
 interface Company {
@@ -90,26 +96,8 @@ export default function DashboardHome() {
   const { applications, activities, upcomingEvents, appStats, userProfile, loading, error } = useAppData();
   const { currentTheme } = useTheme();
 
-  // Analytics colors derived from current theme
-  const analytics = {
-    primary: [
-      currentTheme?.colors?.primary || '#3b82f6',
-      currentTheme?.colors?.accent || '#8b5cf6',
-      currentTheme?.colors?.status?.info || '#06b6d4',
-      currentTheme?.colors?.status?.warning || '#f59e0b'
-    ],
-    positive: currentTheme?.colors?.status?.success || '#10b981',
-    negative: currentTheme?.colors?.status?.error || '#ef4444',
-    neutral: currentTheme?.colors?.secondary || '#6b7280'
-  };
 
-  // Extract individual data sets for easier access
-  const applicationsData = applications;
-  const activitiesData = activities;
-  const eventsData = upcomingEvents;
-  const goalsData: any[] = []; // Goals not implemented in DB yet, will use defaults
-  const remindersData: any[] = []; // Reminders not implemented in DB yet
-
+  // Removed unused internal interfaces: Activity, UpcomingEvent, MonthlyGoal
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [mounted, setMounted] = useState(false);

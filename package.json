@@ -56,6 +56,8 @@
     "apps:export:csv": "curl -s http://localhost:3001/api/admin/export?format=csv > applications-export.csv && echo 'Exported to applications-export.csv'",
     "find-dead-paths": "node scripts/find-dead-paths.js",
     "find-dead-paths:json": "node scripts/find-dead-paths.js --json",
+  "dead-code": "tsx scripts/analyze-dead-code.ts",
+  "dead-code:json": "tsx scripts/analyze-dead-code.ts --json",
   "db:explore": "sqlite3 -cmd \".read scripts/sql/explore.sql\" database/jjugg.db",
   "db:admin": "dbgate-serve",
     "daemon:dev": "npm --workspace @jjugg/dev-api run dev",

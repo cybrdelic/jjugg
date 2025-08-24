@@ -1,29 +1,25 @@
 'use client';
 
-import React from 'react';
 import {
-    FileText, BookOpen, Users, Plus, ChevronRight, DollarSign, MapPin,
-    Rocket, Mail, Clock, CheckSquare, UserPlus, ExternalLink, Calendar
+    BookOpen,
+    Calendar,
+    CheckSquare,
+    ChevronRight,
+    Clock,
+    DollarSign,
+    ExternalLink,
+    FileText,
+    Mail,
+    MapPin,
+    Plus,
+    Rocket,
+    UserPlus,
+    Users
 } from 'lucide-react';
 import ActionButton from '../components/dashboard/ActionButton';
 import EnhancedDropdown from './EnhancedDropdown';
 
 // Types (can be moved to a shared types file if reused elsewhere)
-interface Company {
-    id: string;
-    name: string;
-    logo: string;
-    industry: string;
-}
-
-interface Application {
-    id: string;
-    position: string;
-    company: Company;
-    dateApplied: Date;
-    stage: 'applied' | 'screening' | 'interview' | 'offer' | 'rejected';
-}
-
 interface RecommendedAction {
     id: string;
     title: string;

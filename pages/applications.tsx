@@ -1,9 +1,8 @@
-import React from 'react';
-import AppLayout from '../components/AppLayout';
 import dynamic from 'next/dynamic';
+import AppLayout from '../components/AppLayout';
 
-// Dynamic import for lazy loading with Next.js
-const ApplicationsLazy = dynamic(() => import('../components/sections/Applications'), {
+// Load full Applications feature (client side for now)
+const Applications = dynamic(() => import('../components/applications/Applications'), {
     ssr: false,
     loading: () => <div>Loading Applications...</div>,
 });
@@ -11,7 +10,7 @@ const ApplicationsLazy = dynamic(() => import('../components/sections/Applicatio
 export default function ApplicationsPage() {
     return (
         <AppLayout currentSection="applications-section">
-            <ApplicationsLazy />
+            <Applications />
         </AppLayout>
     );
 }

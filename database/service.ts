@@ -227,7 +227,67 @@ export class DatabaseService {
                 updated_at: ''
             } : undefined
         }));
-    } static getApplication(id: number): Application | undefined {
+    }
+
+    // Paginated applications with total count (for infinite scroll)
+    static getApplicationsPage(opts: { userId?: number; limit: number; offset: number }): { items: Application[]; total: number } {
+        const { userId, limit, offset } = opts;
+        let baseWhere = '';
+        const params: any[] = [];
+        if (userId) {
+            baseWhere = 'WHERE a.user_id = ?';
+            params.push(userId);
+        }
+
+        // Total count (without limit/offset)
+        const totalRow = db.prepare(`SELECT COUNT(*) as cnt FROM applications a ${baseWhere}`).get(...params) as { cnt: number };
+
+        // Data page
+        const pageQuery = `
+            SELECT a.*, c.name as company_name, c.logo as company_logo, c.industry as company_industry,
+                   c.website as company_website, c.description as company_description
+            FROM applications a
+            LEFT JOIN companies c ON a.company_id = c.id
+            ${baseWhere}
+            ORDER BY a.date_applied DESC, a.id DESC
+            LIMIT ? OFFSET ?
+        `;
+        const pageStmt = db.prepare(pageQuery);
+        const pageRows = pageStmt.all(...params, limit, offset) as any[];
+
+        const items = pageRows.map(row => ({
+            id: row.id,
+            user_id: row.user_id,
+            company_id: row.company_id,
+            position: row.position,
+            stage: row.stage,
+            date_applied: row.date_applied,
+            salary_range: row.salary_range,
+            job_description: row.job_description,
+            notes: row.notes,
+            location: row.location,
+            remote: row.remote,
+            bonus: row.bonus,
+            benefits: row.benefits,
+            tech_stack: row.tech_stack,
+            created_at: row.created_at,
+            updated_at: row.updated_at,
+            company: row.company_name ? {
+                id: row.company_id,
+                name: row.company_name,
+                logo: row.company_logo,
+                industry: row.company_industry,
+                website: row.company_website || '',
+                description: row.company_description || '',
+                created_at: '',
+                updated_at: ''
+            } : undefined
+        }));
+
+        return { items, total: totalRow.cnt };
+    }
+
+    static getApplication(id: number): Application | undefined {
         const stmt = db.prepare(`
       SELECT a.*, c.name as company_name, c.logo as company_logo, c.industry as company_industry,
              c.website as company_website, c.description as company_description

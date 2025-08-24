@@ -27,7 +27,7 @@ const DEFAULT_IMAP: ImapSettings = {
   mailbox: 'INBOX',
 };
 
-const STORAGE_KEY = 'imapSettings';
+// Removed unused STORAGE_KEY constant
 
 const ProfileSettings: React.FC = () => {
   const router = useRouter();
