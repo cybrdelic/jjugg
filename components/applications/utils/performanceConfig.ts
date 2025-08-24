@@ -144,6 +144,9 @@ export function getAdaptivePerformanceConfig(
 /**
  * Performance optimization suggestions based on current metrics
  */
+/**
+ * @deprecated Currently unused; retained temporarily for future performance profiling UI.
+ */
 export function getPerformanceOptimizationSuggestions(
     renderTime: number,
     memoryUsage: number,

@@ -3,7 +3,7 @@
  * Global notification management system
  */
 
-import React, { createContext, useContext, useCallback, useState, ReactNode } from 'react';
+import React, { createContext, ReactNode, useCallback, useContext, useState } from 'react';
 import SnackBar, { SnackBarMessage } from '../components/SnackBar';
 
 interface SnackBarContextType {
@@ -103,6 +103,9 @@ export const useSnackBar = (): SnackBarContextType => {
 };
 
 // Utility hook for application operations with automatic error handling
+/**
+ * @deprecated Wrapper not referenced; prefer calling SnackBar methods directly.
+ */
 export const useApplicationOperations = () => {
     const snackBar = useSnackBar();
 

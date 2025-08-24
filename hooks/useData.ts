@@ -3,27 +3,22 @@
  * Provides reactive access to persisted data
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
+    activityService,
     applicationService,
     companyService,
-    activityService,
     eventService,
-    reminderService,
     goalService,
+    reminderService,
     statsService,
-    userService,
-    syncData
+    syncData,
+    userService
 } from '../lib/dataService';
 import type {
-    Application,
-    Company,
-    Activity,
-    UpcomingEvent,
-    Reminder,
-    MonthlyGoal,
     AppStats,
-    ApplicationStage
+    ApplicationStage,
+    MonthlyGoal
 } from '../types';
 
 // Generic hook for data with CRUD operations
@@ -397,6 +392,9 @@ export function useUserProfile() {
 }
 
 // Data synchronization hook
+/**
+ * @deprecated Not consumed; consider removing or integrating with a real sync pipeline.
+ */
 export function useDataSync() {
     const [lastSync, setLastSync] = useState<Date | null>(null);
     const [syncing, setSyncing] = useState(false);

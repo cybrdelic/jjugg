@@ -204,6 +204,9 @@ export function usePerformanceMonitor(label: string) {
 }
 
 // Performance decorator for component methods
+/**
+ * @deprecated Unused decorator (kept for potential future instrumentation). Safe to remove if not adopted.
+ */
 export function measurePerformance(label: string) {
     return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
         const method = descriptor.value;

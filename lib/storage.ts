@@ -180,6 +180,9 @@ export const migrateData = {
 };
 
 // Backup and restore utilities
+/**
+ * @deprecated Not invoked in current UI; consider removing or moving to an admin tools module.
+ */
 export const backupData = () => {
     try {
         const backup: Record<string, any> = {};
@@ -213,6 +216,9 @@ export const backupData = () => {
     }
 };
 
+/**
+ * @deprecated Not invoked in current UI; consider removing or moving to an admin tools module.
+ */
 export const restoreData = (file: File): Promise<boolean> => {
     return new Promise((resolve) => {
         try {
