@@ -3,180 +3,216 @@
  * Handles data persistence with localStorage
  */
 
+import {
+  DataMigrators,
+  DataValidators,
+  DateRevivable,
+  StoredActivity,
+  StoredApplication,
+  StoredCompany,
+  StoredEvent,
+  StoredReminder,
+} from "./storage.types";
+
 // Storage keys
 export const STORAGE_KEYS = {
-    USER_PROFILE: 'jjugg_user_profile',
-    APPLICATIONS: 'jjugg_applications',
-    COMPANIES: 'jjugg_companies',
-    ACTIVITIES: 'jjugg_activities',
-    UPCOMING_EVENTS: 'jjugg_upcoming_events',
-    MONTHLY_GOALS: 'jjugg_monthly_goals',
-    REMINDERS: 'jjugg_reminders',
-    APP_STATS: 'jjugg_app_stats',
-    SETTINGS: 'jjugg_settings',
-    LAST_SYNC: 'jjugg_last_sync',
+  USER_PROFILE: "jjugg_user_profile",
+  APPLICATIONS: "jjugg_applications",
+  COMPANIES: "jjugg_companies",
+  ACTIVITIES: "jjugg_activities",
+  UPCOMING_EVENTS: "jjugg_upcoming_events",
+  MONTHLY_GOALS: "jjugg_monthly_goals",
+  REMINDERS: "jjugg_reminders",
+  APP_STATS: "jjugg_app_stats",
+  SETTINGS: "jjugg_settings",
+  LAST_SYNC: "jjugg_last_sync",
 } as const;
 
 // Storage interface
 export interface StorageService {
-    get<T>(key: string): T | null;
-    set<T>(key: string, value: T): void;
-    remove(key: string): void;
-    clear(): void;
-    exists(key: string): boolean;
+  get<T>(key: string): T | null;
+  set<T>(key: string, value: T): void;
+  remove(key: string): void;
+  clear(): void;
+  exists(key: string): boolean;
 }
 
 // Local storage implementation
 class LocalStorageService implements StorageService {
-    get<T>(key: string): T | null {
-        try {
-            if (typeof window === 'undefined') return null;
-            const item = localStorage.getItem(key);
-            if (!item) return null;
+  get<T>(key: string): T | null {
+    try {
+      if (typeof window === "undefined") return null;
+      const item = localStorage.getItem(key);
+      if (!item) return null;
 
-            const parsed = JSON.parse(item);
+      const parsed = JSON.parse(item);
 
-            // Convert date strings back to Date objects
-            return this.reviveDates(parsed);
-        } catch (error) {
-            console.error(`Error getting item from localStorage:`, error);
-            return null;
-        }
+      // Convert date strings back to Date objects
+      return this.reviveDates(parsed) as T;
+    } catch (error) {
+      console.error(`Error getting item from localStorage:`, error);
+      return null;
+    }
+  }
+
+  set<T>(key: string, value: T): void {
+    try {
+      if (typeof window === "undefined") return;
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      console.error(`Error setting item in localStorage:`, error);
+    }
+  }
+
+  remove(key: string): void {
+    try {
+      if (typeof window === "undefined") return;
+      localStorage.removeItem(key);
+    } catch (error) {
+      console.error(`Error removing item from localStorage:`, error);
+    }
+  }
+
+  clear(): void {
+    try {
+      if (typeof window === "undefined") return;
+      // Only clear our app's data
+      Object.values(STORAGE_KEYS).forEach((key) => {
+        localStorage.removeItem(key);
+      });
+    } catch (error) {
+      console.error(`Error clearing localStorage:`, error);
+    }
+  }
+
+  exists(key: string): boolean {
+    try {
+      if (typeof window === "undefined") return false;
+      return localStorage.getItem(key) !== null;
+    } catch (error) {
+      console.error(`Error checking localStorage:`, error);
+      return false;
+    }
+  }
+
+  // Helper method to convert date strings back to Date objects
+  private reviveDates(obj: DateRevivable): DateRevivable {
+    if (obj === null || obj === undefined) return obj;
+
+    if (typeof obj === "string") {
+      // Check if string looks like a date
+      const dateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+      if (dateRegex.test(obj)) {
+        return new Date(obj);
+      }
+      return obj;
     }
 
-    set<T>(key: string, value: T): void {
-        try {
-            if (typeof window === 'undefined') return;
-            localStorage.setItem(key, JSON.stringify(value));
-        } catch (error) {
-            console.error(`Error setting item in localStorage:`, error);
-        }
+    if (Array.isArray(obj)) {
+      return obj.map((item) => this.reviveDates(item));
     }
 
-    remove(key: string): void {
-        try {
-            if (typeof window === 'undefined') return;
-            localStorage.removeItem(key);
-        } catch (error) {
-            console.error(`Error removing item from localStorage:`, error);
+    if (typeof obj === "object") {
+      const revived: { [key: string]: DateRevivable } = {};
+      for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          revived[key] = this.reviveDates(
+            (obj as Record<string, DateRevivable>)[key]
+          );
         }
+      }
+      return revived;
     }
 
-    clear(): void {
-        try {
-            if (typeof window === 'undefined') return;
-            // Only clear our app's data
-            Object.values(STORAGE_KEYS).forEach(key => {
-                localStorage.removeItem(key);
-            });
-        } catch (error) {
-            console.error(`Error clearing localStorage:`, error);
-        }
-    }
-
-    exists(key: string): boolean {
-        try {
-            if (typeof window === 'undefined') return false;
-            return localStorage.getItem(key) !== null;
-        } catch (error) {
-            console.error(`Error checking localStorage:`, error);
-            return false;
-        }
-    }
-
-    // Helper method to convert date strings back to Date objects
-    private reviveDates(obj: any): any {
-        if (obj === null || obj === undefined) return obj;
-
-        if (typeof obj === 'string') {
-            // Check if string looks like a date
-            const dateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
-            if (dateRegex.test(obj)) {
-                return new Date(obj);
-            }
-            return obj;
-        }
-
-        if (Array.isArray(obj)) {
-            return obj.map(item => this.reviveDates(item));
-        }
-
-        if (typeof obj === 'object') {
-            const revived: any = {};
-            for (const key in obj) {
-                if (obj.hasOwnProperty(key)) {
-                    revived[key] = this.reviveDates(obj[key]);
-                }
-            }
-            return revived;
-        }
-
-        return obj;
-    }
+    return obj;
+  }
 }
 
 // Create storage instance
 export const storage = new LocalStorageService();
 
 // Data validation utilities
-export const isValidData = {
-    application: (data: any): boolean => {
-        return data &&
-            typeof data.id === 'string' &&
-            typeof data.position === 'string' &&
-            data.company &&
-            data.dateApplied &&
-            ['applied', 'screening', 'interview', 'offer', 'rejected'].includes(data.stage);
-    },
+export const isValidData: DataValidators = {
+  application: (data: unknown): data is StoredApplication => {
+    const app = data as StoredApplication;
+    return Boolean(
+      app &&
+        typeof app.id === "string" &&
+        typeof app.position === "string" &&
+        app.company &&
+        app.dateApplied &&
+        ["applied", "screening", "interview", "offer", "rejected"].includes(
+          app.stage
+        )
+    );
+  },
 
-    company: (data: any): boolean => {
-        return data &&
-            typeof data.id === 'string' &&
-            typeof data.name === 'string' &&
-            typeof data.industry === 'string';
-    },
+  company: (data: unknown): data is StoredCompany => {
+    const company = data as StoredCompany;
+    return Boolean(
+      company &&
+        typeof company.id === "string" &&
+        typeof company.name === "string" &&
+        typeof company.industry === "string"
+    );
+  },
 
-    activity: (data: any): boolean => {
-        return data &&
-            typeof data.id === 'string' &&
-            typeof data.type === 'string' &&
-            typeof data.title === 'string' &&
-            data.timestamp;
-    },
+  activity: (data: unknown): data is StoredActivity => {
+    const activity = data as StoredActivity;
+    return Boolean(
+      activity &&
+        typeof activity.id === "string" &&
+        typeof activity.type === "string" &&
+        typeof activity.title === "string" &&
+        activity.timestamp
+    );
+  },
 
-    event: (data: any): boolean => {
-        return data &&
-            typeof data.id === 'string' &&
-            typeof data.title === 'string' &&
-            data.date &&
-            data.company;
-    },
+  event: (data: unknown): data is StoredEvent => {
+    const event = data as StoredEvent;
+    return Boolean(
+      event &&
+        typeof event.id === "string" &&
+        typeof event.title === "string" &&
+        event.date &&
+        event.company
+    );
+  },
 
-    reminder: (data: any): boolean => {
-        return data &&
-            typeof data.id === 'string' &&
-            typeof data.title === 'string' &&
-            data.dueDate &&
-            ['high', 'medium', 'low'].includes(data.priority) &&
-            ['pending', 'completed'].includes(data.status);
-    }
+  reminder: (data: unknown): data is StoredReminder => {
+    const reminder = data as StoredReminder;
+    return Boolean(
+      reminder &&
+        typeof reminder.id === "string" &&
+        typeof reminder.title === "string" &&
+        reminder.dueDate &&
+        ["high", "medium", "low"].includes(reminder.priority) &&
+        ["pending", "completed"].includes(reminder.status)
+    );
+  },
 };
 
 // Migration utilities for schema changes
-export const migrateData = {
-    applications: (data: any[]): any[] => {
-        return data.map(app => ({
-            ...app,
-            // Ensure all required fields exist
-            contacts: app.contacts || [],
-            interviews: app.interviews || [],
-            tasks: app.tasks || [],
-            documents: app.documents || [],
-            allNotes: app.allNotes || [],
-            // Migrate old date formats
-            dateApplied: app.dateApplied instanceof Date ? app.dateApplied : new Date(app.dateApplied)
-        }));
-    }
+export const migrateData: DataMigrators = {
+  applications: (data: unknown[]): StoredApplication[] => {
+    return data.map((app) => {
+      const appData = app as Partial<StoredApplication>;
+      return {
+        ...appData,
+        // Ensure all required fields exist
+        contacts: appData.contacts || [],
+        interviews: appData.interviews || [],
+        tasks: appData.tasks || [],
+        documents: appData.documents || [],
+        allNotes: appData.allNotes || [],
+        // Migrate old date formats
+        dateApplied:
+          appData.dateApplied instanceof Date
+            ? appData.dateApplied
+            : new Date(appData.dateApplied || Date.now()),
+      } as StoredApplication;
+    });
+  },
 };
 
 // Backup and restore utilities

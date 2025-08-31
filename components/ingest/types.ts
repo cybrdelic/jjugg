@@ -1,0 +1,2 @@
+export interface ParsedInfo { company?: string; role?: string; next_action?: string; action_date?: string; sentiment?: string; summary?: string; raw?: string }
+export interface EmailRow { id:number; date:string; subject:string; class:string; vendor:string; application_id:number|null; parse_status:string; parsed_at?:string; openai_model?:string; parsed_json?: ParsedInfo | null; company?:string; position?:string; }

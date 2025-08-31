@@ -3,15 +3,17 @@
  * Individual row in the applications table with performance optimizations
  */
 
-import React, { forwardRef, useMemo, useCallback } from 'react';
-import {
-  Clock, CheckSquare, Briefcase, MapPin, DollarSign,
-  Users, ArrowUp, ArrowDown, User
-} from 'lucide-react';
-import { Application, ApplicationStage } from '@/types';
-import Tooltip from '../../Tooltip';
-import Portal from '../../Portal';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { Application, ApplicationStage } from '@/types';
+import {
+    Briefcase,
+    CheckSquare,
+    Clock,
+    MapPin
+} from 'lucide-react';
+import React, { forwardRef, useCallback, useMemo } from 'react';
+import Portal from '../../Portal';
+import Tooltip from '../../Tooltip';
 
 interface ApplicationTableRowProps {
   application: Application;
@@ -148,6 +150,9 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
           >
             <div className="company-info">
               <span className="company-name">{application.company.name}</span>
+              {application.isShortlisted && (
+                <span className="shortlist-indicator" aria-label="Shortlisted" title="Shortlisted">★</span>
+              )}
             </div>
           </Tooltip>
         </div>
@@ -704,6 +709,21 @@ const ApplicationTableRow = forwardRef<HTMLDivElement, ApplicationTableRowProps>
           letter-spacing: var(--tracking-tight);
           line-height: var(--leading-tight);
           text-align: left;
+        }
+
+        .shortlist-indicator {
+          color: var(--amber-500, #f59e0b);
+          font-size: 11px;
+          line-height: 1;
+          margin-left: 4px;
+          text-shadow: 0 0 2px rgba(0,0,0,0.2);
+          filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15));
+          animation: shortlistPulse 2.4s ease-in-out infinite;
+        }
+
+        @keyframes shortlistPulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.25); opacity: 0.85; }
         }
 
         /* Enhanced position cell with improved hierarchy */

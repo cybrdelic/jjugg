@@ -1,4 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { createLogger } from "@/lib/logger";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+const logger = createLogger("usePaginatedApplications");
 
 interface PaginatedApplicationsResult<T> {
   items: T[];
@@ -15,7 +18,12 @@ interface PaginatedApplicationsResult<T> {
   prefetchNext: () => Promise<void>;
 }
 
-export function usePaginatedApplications<T extends { id: any }>(opts?: { userId?: number; pageSize?: number; }) : PaginatedApplicationsResult<T> {
+export function usePaginatedApplications<
+  T extends { id: string | number }
+>(opts?: {
+  userId?: number;
+  pageSize?: number;
+}): PaginatedApplicationsResult<T> {
   const userId = opts?.userId ?? 1;
   const pageSizeRef = useRef(opts?.pageSize ?? 50);
   const [items, setItems] = useState<T[]>([]);
@@ -26,69 +34,102 @@ export function usePaginatedApplications<T extends { id: any }>(opts?: { userId?
   const [error, setError] = useState<string | null>(null);
   const inflightRef = useRef<Promise<any> | null>(null);
   const [prefetching, setPrefetching] = useState(false);
-  const prefetchCacheRef = useRef<{ offset: number; items: T[]; total: number | null } | null>(null);
+  const prefetchCacheRef = useRef<{
+    offset: number;
+    items: T[];
+    total: number | null;
+  } | null>(null);
   const prefetchInflightRef = useRef<Promise<any> | null>(null);
   const MAX_PREFETCH_AHEAD_PAGES = 1; // keep memory bounded
 
-  const fetchPage = useCallback(async (nextOffset: number, replace: boolean) => {
-    const limit = pageSizeRef.current;
-    const params = new URLSearchParams({ userId: String(userId), limit: String(limit), offset: String(nextOffset) });
-    console.log(`[usePaginatedApplications] Fetching: offset=${nextOffset}, limit=${limit}`);
-    const res = await fetch(`/api/applications?${params.toString()}`);
-    if (!res.ok) throw new Error(`Failed to load applications page (${res.status})`);
-    const json = await res.json();
-    const pageItems: T[] = json.items || json; // fallback if legacy shape
-    console.log(`[usePaginatedApplications] Received: ${pageItems.length} items, total=${json.total}, hasMore=${json.hasMore}`);
+  const fetchPage = useCallback(
+    async (nextOffset: number, replace: boolean) => {
+      const limit = pageSizeRef.current;
+      const params = new URLSearchParams({
+        userId: String(userId),
+        limit: String(limit),
+        offset: String(nextOffset),
+      });
+      logger.debug(`Fetching: offset=${nextOffset}, limit=${limit}`);
+      const res = await fetch(`/api/applications?${params.toString()}`);
+      if (!res.ok)
+        throw new Error(`Failed to load applications page (${res.status})`);
+      const json = await res.json();
+      const pageItems: T[] = json.items || json; // fallback if legacy shape
+      logger.debug(
+        `Received: ${pageItems.length} items, total=${json.total}, hasMore=${json.hasMore}`
+      );
 
-    // Total handling strategy:
-    // 1. If API supplies total, trust it.
-    // 2. If no total: keep total=null while pages are "full" (pageItems.length === limit) so hasMore stays true.
-    // 3. When we receive a short page (< limit), we know we've reached the end; set total to nextOffset + pageItems.length.
-    setItems(prev => {
-      const newItems = replace ? pageItems : [...prev, ...pageItems];
-      console.log(`[usePaginatedApplications] Items updated: ${prev.length} -> ${newItems.length}`);
-      return newItems;
-    });
-    setOffset(nextOffset + pageItems.length);
-    if (typeof json.total === 'number') {
-      setTotal(json.total);
-    } else if (pageItems.length < limit) {
-      // Infer final total from accumulated count
-      setTotal(nextOffset + pageItems.length);
-    } else if (replace) {
-      // On initial load without total and full page, ensure total remains null (explicit) so hasMore=true
-      setTotal(null);
-    }
-  }, [userId]);
+      // Total handling strategy:
+      // 1. If API supplies total, trust it.
+      // 2. If no total: keep total=null while pages are "full" (pageItems.length === limit) so hasMore stays true.
+      // 3. When we receive a short page (< limit), we know we've reached the end; set total to nextOffset + pageItems.length.
+      setItems((prev) => {
+        const newItems = replace ? pageItems : [...prev, ...pageItems];
+        logger.debug(`Items updated: ${prev.length} -> ${newItems.length}`);
+        return newItems;
+      });
+      setOffset(nextOffset + pageItems.length);
+      if (typeof json.total === "number") {
+        setTotal(json.total);
+      } else if (pageItems.length < limit) {
+        // Infer final total from accumulated count
+        setTotal(nextOffset + pageItems.length);
+      } else if (replace) {
+        // On initial load without total and full page, ensure total remains null (explicit) so hasMore=true
+        setTotal(null);
+      }
+    },
+    [userId]
+  );
 
   // Raw fetch that returns data without committing (used for prefetch)
-  const fetchPageSilent = useCallback(async (nextOffset: number) => {
-    const limit = pageSizeRef.current;
-    const params = new URLSearchParams({ userId: String(userId), limit: String(limit), offset: String(nextOffset) });
-    console.log(`[usePaginatedApplications] Prefetching (silent): offset=${nextOffset}, limit=${limit}`);
-    const res = await fetch(`/api/applications?${params.toString()}`);
-    if (!res.ok) throw new Error(`Failed to prefetch applications page (${res.status})`);
-    const json = await res.json();
-    const pageItems: T[] = json.items || json;
-    let inferredTotal: number | null = null;
-    if (typeof json.total === 'number') inferredTotal = json.total;
-    else if (pageItems.length < limit) inferredTotal = nextOffset + pageItems.length; // last page
-    return { items: pageItems, total: inferredTotal };
-  }, [userId]);
+  const fetchPageSilent = useCallback(
+    async (nextOffset: number) => {
+      const limit = pageSizeRef.current;
+      const params = new URLSearchParams({
+        userId: String(userId),
+        limit: String(limit),
+        offset: String(nextOffset),
+      });
+      logger.debug(
+        `Prefetching (silent): offset=${nextOffset}, limit=${limit}`
+      );
+      const res = await fetch(`/api/applications?${params.toString()}`);
+      if (!res.ok)
+        throw new Error(`Failed to prefetch applications page (${res.status})`);
+      const json = await res.json();
+      const pageItems: T[] = json.items || json;
+      let inferredTotal: number | null = null;
+      if (typeof json.total === "number") inferredTotal = json.total;
+      else if (pageItems.length < limit)
+        inferredTotal = nextOffset + pageItems.length; // last page
+      return { items: pageItems, total: inferredTotal };
+    },
+    [userId]
+  );
 
   const loadInitial = useCallback(async () => {
-    setLoadingInitial(true); setError(null);
-    try { await fetchPage(0, true); } catch (e:any) { setError(e.message || 'Failed to load'); }
-    finally { setLoadingInitial(false); }
+    setLoadingInitial(true);
+    setError(null);
+    try {
+      await fetchPage(0, true);
+    } catch (e: any) {
+      setError(e.message || "Failed to load");
+    } finally {
+      setLoadingInitial(false);
+    }
   }, [fetchPage]);
 
   const commitPrefetchedIfAvailable = useCallback(() => {
     if (!prefetchCacheRef.current) return false;
     if (prefetchCacheRef.current.offset !== offset) return false; // stale (offset advanced meanwhile)
     const { items: cachedItems, total: cachedTotal } = prefetchCacheRef.current;
-    setItems(prev => {
+    setItems((prev) => {
       const newItems = [...prev, ...cachedItems];
-      console.log(`[usePaginatedApplications] Committing prefetched page: ${prev.length} -> ${newItems.length}`);
+      logger.debug(
+        `Committing prefetched page: ${prev.length} -> ${newItems.length}`
+      );
       return newItems;
     });
     setOffset(offset + cachedItems.length);
@@ -107,7 +148,8 @@ export function usePaginatedApplications<T extends { id: any }>(opts?: { userId?
     if (pagesPrefetched >= MAX_PREFETCH_AHEAD_PAGES) return;
     // Defer to idle to avoid blocking main work
     const idleCallback = (cb: () => void) => {
-      if (typeof (window as any).requestIdleCallback === 'function') (window as any).requestIdleCallback(cb, { timeout: 500 });
+      if (typeof (window as any).requestIdleCallback === "function")
+        (window as any).requestIdleCallback(cb, { timeout: 500 });
       else setTimeout(cb, 150);
     };
     idleCallback(async () => {
@@ -119,11 +161,17 @@ export function usePaginatedApplications<T extends { id: any }>(opts?: { userId?
         if (pfItems.length === 0) {
           if (pfTotal !== null) setTotal(pfTotal);
         } else {
-          prefetchCacheRef.current = { offset: nextOffset, items: pfItems, total: pfTotal };
-          console.log(`[usePaginatedApplications] Prefetched page cached at offset=${nextOffset} count=${pfItems.length}`);
+          prefetchCacheRef.current = {
+            offset: nextOffset,
+            items: pfItems,
+            total: pfTotal,
+          };
+          logger.debug(
+            `Prefetched page cached at offset=${nextOffset} count=${pfItems.length}`
+          );
         }
-      } catch (e:any) {
-        console.warn('[usePaginatedApplications] Prefetch failed:', e.message);
+      } catch (e: any) {
+        logger.warn("Prefetch failed:", e.message);
       } finally {
         setPrefetching(false);
         prefetchInflightRef.current = null;
@@ -140,14 +188,23 @@ export function usePaginatedApplications<T extends { id: any }>(opts?: { userId?
       if (!usedCache) {
         await fetchPage(offset, false);
       }
-    } catch (e:any) {
-      setError(e.message || 'Failed to load more');
+    } catch (e: any) {
+      setError(e.message || "Failed to load more");
     } finally {
       setLoadingMore(false);
       // After any load attempt, try to prefetch next
       scheduleAutoPrefetch();
     }
-  }, [loadingMore, loadingInitial, total, items.length, commitPrefetchedIfAvailable, fetchPage, offset, scheduleAutoPrefetch]);
+  }, [
+    loadingMore,
+    loadingInitial,
+    total,
+    items.length,
+    commitPrefetchedIfAvailable,
+    fetchPage,
+    offset,
+    scheduleAutoPrefetch,
+  ]);
 
   const prefetchNext = useCallback(async () => {
     if (prefetchInflightRef.current || prefetchCacheRef.current) return;
@@ -161,10 +218,12 @@ export function usePaginatedApplications<T extends { id: any }>(opts?: { userId?
         if (pfTotal !== null) setTotal(pfTotal);
       } else {
         prefetchCacheRef.current = { offset, items: pfItems, total: pfTotal };
-        console.log(`[usePaginatedApplications] Manual prefetch cached at offset=${offset} count=${pfItems.length}`);
+        logger.debug(
+          `Manual prefetch cached at offset=${offset} count=${pfItems.length}`
+        );
       }
-    } catch (e:any) {
-      console.warn('[usePaginatedApplications] Manual prefetch failed:', e.message);
+    } catch (e: any) {
+      logger.warn("Manual prefetch failed:", e.message);
     } finally {
       setPrefetching(false);
       prefetchInflightRef.current = null;
@@ -176,24 +235,40 @@ export function usePaginatedApplications<T extends { id: any }>(opts?: { userId?
   }, [loadInitial]);
 
   const resetAndReload = useCallback(async () => {
-    setItems([]); setOffset(0); await loadInitial();
+    setItems([]);
+    setOffset(0);
+    await loadInitial();
   }, [loadInitial]);
 
-  useEffect(() => { loadInitial(); }, [loadInitial]);
+  useEffect(() => {
+    loadInitial();
+  }, [loadInitial]);
   // After initial load completes, schedule a prefetch for smoother second page reveal
   useEffect(() => {
     if (!loadingInitial && items.length > 0) scheduleAutoPrefetch();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadingInitial]);
 
   const hasMore = total == null || items.length < total;
-  console.log('[usePaginatedApplications] hasMore calculation:', {
+  logger.debug("hasMore calculation:", {
     total,
     itemsLength: items.length,
     hasMore,
     loadingInitial,
-    loadingMore
+    loadingMore,
   });
 
-  return { items, total, hasMore, loadingInitial, loadingMore, prefetching, error, loadMore, refresh, resetAndReload, prefetchNext };
+  return {
+    items,
+    total,
+    hasMore,
+    loadingInitial,
+    loadingMore,
+    prefetching,
+    error,
+    loadMore,
+    refresh,
+    resetAndReload,
+    prefetchNext,
+  };
 }

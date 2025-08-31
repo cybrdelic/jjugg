@@ -106,6 +106,7 @@ export default function Applications() {
   applicationsTotal,
   applicationsHasMore,
   applicationsLoadingMore,
+  handleResetFilters,
   } = useApplicationsLogic();
 
   const isInitialLoading = loading && !mounted;
@@ -240,6 +241,19 @@ export default function Applications() {
 
   const prefersReduced = usePrefersReducedMotion();
 
+  // Compute active filters signature for reset button visibility/count
+  const activeFilters = useMemo(() => {
+    const entries: Record<string, string> = {};
+    if (searchTerm) entries.search = searchTerm;
+    const columnFilterCount = Object.values(columnFilters).filter(Boolean).length;
+    if (columnFilterCount) entries.column = String(columnFilterCount);
+    if (quickFilters.stage !== 'all') entries.stage = quickFilters.stage;
+    if (quickFilters.dateRange !== 'all') entries.date = quickFilters.dateRange;
+    if (quickFilters.dateRange === 'custom' && (quickFilters.customDateRange?.start || quickFilters.customDateRange?.end)) entries.dateCustom = 'custom';
+    if (quickFilters.salary !== 'all') entries.salary = quickFilters.salary;
+    return entries;
+  }, [searchTerm, columnFilters, quickFilters]);
+
   return (
     <div className={`applications-page ${(mounted || isInitialLoading) ? 'mounted' : ''}`}>
       {/* Skip link for a11y */}
@@ -282,7 +296,8 @@ export default function Applications() {
             visibleColumns={visibleColumns}
             selectedRows={selectedRows}
             selectedApplications={selectedApplications}
-            activeFilters={{}}
+            activeFilters={activeFilters}
+            onResetFilters={handleResetFilters}
             onMobileViewToggle={() => setIsMobileView(!isMobileView)}
             onAutosizeToggle={() => setIsAutosizeEnabled(!isAutosizeEnabled)}
             onDensityChange={setTableViewDensity}
@@ -295,7 +310,6 @@ export default function Applications() {
             onBulkStageChange={handleBulkStageChange}
             onExport={handleExport}
             onBulkEdit={handleBulkEdit}
-            onResetFilters={undefined}
           />
         </div>
 
@@ -381,8 +395,8 @@ export default function Applications() {
                 else setSelectedRows(selectedRows.filter(id => id !== appId));
               }}
               onBulkSelect={(appIds, selected) => { setSelectedRows(selected ? appIds : []); }}
-              activeFilters={{}}
-              onResetFilters={undefined}
+              activeFilters={activeFilters}
+              onResetFilters={handleResetFilters}
               onQuickFilter={() => { }}
               onRowClick={handleRowClick}
               onContextMenu={handleContextMenu}
