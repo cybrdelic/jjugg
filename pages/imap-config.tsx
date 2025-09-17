@@ -1,10 +1,5 @@
-import React, { useState } from 'react';
-import {
-    Mail, Eye, EyeOff, ExternalLink, Copy, Save, Trash2, ArrowLeft, ArrowRight,
-    Settings, Server
-} from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
-import '@/styles/theme.css';
+import React, { useState } from 'react';
 
 // --- Types ---
 interface EmailConfig {

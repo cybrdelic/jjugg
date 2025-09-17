@@ -16,7 +16,6 @@ import {
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useAppData } from '../../contexts/AppDataContext';
-import { useTheme } from '../../contexts/ThemeContext';
 import ApplicationFunnel from '../ApplicationFunnel';
 import ActionButton from '../dashboard/ActionButton';
 import ActivityItem from '../dashboard/ActivityItem';
@@ -94,7 +93,6 @@ interface SkillGap {
 export default function DashboardHome() {
   const { ENABLE_DEVELOPMENT_FEATURES } = useFeatureFlags();
   const { applications, activities, upcomingEvents, appStats, userProfile, loading, error } = useAppData();
-  const { currentTheme } = useTheme();
 
 
   // Removed unused internal interfaces: Activity, UpcomingEvent, MonthlyGoal
@@ -110,9 +108,34 @@ export default function DashboardHome() {
     setMounted(true);
   }, []);
 
+  // Define analytics colors
+  const analytics = {
+    primary: ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b'],
+    positive: '#10b981',
+    negative: '#ef4444'
+  };
+
   // Calculate stats from actual database data
-  const stageCounts = applicationsData.reduce((counts, app) => {
-    counts[app.stage] = (counts[app.stage] || 0) + 1;
+  const stageCounts = applications.reduce((counts: { applied: number; screening: number; interview: number; offer: number; rejected: number }, app: any) => {
+    switch (app.stage) {
+      case 'applied':
+        counts.applied++;
+        break;
+      case 'screening':
+        counts.screening++;
+        break;
+      case 'interview':
+        counts.interview++;
+        break;
+      case 'offer':
+        counts.offer++;
+        break;
+      case 'rejected':
+        counts.rejected++;
+        break;
+      default:
+        counts.applied++; // Default unknown stages to applied
+    }
     return counts;
   }, {
     applied: 0,
@@ -135,7 +158,7 @@ export default function DashboardHome() {
     const today = new Date();
     const activity = [0, 0, 0, 0, 0, 0, 0]; // Sun-Sat
 
-    applicationsData.forEach(app => {
+    applications.forEach((app: any) => {
       const appDate = new Date(app.date_applied);
       const daysDiff = Math.floor((today.getTime() - appDate.getTime()) / (1000 * 60 * 60 * 24));
 
@@ -152,7 +175,7 @@ export default function DashboardHome() {
   const responseTimesByTier: { tier: string; days: number }[] = (() => {
     const tiers: { [key: string]: number[] } = { 'Startup': [], 'Mid-size': [], 'Enterprise': [] };
 
-    applicationsData.forEach(app => {
+    applications.forEach((app: any) => {
       const responseTime = Math.floor(Math.random() * 14) + 1; // 1-14 days
       // Simple heuristic: classify by company name patterns
       if (app.company.name.toLowerCase().includes('google') ||
@@ -176,7 +199,7 @@ export default function DashboardHome() {
   const topIndustries: { name: string; count: number; success: number }[] = (() => {
     const industries: { [key: string]: { count: number; offers: number } } = {};
 
-    applicationsData.forEach(app => {
+    applications.forEach((app: any) => {
       const industry = app.company.industry || 'Technology'; // Default fallback
       if (!industries[industry]) {
         industries[industry] = { count: 0, offers: 0 };
@@ -198,10 +221,10 @@ export default function DashboardHome() {
   })();
 
   // Use database data directly (arrays, not wrapped objects)
-  const upcomingEventsToShow = eventsData.slice(0, 4);
+  const upcomingEventsToShow = upcomingEvents.slice(0, 4);
   const upcomingReminders: any[] = []; // remindersData.slice(0, 3); // Not implemented in DB yet
-  const recentActivities = activitiesData.slice(0, 5);
-  const monthlyGoals = goalsData; // Empty for now, will use defaults later
+  const recentActivities = activities.slice(0, 5);
+  const monthlyGoals: any[] = []; // Empty for now, will use defaults later
 
   const recommendedActions: RecommendedAction[] = [
     { id: 'action1', title: 'Follow up on Google application', description: 'It\'s been 7 days since your application with no response.', priority: 'high', type: 'follow-up', dueDate: new Date(new Date().getTime() + 86400000) },
@@ -213,9 +236,9 @@ export default function DashboardHome() {
 
   // Calculate job match scores based on application data
   const jobMatchScores: number[] = (() => {
-    if (applicationsData.length === 0) return [];
+    if (applications.length === 0) return [];
 
-    return applicationsData.map(app => {
+    return applications.map((app: any) => {
       // Generate match scores based on various factors
       let score = 70; // Base score
 

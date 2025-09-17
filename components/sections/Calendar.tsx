@@ -1,16 +1,15 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin, Briefcase, Info, Plus, Search, Filter, X, ArrowLeft, ArrowRight, Check, Circle } from 'lucide-react';
-import Modal from '../Modal';
-import CardHeader from '../CardHeader';
-import TabButton, { TabGroup } from '../TabButton';
-import Pill, { PillGroup } from '../Pill';
-import EnhancedDropdown from '../EnhancedDropdown';
-import { upcomingEvents, applications } from '@/pages/data';
-import type { Application, Company } from '@/types';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useFeatureFlags } from '@/contexts/FeatureFlagContext';
+import { applications, upcomingEvents } from '@/pages/data';
+import type { Application, Company } from '@/types';
+import { Briefcase, Calendar as CalendarIcon, Check, ChevronLeft, ChevronRight, Circle, Clock, Info, MapPin, Plus, Search, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import CardHeader from '../CardHeader';
+import EnhancedDropdown from '../EnhancedDropdown';
+import Modal from '../Modal';
+import Pill, { PillGroup } from '../Pill';
+import TabButton, { TabGroup } from '../TabButton';
 
 // Define the CalendarEvent interface
 interface CalendarEvent {
@@ -32,7 +31,6 @@ interface CalendarEvent {
 type CalendarView = 'month' | 'week' | 'agenda';
 
 export default function Calendar() {
-  const { currentTheme } = useTheme();
   const { ENABLE_CALENDAR_VIEW } = useFeatureFlags();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);

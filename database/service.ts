@@ -36,7 +36,7 @@ export interface Application {
     user_id: number;
     company_id: number;
     position: string;
-    stage: 'applied' | 'screening' | 'interview' | 'offer' | 'rejected';
+    stage: 'lead' | 'applied' | 'screening' | 'interview' | 'offer' | 'rejected';
     date_applied: string;
     salary_range?: string;
     job_description?: string;
@@ -190,8 +190,10 @@ export class DatabaseService {
         const params: any[] = [];
 
         if (userId) {
-            query += ' WHERE a.user_id = ?';
+            query += ' WHERE a.user_id = ? AND a.deleted_at IS NULL';
             params.push(userId);
+        } else {
+            query += ' WHERE a.deleted_at IS NULL';
         }
 
         query += ' ORDER BY a.date_applied DESC';
@@ -240,7 +242,7 @@ export class DatabaseService {
         }
 
         // Total count (without limit/offset)
-        const totalRow = db.prepare(`SELECT COUNT(*) as cnt FROM applications a ${baseWhere}`).get(...params) as { cnt: number };
+    const totalRow = db.prepare(`SELECT COUNT(*) as cnt FROM applications a ${baseWhere ? baseWhere + ' AND a.deleted_at IS NULL' : 'WHERE a.deleted_at IS NULL'}`).get(...params) as { cnt: number };
 
         // Data page
         const pageQuery = `
@@ -248,7 +250,7 @@ export class DatabaseService {
                    c.website as company_website, c.description as company_description
             FROM applications a
             LEFT JOIN companies c ON a.company_id = c.id
-            ${baseWhere}
+            ${baseWhere ? baseWhere + ' AND a.deleted_at IS NULL' : 'WHERE a.deleted_at IS NULL'}
             ORDER BY a.date_applied DESC, a.id DESC
             LIMIT ? OFFSET ?
         `;
@@ -422,18 +424,13 @@ export class DatabaseService {
     }
 
     static deleteApplication(id: number): void {
-        // Delete related records first (foreign key constraints)
-        db.prepare('DELETE FROM activities WHERE application_id = ?').run(id);
-        db.prepare('DELETE FROM events WHERE application_id = ?').run(id);
-        db.prepare('DELETE FROM interviews WHERE application_id = ?').run(id);
-
-        // Delete the application
-        db.prepare('DELETE FROM applications WHERE id = ?').run(id);
+    // Soft delete: mark deleted_at; keep related history for analytics
+    db.prepare('UPDATE applications SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(id);
     }
 
     // Interview operations
     static getAllInterviews(userId?: number): Interview[] {
-        let query = `
+    let query = `
       SELECT i.*, a.position, c.name as company_name
       FROM interviews i
       LEFT JOIN applications a ON i.application_id = a.id
@@ -442,8 +439,10 @@ export class DatabaseService {
         const params: any[] = [];
 
         if (userId) {
-            query += ' WHERE a.user_id = ?';
+            query += ' WHERE a.user_id = ? AND a.deleted_at IS NULL';
             params.push(userId);
+        } else {
+            query += ' WHERE a.deleted_at IS NULL';
         }
 
         query += ' ORDER BY i.scheduled_date DESC';
@@ -453,7 +452,7 @@ export class DatabaseService {
     }
 
     static getUpcomingInterviews(userId?: number): Interview[] {
-        let query = `
+    let query = `
       SELECT i.*, a.position, c.name as company_name
       FROM interviews i
       LEFT JOIN applications a ON i.application_id = a.id
@@ -463,8 +462,10 @@ export class DatabaseService {
         const params: any[] = [];
 
         if (userId) {
-            query += ' AND a.user_id = ?';
+            query += ' AND a.user_id = ? AND a.deleted_at IS NULL';
             params.push(userId);
+        } else {
+            query += ' AND a.deleted_at IS NULL';
         }
 
         query += ' ORDER BY i.scheduled_date ASC';
@@ -475,7 +476,7 @@ export class DatabaseService {
 
     // Activity operations
     static getAllActivities(userId?: number): any[] {
-        let query = `
+    let query = `
       SELECT act.*,
              a.position,
              a.company_id,
@@ -489,8 +490,10 @@ export class DatabaseService {
         const params: any[] = [];
 
         if (userId) {
-            query += ' WHERE act.user_id = ?';
+            query += ' WHERE act.user_id = ? AND (a.deleted_at IS NULL OR a.id IS NULL)';
             params.push(userId);
+        } else {
+            query += ' WHERE (a.deleted_at IS NULL OR a.id IS NULL)';
         }
 
         query += ' ORDER BY act.created_at DESC';
@@ -523,7 +526,7 @@ export class DatabaseService {
         }));
     }    // Event operations
     static getAllEvents(userId?: number): Event[] {
-        let query = `
+    let query = `
       SELECT e.*,
              a.position, a.company_id,
              c.name as company_name
@@ -534,8 +537,10 @@ export class DatabaseService {
         const params: any[] = [];
 
         if (userId) {
-            query += ' WHERE e.user_id = ?';
+            query += ' WHERE e.user_id = ? AND (a.deleted_at IS NULL OR a.id IS NULL)';
             params.push(userId);
+        } else {
+            query += ' WHERE (a.deleted_at IS NULL OR a.id IS NULL)';
         }
 
         query += ' ORDER BY e.event_date ASC';
@@ -558,7 +563,7 @@ export class DatabaseService {
     }
 
     static getUpcomingEvents(userId?: number): any[] {
-        let query = `
+    let query = `
       SELECT e.*,
              a.position,
              a.company_id,
@@ -573,8 +578,10 @@ export class DatabaseService {
         const params: any[] = [];
 
         if (userId) {
-            query += ' AND e.user_id = ?';
+            query += ' AND e.user_id = ? AND (a.deleted_at IS NULL OR a.id IS NULL)';
             params.push(userId);
+        } else {
+            query += ' AND (a.deleted_at IS NULL OR a.id IS NULL)';
         }
 
         query += ' ORDER BY e.event_date ASC LIMIT 10';
@@ -638,7 +645,7 @@ export class DatabaseService {
 
     // Statistics
     static getApplicationStats(userId?: number) {
-        const baseQuery = userId ? 'WHERE user_id = ?' : '';
+    const baseQuery = userId ? 'WHERE user_id = ? AND deleted_at IS NULL' : 'WHERE deleted_at IS NULL';
         const params = userId ? [userId] : [];
 
         const totalApps = db.prepare(`SELECT COUNT(*) as count FROM applications ${baseQuery}`).get(...params) as { count: number };
@@ -648,8 +655,10 @@ export class DatabaseService {
       ${userId ? 'WHERE a.user_id = ?' : ''}
     `).get(...params) as { count: number };
 
-        const offers = db.prepare(`SELECT COUNT(*) as count FROM applications ${baseQuery} AND stage = 'offer'`).get(...params) as { count: number };
-        const rejections = db.prepare(`SELECT COUNT(*) as count FROM applications ${baseQuery} AND stage = 'rejected'`).get(...params) as { count: number };
+    const stageClauseOffer = baseQuery ? `${baseQuery} AND stage = 'offer'` : `WHERE stage = 'offer'`;
+    const stageClauseReject = baseQuery ? `${baseQuery} AND stage = 'rejected'` : `WHERE stage = 'rejected'`;
+    const offers = db.prepare(`SELECT COUNT(*) as count FROM applications ${stageClauseOffer} AND deleted_at IS NULL`).get(...params) as { count: number };
+    const rejections = db.prepare(`SELECT COUNT(*) as count FROM applications ${stageClauseReject} AND deleted_at IS NULL`).get(...params) as { count: number };
 
         const responseRate = totalApps.count > 0 ? ((interviews.count / totalApps.count) * 100).toFixed(1) : '0';
         const successRate = totalApps.count > 0 ? ((offers.count / totalApps.count) * 100).toFixed(1) : '0';

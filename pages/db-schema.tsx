@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import AppLayout from '../components/AppLayout';
-import Card from '../components/Card';
 import GlassButton from '../components/GlassButton';
 
 export default function DBSchemaPage() {
@@ -29,7 +28,7 @@ export default function DBSchemaPage() {
     }, []);
 
     return (
-        <AppLayout currentSection="db-schema">
+        <AppLayout currentSection="dashboard-home">
             <div className="db-schema-page">
                 <h1 className="page-title">Database Schema Inspector</h1>
                 <p className="page-subtitle">View all tables and columns in your database, anytime.</p>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 // Simple in-memory cache to prevent redundant API calls
 const cache = new Map();
@@ -50,10 +50,11 @@ export function useDbData() {
                 fetch(`/api/interviews?userId=${userId}`)
             ]);
 
-            // Check if all requests were successful
-            if (!applicationsRes.ok || !activitiesRes.ok || !eventsRes.ok || !statsRes.ok || !interviewsRes.ok) {
-                throw new Error('Failed to fetch data from database');
-            }
+            // Allow partial success: treat non-ok as empty set / default stats
+            const safeJson = async (res: Response, fallback: any) => {
+                if (!res.ok) return fallback;
+                try { return await res.json(); } catch { return fallback; }
+            };
 
             // Parse JSON responses
             const [
@@ -63,11 +64,11 @@ export function useDbData() {
                 statsData,
                 interviewsData
             ] = await Promise.all([
-                applicationsRes.json(),
-                activitiesRes.json(),
-                eventsRes.json(),
-                statsRes.json(),
-                interviewsRes.json()
+                safeJson(applicationsRes, []),
+                safeJson(activitiesRes, []),
+                safeJson(eventsRes, []),
+                safeJson(statsRes, {}),
+                safeJson(interviewsRes, [])
             ]);
 
             // Update state with fetched data
@@ -96,8 +97,8 @@ export function useDbData() {
             });
 
         } catch (err) {
-            console.error('❌ Error fetching database data:', err);
-            setError(err instanceof Error ? err.message : 'Failed to fetch data');
+            console.error('❌ Error fetching database data (non-fatal fallback applied):', err);
+            setError(err instanceof Error ? err.message : 'Failed to fetch some data');
         } finally {
             setLoading(false);
         }

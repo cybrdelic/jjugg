@@ -1,7 +1,7 @@
-import ImapFlow from 'imapflow';
-import { simpleParser } from 'mailparser';
 import sqlite3 from 'better-sqlite3';
 import dotenv from 'dotenv';
+import { ImapFlow } from 'imapflow';
+import { simpleParser } from 'mailparser';
 dotenv.config();
 
 const db = sqlite3('database/jjugg.db');

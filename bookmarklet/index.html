@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JJUGG Job Tracker - Bookmarklet</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        h1 { text-align: center; margin-bottom: 30px; }
+        .bookmarklet {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .drag-me {
+            display: inline-block;
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: move;
+            margin: 10px 0;
+        }
+        .instructions {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        code {
+            background: rgba(0,0,0,0.3);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 JJUGG Job Tracker Bookmarklet</h1>
+
+        <p>Drag the button below to your bookmarks bar, then click it on any job posting page to activate tracking:</p>
+
+        <div class="bookmarklet">
+            <a href="javascript:(function(){var s=document.createElement('script');s.src='https://your-domain.com/jjugg-tracker.js';document.head.appendChild(s);})();" class="drag-me">🎯 JJUGG Tracker</a>
+        </div>
+
+        <div class="instructions">
+            <h3>📖 Instructions:</h3>
+            <ol>
+                <li><strong>Drag</strong> the green button above to your browser's bookmarks bar</li>
+                <li><strong>Navigate</strong> to any job posting (LinkedIn, Indeed, Glassdoor, etc.)</li>
+                <li><strong>Click</strong> the "JJUGG Tracker" bookmark</li>
+                <li><strong>Watch</strong> the overlay appear and start tracking!</li>
+            </ol>
+
+            <h3>✨ Features:</h3>
+            <ul>
+                <li>Real-time job data extraction</li>
+                <li>AI-powered job matching scores</li>
+                <li>Auto-fill application forms</li>
+                <li>Company research tools</li>
+                <li>Action tracking and analytics</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

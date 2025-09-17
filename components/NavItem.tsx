@@ -1,8 +1,7 @@
 // components/NavItem.tsx
-import { useTheme } from '@/contexts/ThemeContext';
-import { SectionKey, NavItemType } from './types';
-import NavItemComponent from './NavItemComponent';
 import { useEffect, useState } from 'react';
+import NavItemComponent from './NavItemComponent';
+import { NavItemType, SectionKey } from './types';
 
 interface NavItemProps {
   item: NavItemType;
@@ -19,7 +18,6 @@ export default function NavItem({
   isCollapsed = false,
   onContextMenu
 }: NavItemProps) {
-  const { currentTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const isActive = currentSection === item.key;
 

@@ -1,5 +1,5 @@
 import cors from 'cors';
-import express, { Request, Response } from 'express';
+import express from 'express';
 import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -7,48 +7,37 @@ import { db, dbPath, runMigrations } from './db.js';
 import { IngestEnvelope, RerunPipeline } from './schemas.js';
 import { ensureId, normalizeCompany, normalizeLocation, stableHash } from './util.js';
 import { EventBus } from './ws.js';
-
 const PORT = 7766;
-
 // ES module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 runMigrations();
-
 const app = express();
 app.use(cors({ origin: [/^http:\/\/localhost:\d+$/, /^http:\/\/127\.0\.0\.1:\d+$/] }));
 app.use(express.json({ limit: '2mb' }));
-
 // Serve static files for the job tracker
 app.use('/static', express.static(path.join(__dirname, '../../../standalone')));
 app.use('/setup', express.static(path.join(__dirname, '../../../standalone')));
-
 const server = http.createServer(app);
 const bus = new EventBus(server);
-
 // MVP audit removed with *_mvp tables cleanup
-function insertAudit() { /* no-op */ }
-
+function insertAudit() { }
 // Health
-app.get('/health', (_req: Request, res: Response) => res.json({ ok: true }));
-
+app.get('/health', (_req, res) => res.json({ ok: true }));
 // Diagnostics
-app.get('/daemon/info', (_req: Request, res: Response) => {
-        const counts = db.prepare(`
+app.get('/daemon/info', (_req, res) => {
+    const counts = db.prepare(`
             SELECT
                 (SELECT COUNT(*) FROM job_postings) as postings
-        `).get() as any;
-        res.json({ ok: true, dbPath, wsClients: bus.clientCount(), counts, now: Date.now() });
+        `).get();
+    res.json({ ok: true, dbPath, wsClients: bus.clientCount(), counts, now: Date.now() });
 });
-
-app.get('/daemon/events', (req: Request, res: Response) => {
+app.get('/daemon/events', (req, res) => {
     const limit = Math.min(Number(req.query.limit ?? 50), 200);
     res.json({ ok: true, events: bus.getRecent(limit) });
 });
-
 // localStorage event bus endpoint
-app.get('/api/job-tracking/poll-events', (req: Request, res: Response) => {
+app.get('/api/job-tracking/poll-events', (req, res) => {
     res.setHeader('Content-Type', 'text/html');
     res.send(`
 <!DOCTYPE html>
@@ -134,11 +123,11 @@ app.get('/api/job-tracking/poll-events', (req: Request, res: Response) => {
 </html>
     `);
 });
-
 // Ingest endpoints
-app.post('/ingest/form', (req: Request, res: Response) => {
+app.post('/ingest/form', (req, res) => {
     const parse = IngestEnvelope.safeParse(req.body);
-    if (!parse.success) return res.status(400).json({ error: parse.error.flatten() });
+    if (!parse.success)
+        return res.status(400).json({ error: parse.error.flatten() });
     const env = parse.data;
     const sourceHash = stableHash(JSON.stringify(env));
     // MVP: stash into job_postings if posting provided
@@ -154,12 +143,11 @@ app.post('/ingest/form', (req: Request, res: Response) => {
     // For MVP, just ack
     res.status(202).json({ ingest_id: sourceHash });
 });
-
 // Draft ingest disabled (removed *_mvp tables)
-
-app.post('/ingest/posting', (req: Request, res: Response) => {
+app.post('/ingest/posting', (req, res) => {
     const parse = IngestEnvelope.safeParse(req.body);
-    if (!parse.success) return res.status(400).json({ error: parse.error.flatten() });
+    if (!parse.success)
+        return res.status(400).json({ error: parse.error.flatten() });
     const env = parse.data;
     const id = ensureId();
     const company = normalizeCompany(env.posting?.company);
@@ -171,20 +159,14 @@ app.post('/ingest/posting', (req: Request, res: Response) => {
     bus.emit('events/posting.captured', { id, url: env.url });
     res.status(202).json({ id, hash });
 });
-
 // Applications API minimal
 // Applications endpoints removed with *_mvp tables
-
 // app.get('/apps/:id', ...) removed
-
 // Status update endpoint removed
-
 // Email link endpoint removed
-
 // Job Tracking Endpoints
-app.post('/api/job-tracking/job-posting', (req: Request, res: Response) => {
+app.post('/api/job-tracking/job-posting', (req, res) => {
     const jobData = req.body;
-
     console.log('\n🎯 NEW JOB POSTING TRACKED:');
     console.log('📍 URL:', jobData.url);
     console.log('💼 Title:', jobData.title);
@@ -192,85 +174,25 @@ app.post('/api/job-tracking/job-posting', (req: Request, res: Response) => {
     console.log('📍 Location:', jobData.location);
     console.log('💰 Salary:', jobData.salary || 'Not specified');
     console.log('⏰ Timestamp:', jobData.timestamp);
-
     if (jobData.description && jobData.description.length > 100) {
         console.log('📝 Description Preview:', jobData.description.substring(0, 200) + '...');
     }
-
     if (jobData.requirements && jobData.requirements.length > 0) {
         console.log('✅ Requirements Found:', jobData.requirements.length);
     }
-
     if (jobData.benefits && jobData.benefits.length > 0) {
         console.log('🎁 Benefits Found:', jobData.benefits.length);
     }
-
     console.log('─'.repeat(80));
-
-    // Persist (dedupe by hash of core identity)
-    try {
-        const company = normalizeCompany(jobData.company);
-        const location = normalizeLocation(jobData.location);
-        const hash = stableHash([jobData.url, jobData.title, company, location].join('|'));
-        // Ensure ID
-        const id = jobData.id || ensureId();
-        db.prepare(`INSERT OR IGNORE INTO job_postings (id, source_url, title, company_name_raw, location_raw, description_raw, raw_payload_json, hash, collected_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`)
-            .run(id, jobData.url, jobData.title ?? '', company, location, jobData.description ?? '', JSON.stringify(jobData ?? {}), hash);
-    // Touch last_seen_at
-    db.prepare('UPDATE job_postings SET last_seen_at = CURRENT_TIMESTAMP WHERE id = ?').run(id);
-        // Promote to application (create application row if not exists and have minimal required fields)
-        try {
-            // Ensure company exists or create
-            let companyId: number | undefined;
-            if (company) {
-                const existing = db.prepare('SELECT id FROM companies WHERE LOWER(name)=LOWER(?)').get(company) as any;
-                if (existing) companyId = existing.id; else {
-                    const ins = db.prepare('INSERT INTO companies (name, created_at, updated_at) VALUES (?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)')
-                        .run(company);
-                    companyId = Number(ins.lastInsertRowid);
-                }
-            } else {
-                // fallback generic company
-                const generic = db.prepare('SELECT id FROM companies WHERE name = ?').get('Unknown Company') as any;
-                if (generic) companyId = generic.id; else {
-                    // Use single quoted literal or parameter binding to avoid SQLite treating it as an identifier
-                    const ins = db.prepare("INSERT INTO companies (name, created_at, updated_at) VALUES ('Unknown Company', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)").run();
-                    companyId = Number(ins.lastInsertRowid);
-                }
-            }
-            // See if an application already linked to this posting
-            const existingApp = db.prepare('SELECT id FROM applications WHERE job_posting_id = ?').get(id) as any;
-            if (!existingApp && companyId) {
-                // Ensure default user row still exists (FK safety)
-                db.prepare('INSERT OR IGNORE INTO users (id, name, email) VALUES (1, ?, ?)').run('Default User', 'default@example.com');
-                try {
-                    db.prepare(`INSERT INTO applications (user_id, company_id, position, stage, date_applied, job_description, location, remote, notes, job_posting_id, is_tracked_only, created_at, updated_at)
-                                VALUES (1, ?, ?, 'lead', CURRENT_TIMESTAMP, ?, ?, 1, '', ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`)
-                        .run(companyId, jobData.title || 'Untitled Role', jobData.description || '', location || '', id);
-                } catch (fkErr) {
-                    console.error('Application insert FK failure detail', fkErr);
-                }
-            }
-        } catch (appErr) {
-            console.error('Failed to promote posting to application', appErr);
-        }
-        jobData.id = id; // reflect any generated id back to event
-        bus.emit('job-tracking/posting', { ...jobData, hash });
-        res.json({ success: true, jobId: id, hash, persisted: true });
-    } catch (e:any) {
-        console.error('Failed to persist job posting', e);
-        res.status(500).json({ success: false, error: e.message });
-    }
+    // Emit event for real-time updates
+    bus.emit('job-tracking/posting', jobData);
+    res.json({ success: true, jobId: jobData.id });
 });
-
-app.post('/api/job-tracking/action', (req: Request, res: Response) => {
+app.post('/api/job-tracking/action', (req, res) => {
     const actionData = req.body;
-
     // Create a more readable action message
     let actionMessage = '';
     let emoji = '🔍';
-
     switch (actionData.type) {
         case 'PAGE_VIEWED':
             emoji = '👀';
@@ -311,124 +233,46 @@ app.post('/api/job-tracking/action', (req: Request, res: Response) => {
         default:
             actionMessage = `${actionData.type}: ${JSON.stringify(actionData.details)}`;
     }
-
     const timestamp = new Date(actionData.timestamp).toLocaleTimeString();
     const domain = new URL(actionData.url).hostname;
-
     console.log(`${emoji} [${timestamp}] ${actionMessage} (${domain})`);
-
     // Show additional details for important actions
     if (actionData.type === 'APPLY_CLICKED' && actionData.details.buttonHref) {
         console.log(`   🔗 Application URL: ${actionData.details.buttonHref}`);
     }
-
     if (actionData.type === 'FORM_SUBMITTED' && actionData.details.formFields) {
-        console.log(`   📝 Form fields: ${actionData.details.formFields.map((f: any) => f.name).join(', ')}`);
+        console.log(`   📝 Form fields: ${actionData.details.formFields.map((f) => f.name).join(', ')}`);
     }
-
-    try {
-        // Attempt to link to existing posting by URL if job_posting_id not provided
-        let jobPostingId = actionData.jobPostingId || actionData.job_posting_id;
-        if (!jobPostingId && actionData.url) {
-            const row = db.prepare('SELECT id FROM job_postings WHERE source_url = ? ORDER BY collected_at DESC LIMIT 1').get(actionData.url) as any;
-            if (row) jobPostingId = row.id;
-        }
-        const id = ensureId();
-        db.prepare(`INSERT INTO job_actions (id, job_posting_id, action_type, url, details_json, occurred_at)
-                    VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`)
-            .run(id, jobPostingId ?? null, actionData.type, actionData.url ?? null, JSON.stringify(actionData.details ?? {}));
-        // Update aggregates if linked
-        if (jobPostingId) {
-            if (actionData.type === 'TIME_SPENT') {
-                const secs = Number(actionData.details?.seconds || 0);
-                if (secs > 0) db.prepare('UPDATE job_postings SET time_spent_seconds = time_spent_seconds + ? WHERE id = ?').run(secs, jobPostingId);
-            } else if (actionData.type === 'SCROLL_DEPTH') {
-                const pct = Number(actionData.details?.percentage || 0);
-                db.prepare('UPDATE job_postings SET max_scroll_pct = CASE WHEN ? > IFNULL(max_scroll_pct,0) THEN ? ELSE max_scroll_pct END WHERE id = ?').run(pct, pct, jobPostingId);
-            } else if (actionData.type === 'APPLY_CLICKED') {
-                db.prepare('UPDATE job_postings SET apply_clicked_count = apply_clicked_count + 1 WHERE id = ?').run(jobPostingId);
-            }
-            db.prepare('UPDATE job_postings SET last_seen_at = CURRENT_TIMESTAMP WHERE id = ?').run(jobPostingId);
-        }
-        actionData.persistedId = id;
-        actionData.job_posting_id = jobPostingId ?? null;
-        bus.emit('job-tracking/action', actionData);
-        res.json({ success: true, id, job_posting_id: jobPostingId });
-    } catch (e:any) {
-        console.error('Failed to persist action', e);
-        res.status(500).json({ success: false, error: e.message });
-    }
+    // Emit event for real-time updates
+    bus.emit('job-tracking/action', actionData);
+    res.json({ success: true });
 });
-
 // Get job tracking statistics
-app.get('/api/job-tracking/stats', (_req: Request, res: Response) => {
-    try {
-        const totals = db.prepare(`SELECT
-              (SELECT COUNT(*) FROM job_postings) as postings,
-              (SELECT COUNT(*) FROM job_actions) as actions
-          `).get() as any;
-        const topCompanies = db.prepare(`SELECT company_name_raw as company, COUNT(*) as cnt
-              FROM job_postings WHERE company_name_raw != '' GROUP BY company_name_raw
-              ORDER BY cnt DESC LIMIT 10`).all();
-        const topTitles = db.prepare(`SELECT title, COUNT(*) as cnt FROM job_postings WHERE title != ''
-              GROUP BY title ORDER BY cnt DESC LIMIT 10`).all();
-        const actionTypes = db.prepare(`SELECT action_type, COUNT(*) as cnt FROM job_actions GROUP BY action_type ORDER BY cnt DESC`).all();
-        res.json({
-            totalJobsViewed: totals.postings,
-            totalActions: totals.actions,
-            topCompanies,
-            topJobTitles: topTitles,
-            actionTypes
-        });
-    } catch (e:any) {
-        res.status(500).json({ error: e.message });
-    }
+app.get('/api/job-tracking/stats', (_req, res) => {
+    // This would normally query a database, but for now we'll return mock stats
+    const stats = {
+        totalJobsViewed: 0,
+        totalApplications: 0,
+        totalTimeSpent: 0,
+        topCompanies: [],
+        topJobTitles: [],
+        applicationSources: []
+    };
+    console.log('📊 Job tracking statistics requested');
+    res.json(stats);
 });
-
-// Backfill: create missing application rows for existing job_postings
-app.post('/api/job-tracking/backfill-applications', (_req: Request, res: Response) => {
-    try {
-        // Ensure default user
-    db.prepare('INSERT OR IGNORE INTO users (id, name, email) VALUES (1, ?, ?)').run('Default User', 'default@example.com');
-
-        const rows = db.prepare(`SELECT p.id, p.title, p.company_name_raw, p.location_raw, p.description_raw
-                                 FROM job_postings p
-                                 LEFT JOIN applications a ON a.job_posting_id = p.id
-                                 WHERE a.id IS NULL`).all() as any[];
-        let inserted = 0;
-        for (const r of rows) {
-            const companyName = r.company_name_raw || 'Unknown Company';
-            let companyId: number | undefined;
-            const existing = db.prepare('SELECT id FROM companies WHERE LOWER(name)=LOWER(?)').get(companyName) as any;
-            if (existing) companyId = existing.id; else {
-                const ins = db.prepare('INSERT INTO companies (name, created_at, updated_at) VALUES (?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)').run(companyName);
-                companyId = Number(ins.lastInsertRowid);
-            }
-            db.prepare(`INSERT INTO applications (user_id, company_id, position, stage, date_applied, job_description, location, remote, notes, job_posting_id, is_tracked_only, created_at, updated_at)
-                        VALUES (1, ?, ?, 'lead', CURRENT_TIMESTAMP, ?, ?, 1, '', ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`)
-                .run(companyId, r.title || 'Untitled Role', r.description_raw || '', r.location_raw || '', r.id);
-            inserted++;
-        }
-        res.json({ ok: true, scanned: rows.length, inserted });
-    } catch (e:any) {
-        console.error('Backfill failed', e);
-        res.status(500).json({ ok: false, error: e.message });
-    }
-});
-
-app.post('/pipeline/rerun', (req: Request, res: Response) => {
+app.post('/pipeline/rerun', (req, res) => {
     const parsed = RerunPipeline.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+    if (!parsed.success)
+        return res.status(400).json({ error: parsed.error.flatten() });
     // MVP: no-op, emit event
     bus.emit('events/pipeline.rerun', parsed.data);
     res.status(202).json({ ok: true });
 });
-
 // Setup page route
-app.get('/', (_req: Request, res: Response) => {
+app.get('/', (_req, res) => {
     res.redirect('/setup');
 });
-
 server.listen(PORT, () => {
     console.log(`✅ JJUGG Daemon listening on http://127.0.0.1:${PORT}`);
     console.log(`📖 Job Tracker Setup: http://127.0.0.1:${PORT}/setup`);

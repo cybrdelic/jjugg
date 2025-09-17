@@ -1,13 +1,13 @@
 'use client';
 
 import React, {
-  useState,
-  useRef,
-  useEffect,
-  useLayoutEffect,
-  useCallback,
-  cloneElement,
-  isValidElement,
+    cloneElement,
+    isValidElement,
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useRef,
+    useState,
 } from 'react';
 import { createPortal } from 'react-dom';
 import Portal from './Portal';
@@ -356,7 +356,7 @@ export default function Tooltip({
     (typeof (children as any).type === 'string' || (children as any).ref != null);
 
   const trigger = childAcceptsRef
-    ? cloneElement(children, {
+    ? cloneElement(children as React.ReactElement<any>, {
       ref: (node: HTMLElement | null) => {
         triggerRef.current = node;
         const orig: any = (children as any).ref;

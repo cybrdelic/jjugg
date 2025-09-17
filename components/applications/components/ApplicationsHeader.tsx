@@ -6,32 +6,31 @@
  * - Works with your CardHeader, ActionButton, ModernSearchBar
  */
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Application, StatusUpdate } from '@/types';
 import {
-  PlusCircle,
-  Download,
-  Trash2,
-  Filter,
-  List,
-  LayoutKanban,
+  Bell,
   CalendarDays,
-  Save,
   ChevronDown,
-  X,
-  RefreshCw,
-  SlidersHorizontal,
-  Settings2,
-  Info,
-  Star,
-  Rows,
   Columns2,
+  Download,
+  Filter,
+  Info,
+  List,
+  PlusCircle,
+  RefreshCw,
+  Rows,
+  Save,
+  Settings2,
+  SlidersHorizontal,
   Sparkles,
-  Bell
+  Star,
+  Trash2,
+  X
 } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import CardHeader from '../../CardHeader';
 import ActionButton from '../../dashboard/ActionButton';
 import ModernSearchBar from '../../ModernSearchBar';
-import { Application, StatusUpdate } from '@/types';
 
 type ViewMode = 'table' | 'kanban' | 'timeline';
 type Density = 'comfortable' | 'compact';
@@ -211,7 +210,6 @@ export function ApplicationsHeader({
       <div className="action-strip">
         <div className="search-wrap" aria-label="Search applications">
           <ModernSearchBar
-            ref={searchRef as any}
             applications={applications}
             onSearch={onSearch}
             placeholder="Search (press / to focus)…"
@@ -303,7 +301,6 @@ export function ApplicationsHeader({
               onClick={() => onChangeView?.('kanban')}
               title="Kanban"
             >
-              <LayoutKanban size={14} aria-hidden />
               <span>Kanban</span>
             </button>
             <button

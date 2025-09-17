@@ -50,6 +50,7 @@
   "exclude": [
     "node_modules",
     "database/scripts/**/*",
-    "database/migrations/**/*"
+    "database/migrations/**/*",
+    "scripts/**/*"
   ]
 }

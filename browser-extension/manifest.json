@@ -1,0 +1,113 @@
+{
+  "manifest_version": 3,
+  "name": "JJUGG Job Tracker & Assistant",
+  "version": "2.0.0",
+  "description": "Advanced job tracking with AI insights, auto-filling, and productivity features",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "notifications",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://www.linkedin.com/*",
+    "https://www.indeed.com/*",
+    "https://www.glassdoor.com/*",
+    "https://angel.co/*",
+    "https://wellfound.com/*",
+    "https://jobs.lever.co/*",
+    "https://boards.greenhouse.io/*",
+    "https://jobs.smartrecruiters.com/*",
+    "https://careers.google.com/*",
+    "https://jobs.apple.com/*",
+    "https://stackoverflow.com/*",
+    "https://remote.co/*",
+    "https://remoteok.io/*",
+    "https://weworkremotely.com/*",
+    "https://flexjobs.com/*",
+    "https://www.ziprecruiter.com/*",
+    "https://www.monster.com/*",
+    "https://*.workable.com/*",
+    "https://jobs.github.com/*",
+    "https://www.dice.com/*",
+    "https://hired.com/*",
+    "https://www.themuse.com/*",
+    "https://builtin.com/*",
+    "https://www.crunchboard.com/*",
+    "https://jobs.techstars.com/*",
+    "https://jobs.ycombinator.com/*",
+    "https://www.upwork.com/*",
+    "https://www.freelancer.com/*",
+    "https://www.toptal.com/*",
+    "https://www.workhoppers.com/*",
+    "https://cryptocurrency.jobs/*",
+    "https://web3.career/*",
+    "https://crypto.jobs/*",
+    "https://jobs.ashbyhq.com/*",
+    "https://apply.workable.com/*",
+    "http://127.0.0.1:7766/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.linkedin.com/jobs/*",
+        "https://www.indeed.com/viewjob*",
+        "https://www.glassdoor.com/Job/*",
+        "https://angel.co/jobs/*",
+        "https://wellfound.com/jobs/*",
+        "https://jobs.lever.co/*",
+        "https://boards.greenhouse.io/*",
+        "https://jobs.smartrecruiters.com/*",
+        "https://careers.google.com/*",
+        "https://jobs.apple.com/*",
+        "https://stackoverflow.com/jobs/*",
+        "https://remote.co/job/*",
+        "https://remoteok.io/remote-jobs/*",
+        "https://weworkremotely.com/remote-jobs/*",
+        "https://flexjobs.com/jobs/*",
+        "https://www.ziprecruiter.com/jobs/*",
+        "https://www.monster.com/job-openings/*",
+        "https://*.workable.com/j/*",
+        "https://jobs.github.com/positions/*",
+        "https://www.dice.com/jobs/detail/*",
+        "https://hired.com/jobs/*",
+        "https://www.themuse.com/jobs/*",
+        "https://builtin.com/jobs/*",
+        "https://www.crunchboard.com/jobs/*",
+        "https://jobs.techstars.com/*",
+        "https://jobs.ycombinator.com/*",
+        "https://www.upwork.com/jobs/*",
+        "https://www.freelancer.com/projects/*",
+        "https://www.toptal.com/developers/job-board/*",
+        "https://www.workhoppers.com/jobs/*",
+        "https://cryptocurrency.jobs/*",
+        "https://web3.career/*",
+        "https://crypto.jobs/*",
+        "https://jobs.ashbyhq.com/*",
+        "https://apply.workable.com/*"
+      ],
+      "js": ["content-script.js"],
+      "css": ["styles.css"],
+      "run_at": "document_end"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "JJUGG Job Tracker",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
